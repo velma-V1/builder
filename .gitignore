@@ -119,7 +119,6 @@ ipython_config.py
 
 # pixi
 #   Similar to Pipfile.lock, it is generally recommended to include pixi.lock in version control.
-# pixi.lock
 #   Pixi creates a virtual environment in the .pixi directory, just like venv module creates one
 #   in the .venv directory. It is recommended not to include this directory in version control.
 .pixi
@@ -216,3 +215,113 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ============================================================
+# LOCAL AI BUILDER — PROJECT-SPECIFIC IGNORE RULES
+# ============================================================
+
+# Secrets, tokens, certificates, and local credentials
+.env.*
+!.env.example
+*.key
+*.pem
+*.pfx
+*.p12
+credentials.*
+/secrets/
+/.secrets/
+/tokens/
+
+# Local model binaries and inference caches
+/local-models/
+/model-cache/
+/model_cache/
+/ollama-data/
+*.gguf
+*.ggml
+*.safetensors
+*.onnx
+*.pt
+*.pth
+*.ckpt
+*.h5
+
+# Private datasets and generated training/tuning artifacts
+/datasets/private/
+/training-output/
+/training_output/
+/checkpoints/
+/runs/
+/wandb/
+/mlruns/
+/lightning_logs/
+
+# Disposable workspaces, sandboxes, runtime state, and caches
+/.builder/runtime/
+/.builder/workspaces/
+/.builder/sandboxes/
+/.builder/cache/
+/.builder/tmp/
+/runtime-data/
+/runtime_data/
+/temp/
+/tmp/
+
+# Local builder memory and runtime databases
+/local-memory/
+/local_memory/
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Generated logs, evidence previews, and test reports
+/logs/
+/audit/local/
+/reports/generated/
+/traces/
+/screenshots/generated/
+/test-results/
+/playwright-report/
+/blob-report/
+
+# Node.js and frontend dependencies/build caches
+node_modules/
+.npm/
+.pnpm-store/
+.yarn/
+.next/
+.nuxt/
+.svelte-kit/
+.vite/
+
+# Rust and Tauri build output
+/src-tauri/target/
+
+# Windows-generated files
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Local editor state
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.example.json
+.idea/
+*.code-workspace
+
+# Temporary and backup files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+
+# Intentionally commit dependency locks, schemas, migrations,
+# Docker files, tests, permanent verification reports, and .env.example.
