@@ -10,9 +10,10 @@ Read and follow these files in order:
 1. `PROJECT_DEFINITION.md`
 2. `docs/01-APPROVED-DECISIONS.md`
 3. `docs/01A-LOCAL-BUILDER-STACK-DECISION.md`
-4. `docs/specifications/2026-07-23-section-1-requirements-contracts-design.md`
-5. `docs/superpowers/plans/2026-07-23-section-1-requirements-contracts.md`
-6. `docs/06-BUILDER-INTERFACE-AND-LOCAL-TOOLCHAIN.md`
+4. `docs/01B-SELF-HOSTING-TRANSITION-DECISION.md`
+5. `docs/specifications/2026-07-23-section-1-requirements-contracts-design.md`
+6. `docs/superpowers/plans/2026-07-23-section-1-requirements-contracts.md`
+7. `docs/06-BUILDER-INTERFACE-AND-LOCAL-TOOLCHAIN.md`
 
 ## Required execution stack
 
@@ -26,9 +27,17 @@ Codex, VS Code, OpenHands, hosted providers, and any other IDE are not required.
 
 ## Bootstrap exception
 
-The Builder Dashboard does not exist yet. Section 1 and the minimum Builder workspace shell may therefore be bootstrapped through a controlled local terminal workflow. After the minimum Dashboard, file explorer, Monaco editor, Ollama bridge, and Aider bridge are verified, normal later development moves inside the Builder.
+The Builder Dashboard does not exist yet. Section 1 and the minimum Builder workspace shell may therefore be bootstrapped through a controlled local terminal workflow.
 
-This exception does not permit unrestricted host access or bypass any contract, path, deletion, checkpoint, test, review, or merge rule.
+This is temporary. After each internal capability passes its acceptance tests, that workflow must move into the Builder:
+
+1. file explorer + Monaco + safe file service → browsing and editing move inside;
+2. controlled terminal + test runner + evidence capture → commands and tests move inside;
+3. Ollama + Aider bridge → AI coding and repair move inside;
+4. Git + worktree + checkpoint + review + rollback controls → repository management moves inside;
+5. full integration and recovery verification → Factory continues building and maintaining itself through the Builder.
+
+The bootstrap exception does not permit unrestricted host access or bypass any contract, path, deletion, checkpoint, test, review, or merge rule.
 
 ## Execution rules
 
@@ -43,6 +52,7 @@ This exception does not permit unrestricted host access or bypass any contract, 
 9. Continue automatically through safe fixes and retries.
 10. Stop only for a genuine blocker or protected human decision.
 11. Do not merge into `main` without explicit user approval.
+12. Do not keep an external development workflow as the normal path after its verified Builder replacement is available.
 
 ## Required task gates
 
