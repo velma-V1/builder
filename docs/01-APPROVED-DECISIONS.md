@@ -212,3 +212,24 @@ The runtime database stores at least:
 State transitions and related counter updates must occur transactionally. Database schemas and migrations are versioned in Git. Runtime database files, WAL files, and local backups are not committed.
 
 A storage interface must isolate the control plane from SQLite-specific calls so a later PostgreSQL migration remains possible without changing contract schemas or watchdog behavior. PostgreSQL is not required for the initial three-lane Factory.
+
+## 16. Contract serialization and validation
+
+Human-authored contracts will use YAML.
+
+Every contract type will have a versioned JSON Schema that defines required fields, allowed values, identifier formats, references, limits, and validation rules.
+
+The Factory must process contracts in this order:
+
+1. parse YAML using a safe loader with aliases and custom executable tags disabled or tightly bounded;
+2. reject duplicate keys, unknown fields where the schema forbids them, malformed identifiers, unresolved references, and schema violations;
+3. normalize approved defaults and scalar types;
+4. convert the validated contract to canonical JSON;
+5. compute and record a deterministic content hash from the canonical JSON;
+6. provide only the validated canonical representation to the watchdog, runtime database, models, lanes, and tools.
+
+Canonical JSON is the internal comparison, hashing, caching, signing, and runtime-transfer format. YAML formatting, comments, key order, and whitespace cannot change contract meaning or identity.
+
+The original YAML remains the human-readable source file. Canonical JSON may be regenerated and must not become a competing editable source of truth.
+
+Invalid or ambiguous YAML must fail closed before task creation, permission granting, lane assignment, or execution.
