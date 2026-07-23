@@ -1,13 +1,15 @@
 # Factory Build Plan Map
 
 **Status:** Approved planning order  
-**Recorded:** July 22, 2026
+**Recorded:** July 23, 2026
 
 ## Planning rule
 
 The Factory is a very large multi-system project. It will not be planned as one document.
 
 Each section below receives its own locked specification and implementation plan. Each section is divided into approximately three to five independently testable tasks. No section advances until its acceptance criteria pass and its decisions are recorded.
+
+Normal development must move into the Builder Dashboard as early as safely practical. A minimum workspace shell is therefore a required early milestone before later sections depend on external development tools.
 
 ## Section 1 — Requirements and contracts
 
@@ -23,9 +25,28 @@ Required outputs:
 - completion and evidence contract;
 - change-control and scope-lock rules.
 
+## Early workspace milestone — minimum Builder shell
+
+After Section 1 and before later normal development moves inside the Builder, implement the minimum primary-interface foundation.
+
+Required outputs:
+
+- launchable Builder Dashboard frame;
+- built-in project file explorer;
+- built-in Monaco code editor;
+- controlled terminal and task output panel;
+- safe file-operation boundary using Section 1 contracts;
+- Ollama health and exact-model status;
+- Aider coding-worker adapter connected to Ollama;
+- task, diff, test, approval, checkpoint, and rollback panels;
+- IDE adapter configuration present but disabled by default;
+- proof that the shell works without Codex, VS Code, OpenHands, or hosted providers.
+
+This milestone provides the working environment. Final Dashboard polish, complete graph views, installation, and packaging remain Section 8.
+
 ## Section 2 — Task queue and state machine
 
-Define durable task states, transitions, dependencies, priority, serialization, cancellation, recovery, and restart behavior.
+Define durable task states, transitions, dependencies, priority, serialization, cancellation, recovery, and restart behavior. Expose state through the minimum Builder shell as it is implemented.
 
 Required outputs:
 
@@ -34,7 +55,8 @@ Required outputs:
 - queue and dependency rules;
 - persistent event record;
 - idempotent restart behavior;
-- state-machine tests.
+- state-machine tests;
+- Dashboard task and queue status integration.
 
 ## Section 3 — Deterministic watchdog
 
@@ -47,21 +69,24 @@ Required outputs:
 - heartbeat and stalled-task detection;
 - retry and escalation control;
 - recovery initiation;
-- audit and evidence enforcement.
+- audit and evidence enforcement;
+- controlled Dashboard, Monaco, file-explorer, terminal, and Aider command interfaces.
 
-## Section 4 — Model routing and quotas
+## Section 4 — Model and coding-tool routing and quotas
 
-Connect the approved local and hosted roster without granting models system authority.
+Connect the permanent local runtime, primary local coding worker, and approved optional hosted roster without granting models or workers system authority.
 
 Required outputs:
 
-- provider adapters;
-- approved-model registry;
+- Ollama runtime adapter;
+- Aider coding-worker adapter;
+- approved-model and approved-worker registry;
 - capability and availability checks;
 - quota and usage ledger;
-- Worker, Reviewer, takeover, and local-fallback routing;
+- local Worker, hosted Worker, Reviewer, takeover, and fallback routing;
 - privacy and cloud-permission enforcement;
-- no-silent-substitution tests.
+- no-silent-substitution tests;
+- proof that basic operation remains local.
 
 ## Section 5 — Git, worktree, and sandbox isolation
 
@@ -74,25 +99,27 @@ Required outputs:
 - disposable Docker/WSL2 sandbox lifecycle;
 - mount, network, secret, process, and resource policy;
 - exact change tracking;
+- safe Monaco and Aider write integration;
 - sandbox destruction and rollback tests.
 
 ## Section 6 — Three Worker–Reviewer lanes
 
-Activate three permanent parallel lanes using the contracts, watchdog, router, Git, and sandbox layers.
+Activate three permanent parallel lane structures using the contracts, watchdog, router, Git, and sandbox layers. Hosted capacity remains optional; the local Aider + Ollama path remains primary.
 
 Required outputs:
 
 - lane lifecycle;
-- Worker task packet;
+- local Aider worker packet and hosted Worker task packet;
 - Reviewer packet with fresh context;
 - `APPROVE`, `REVISE`, and `STOP` verdict handling;
 - ownership-conflict prevention;
 - three-component parallel demonstration;
-- lane takeover and degraded-operation tests.
+- lane takeover and degraded-operation tests;
+- proof that hosted lane loss does not disable local work.
 
 ## Section 7 — Testing, evidence, integration, and recovery
 
-Prove that lane work can be independently verified, safely combined, and restored after failure.
+Prove that local and lane work can be independently verified, safely combined, and restored after failure.
 
 Required outputs:
 
@@ -103,21 +130,25 @@ Required outputs:
 - regression and failure-path execution;
 - scope-drift recovery;
 - repeated-failure limits;
-- release-candidate verification packet.
+- release-candidate verification packet;
+- Dashboard evidence and recovery visibility.
 
-## Section 8 — Dashboard, packaging, and installation
+## Section 8 — Complete Dashboard, packaging, and installation
 
-Expose the Factory clearly and package it for Windows 11 Home.
+Complete the primary Builder interface and package Factory for Windows 11 Home.
 
 Required outputs:
 
-- dashboard and selectable panels;
-- three-lane activity view;
-- approvals, tests, failures, checkpoints, rollback, model use, and hardware views;
+- complete Dashboard and selectable panels;
+- polished built-in file explorer;
+- complete Monaco editing workflow;
+- three-lane and local-worker activity views;
+- approvals, tests, failures, checkpoints, rollback, model use, Aider activity, and hardware views;
 - required graph views;
+- optional IDE adapter/plugin, disabled by default;
 - guided setup;
 - installer or verified installation path;
-- clean-machine installation test;
+- clean-machine installation test without Codex, VS Code, OpenHands, or hosted services;
 - final documentation and release package.
 
 ## Drift-control rules
@@ -132,7 +163,8 @@ Every section must follow these rules:
 6. Give every task exact inputs, outputs, owned paths, forbidden paths, tests, and completion evidence.
 7. Stop a drifting task, preserve evidence, return to the last safe point, correct the contract, and restart.
 8. Do not claim completion without deterministic evidence.
+9. Do not add an external IDE, Codex, OpenHands, hosted provider, or alternate local runtime as a required dependency.
 
 ## Current next step
 
-Plan **Section 1 — Requirements and contracts** completely before writing implementation code.
+Execute the approved Section 1 implementation plan through the local-first build path, then implement the minimum Builder workspace shell before later normal development moves fully inside the Dashboard.

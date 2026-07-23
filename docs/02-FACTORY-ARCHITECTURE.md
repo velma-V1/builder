@@ -1,50 +1,79 @@
 # Factory Architecture
 
 **Status:** Approved high-level architecture  
-**Recorded:** July 22, 2026
+**Recorded:** July 23, 2026
 
 ## 1. System shape
 
 ```text
-User and Dashboard
+Builder Dashboard — primary interface
+├── Built-in project file explorer
+├── Built-in Monaco code editor
+├── Controlled terminal and preview
+├── Tasks, diffs, tests, evidence, approvals, checkpoints, rollback, and graphs
+└── Optional IDE adapter — disabled by default
         |
         v
 Deterministic Control Plane
 ├── Versioned contract loader
 ├── Queue and state machine
 ├── Watchdog and permission gates
-├── Model and quota router
+├── Model and coding-worker router
+├── Safe file-operation service
 ├── Git, worktree, and sandbox manager
 ├── Evidence and audit ledger
 ├── Transactional runtime-state store
 └── Serialized integration coordinator
         |
-        +------------------+------------------+
-        |                  |                  |
-        v                  v                  v
-     Lane 1             Lane 2             Lane 3
-  Worker/Reviewer    Worker/Reviewer    Worker/Reviewer
-  branch/worktree    branch/worktree    branch/worktree
-  sandbox            sandbox            sandbox
-        |                  |                  |
-        +------------------+------------------+
-                           |
-                           v
-               Deterministic Integration Gates
-                           |
-                           v
-              Verified package or recovery path
+        +---------------- Primary local path ----------------+
+        |                                                    |
+        v                                                    v
+Aider coding-worker adapter                          Ollama runtime adapter
+        |                                            ├── qwen3:8b
+        +-------------------- Ollama -----------------└── qwen3:14b
+        |
+        +---------------- Optional secondary capacity ----------------+
+        |                         |                                    |
+        v                         v                                    v
+     Lane 1                    Lane 2                               Lane 3
+ Worker/Reviewer            Worker/Reviewer                     Worker/Reviewer
+ branch/worktree            branch/worktree                     branch/worktree
+ sandbox                    sandbox                             sandbox
+        |                         |                                    |
+        +-------------------------+------------------------------------+
+                                  |
+                                  v
+                      Deterministic Integration Gates
+                                  |
+                                  v
+                     Verified package or recovery path
 ```
 
-## 2. Control plane
+## 2. Primary interface
+
+The Builder Dashboard is the normal Factory development environment.
+
+The built-in file explorer and Monaco editor must provide enough functionality for routine repository inspection, editing, coding-worker interaction, testing, review, and recovery without requiring an external IDE.
+
+Dashboard components are clients of the control plane. They cannot directly grant authority, modify authoritative runtime state, bypass file protections, or certify completion.
+
+## 3. IDE independence
+
+Factory core must not depend on VS Code, Codex, OpenHands, or another IDE or agent application.
+
+A disabled-by-default IDE adapter may later connect VS Code or another external editor through a narrow permission-controlled interface. Removing or disabling the adapter must not affect normal Factory operation.
+
+OpenHands is deferred beyond v1. Codex is not a required dependency.
+
+## 4. Control plane
 
 The control plane is deterministic Python software. It remains active while approved work exists and owns every authoritative state transition.
 
-It must never depend on a model to remember critical state. Approved intent is loaded from versioned contracts. Live state includes tasks, lanes, queues, dependencies, checkpoints, commands, model calls, quota usage, test results, evidence, approvals, failures, recoveries, and integration records.
+It must never depend on a model or coding worker to remember critical state. Approved intent is loaded from versioned contracts. Live state includes tasks, lanes, queues, dependencies, checkpoints, commands, model calls, coding-worker calls, quota usage, test results, evidence, approvals, failures, recoveries, and integration records.
 
-The watchdog is the sole authoritative writer to the runtime-state database. Lanes, models, tools, and dashboard processes submit commands or appendable events through controlled interfaces instead of directly modifying shared state.
+The watchdog is the sole authoritative writer to the runtime-state database. The Dashboard, Aider, models, lanes, tools, and IDE adapters submit commands or appendable events through controlled interfaces instead of directly modifying shared state.
 
-## 3. Contract system
+## 5. Contract system
 
 The Factory uses seven small linked contract families:
 
@@ -58,51 +87,71 @@ The Factory uses seven small linked contract families:
 
 Contracts are versioned, Git-tracked repository files treated as code. They remain readable by humans and models, schema-validated, diffable, reviewable, and tied to approval history.
 
-Every lane task must eventually receive linked machine-readable contracts containing at least:
+Every coding task receives linked machine-readable contracts containing at least:
 
 - unique project and task identifiers;
 - parent requirement identifiers;
 - objective and expected deliverable;
 - owned and forbidden paths;
 - frozen interfaces and dependencies;
-- permitted tools, network access, and environment;
+- permitted tools, coding workers, model routes, network access, and environment;
 - applicable tests and evidence;
 - resource, retry, file, time, and model limits;
 - approval requirements;
 - recovery and escalation behavior;
 - completion conditions.
 
-The exact schemas are designed in Build Section 1.
-
-## 4. Runtime-state database
+## 6. Runtime-state database
 
 High-frequency execution state is stored in SQLite using WAL mode, foreign-key enforcement, explicit transactions, migrations, integrity checks, and controlled backups.
 
 The runtime database stores at least:
 
 - project-run and task-instance state;
-- lane status, ownership leases, and heartbeats;
+- lane and local-worker status, ownership leases, and heartbeats;
 - queue order and dependency readiness;
-- current Worker and Reviewer assignments;
-- provider availability and degradation state;
+- current Worker, Reviewer, Aider, and model-route assignments;
+- provider and Ollama availability and degradation state;
 - request, input-token, output-token, quota, and retry counters;
 - approval, checkpoint, rollback, and integration references;
 - append-only audit and state-transition events;
 - failure, recovery, and escalation records.
 
-A storage abstraction prevents watchdog logic from depending directly on SQLite. This preserves a controlled future path to PostgreSQL without changing approved contracts or state-machine semantics.
+A storage abstraction prevents watchdog logic from depending directly on SQLite. Runtime database files, WAL files, and local backups remain local and are never committed. Database schemas and migrations are committed.
 
-Runtime database files, WAL files, and local backups remain local and are never committed. Database schemas and migrations are committed.
-
-## 5. Transaction rule
+## 7. Transaction rule
 
 Every authoritative state transition must be atomic.
 
 A transition transaction must validate the expected current state, apply the new state, update related counters or leases, append its audit event, and commit as one operation. Failure rolls back the entire transition.
 
-Token or request totals may be corrected after a provider returns final usage, but estimated and final values must remain distinguishable and auditable.
+Token or request totals may be corrected after a runtime or provider returns final usage, but estimated and final values must remain distinguishable and auditable.
 
-## 6. Lane boundary
+## 8. Primary local coding path
+
+Ollama is the permanent local model runtime. Aider connected to Ollama is the primary local coding worker for v1.
+
+Aider must operate through a coding-worker adapter and receive only:
+
+- validated task contracts;
+- bounded repository context;
+- owned paths;
+- approved commands and environment;
+- abstract model route resolved to an approved Ollama model;
+- resource, retry, and time limits;
+- required tests and evidence.
+
+Aider may propose and implement changes inside its task boundary. It cannot assign itself work, expand scope, alter protected state, approve deletions, weaken evidence, merge protected branches, publish, release, or mark work complete.
+
+The coding-worker adapter must be replaceable so a future approved worker, including a possible OpenHands adapter, can use the same control boundary without becoming a second authority.
+
+## 9. Ollama runtime boundary
+
+The Ollama adapter is responsible for health checks, exact-model discovery, local request execution, cancellation, error reporting, resource-aware routing, and usage records.
+
+The Factory must remain capable of basic operation when every hosted provider is unavailable. A second local runtime is not required for v1.
+
+## 10. Lane boundary
 
 A lane is a controlled execution unit, not an independent authority.
 
@@ -110,43 +159,51 @@ The Worker implements the bounded task. The Reviewer receives fresh context cont
 
 The watchdog validates the verdict against deterministic evidence. Reviewer approval cannot bypass failed tests, missing evidence, scope violations, security gates, or permission limits.
 
-A lane cannot directly alter task state, shared token totals, quota state, another lane's ownership, or completion status.
+The three approved hosted lanes remain optional secondary capacity. Their unavailability cannot prevent normal Aider + Ollama local work.
 
-## 7. Parallelism rule
+## 11. Parallelism rule
 
-Three lanes may run concurrently only when:
+Three lanes or local worker instances may run concurrently only when:
 
 - their owned paths are disjoint;
 - shared interfaces are frozen;
 - dependency direction is known;
 - each task can be independently tested;
-- no lane controls a shared migration, global manifest, or protected configuration file.
+- no worker controls a shared migration, global manifest, or protected configuration file.
 
 Tasks that violate these conditions enter the serialized integration queue.
 
-## 8. Model routing
+## 12. Model and worker routing
 
-The router selects only approved models. Selection considers task type, demonstrated capability, privacy, context size, tool reliability, provider availability, quota, current local load, and evidence quality.
+The router selects only approved coding workers and model routes. Selection considers task type, demonstrated capability, privacy, context size, tool reliability, Ollama and provider availability, quota, current local load, and evidence quality.
 
-The routing order is:
+The default routing order is:
 
-1. assign suitable work to the lane Worker;
-2. route difficult work and independent review to the lane Reviewer;
-3. allow Reviewer takeover when the Worker is unavailable or unsuitable;
-4. use local Qwen fallback when hosted capacity is unavailable or privacy requires local execution;
-5. pause the task rather than silently selecting an unapproved model.
+1. use Aider with an approved Ollama model for suitable local coding work;
+2. use local Qwen supervision, planning, review, or recovery as assigned;
+3. use an approved hosted Worker or Reviewer only when permitted and beneficial;
+4. fall back to the approved local path when hosted capacity is unavailable or privacy requires local execution;
+5. pause only the affected task rather than silently selecting an unapproved worker, model, runtime, or IDE.
 
-Provider usage and token counts are written through watchdog transactions before and after each call so routing decisions use current auditable state.
+Provider, Ollama, Aider, and token/request state are written through watchdog transactions so routing decisions use current auditable information.
 
-## 9. Git and sandbox boundary
+## 13. File and editor boundary
+
+The Dashboard file explorer and Monaco editor use the safe file-operation service.
+
+Every read or write must respect project root, ownership, read-only, forbidden, protected, generated, disposable, symlink, junction, reparse-point, case, and Windows path rules.
+
+Monaco save actions and Aider edits enter the same policy, checkpoint, diff, evidence, and rollback pipeline. Neither interface receives a bypass path.
+
+## 14. Git and sandbox boundary
 
 Every task uses an isolated branch and worktree where practical. Execution occurs in a disposable Docker environment through WSL2 unless the approved task requires a restricted Windows-native environment.
 
-No lane receives unrestricted host access. Project mounts, network access, secrets, devices, capabilities, commands, and resource limits are explicitly granted by contract.
+No worker, model, Dashboard panel, or IDE adapter receives unrestricted host access. Project mounts, network access, secrets, devices, capabilities, commands, and resource limits are explicitly granted by contract.
 
-## 10. Integration flow
+## 15. Integration flow
 
-A completed lane produces an integration package containing:
+A completed worker or lane produces an integration package containing:
 
 - linked task contracts;
 - base and head commit identifiers;
@@ -160,12 +217,12 @@ A completed lane produces an integration package containing:
 
 The integration coordinator serializes shared changes, runs cross-component tests, and either advances the project or starts recovery.
 
-## 11. Recovery principle
+## 16. Recovery principle
 
 Failure does not erase evidence. Every failed attempt remains traceable. Recovery returns to the last verified safe checkpoint, corrects the contract or implementation, and restarts within bounded limits.
 
-Database recovery must validate transaction integrity, migration version, and checkpoint references before work resumes. Database restoration cannot independently roll repository state forward or backward; repository and runtime checkpoints must be reconciled.
+Database recovery must validate transaction integrity, migration version, and checkpoint references before work resumes. Repository and runtime checkpoints must be reconciled.
 
-## 12. Completion principle
+## 17. Completion principle
 
-No task, lane, integration, project, package, or release is complete because a model says it is complete. Completion is a deterministic database state reached only when the linked contracts and applicable evidence gates pass.
+No task, worker, lane, integration, project, package, or release is complete because Aider, a model, an IDE, or a reviewer says it is complete. Completion is a deterministic database state reached only when the linked contracts and applicable evidence gates pass.
