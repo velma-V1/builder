@@ -24,6 +24,8 @@ The built-in workspace includes:
 
 An IDE adapter/plugin is included as a disabled-by-default extension point. VS Code may be connected later as an optional external tool, but Factory core must never depend on VS Code or any IDE.
 
+Development begins through a controlled local bootstrap only until the matching Builder capabilities are verified. File editing, commands, testing, AI coding, Git, review, evidence, and recovery then move into Factory capability-by-capability. The verified end state is self-hosted local development through the Builder.
+
 ## Core architecture
 
 ```text
@@ -53,11 +55,13 @@ Read the repository in this order:
 1. [`PROJECT_DEFINITION.md`](PROJECT_DEFINITION.md) — governing purpose, boundaries, priorities, controls, and success criteria.
 2. [`docs/00-DOCUMENTATION-INDEX.md`](docs/00-DOCUMENTATION-INDEX.md) — source hierarchy and repository map.
 3. [`docs/01-APPROVED-DECISIONS.md`](docs/01-APPROVED-DECISIONS.md) — approved architecture, permissions, storage, local toolchain, and interface decisions.
-4. [`docs/02-FACTORY-ARCHITECTURE.md`](docs/02-FACTORY-ARCHITECTURE.md) — high-level component boundaries and execution flow.
-5. [`docs/03-MODEL-ROSTER.md`](docs/03-MODEL-ROSTER.md) — approved local and hosted models, roles, routing, and fallback rules.
-6. [`docs/04-RECOVERY-POLICY.md`](docs/04-RECOVERY-POLICY.md) — safe checkpoints, rollback, restart, failure, and scope-drift behavior.
-7. [`docs/05-BUILD-PLAN-MAP.md`](docs/05-BUILD-PLAN-MAP.md) — eight ordered planning and implementation sections.
-8. [`docs/06-BUILDER-INTERFACE-AND-LOCAL-TOOLCHAIN.md`](docs/06-BUILDER-INTERFACE-AND-LOCAL-TOOLCHAIN.md) — dashboard, Monaco, file explorer, Aider/Ollama, and optional IDE adapter rules.
+4. [`docs/01A-LOCAL-BUILDER-STACK-DECISION.md`](docs/01A-LOCAL-BUILDER-STACK-DECISION.md) — Ollama, Aider, Dashboard, Monaco, file explorer, IDE independence, and OpenHands deferral.
+5. [`docs/01B-SELF-HOSTING-TRANSITION-DECISION.md`](docs/01B-SELF-HOSTING-TRANSITION-DECISION.md) — staged migration from bootstrap tools into the local Builder.
+6. [`docs/02-FACTORY-ARCHITECTURE.md`](docs/02-FACTORY-ARCHITECTURE.md) — high-level component boundaries and execution flow.
+7. [`docs/03-MODEL-ROSTER.md`](docs/03-MODEL-ROSTER.md) — approved local and hosted models, roles, routing, and fallback rules.
+8. [`docs/04-RECOVERY-POLICY.md`](docs/04-RECOVERY-POLICY.md) — safe checkpoints, rollback, restart, failure, and scope-drift behavior.
+9. [`docs/05-BUILD-PLAN-MAP.md`](docs/05-BUILD-PLAN-MAP.md) — ordered build sections and self-hosting transition gates.
+10. [`docs/06-BUILDER-INTERFACE-AND-LOCAL-TOOLCHAIN.md`](docs/06-BUILDER-INTERFACE-AND-LOCAL-TOOLCHAIN.md) — dashboard, Monaco, file explorer, Aider/Ollama, and optional IDE adapter rules.
 
 ## Approved build order
 
@@ -97,4 +101,4 @@ Read the repository in this order:
 
 ## Next work
 
-Implement Section 1 from the approved plan using the local-first development path. The minimum Builder workspace shell must be available before normal later-section development moves fully inside the Dashboard.
+Implement Section 1 through the local-first bootstrap path, then build the minimum Builder shell and move each verified workflow inside Factory.
