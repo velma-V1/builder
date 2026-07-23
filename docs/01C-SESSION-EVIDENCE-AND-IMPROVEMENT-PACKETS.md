@@ -190,7 +190,40 @@ If application, testing, validation, or regression checks fail, the verified pre
 
 This is a single rolling recovery snapshot, not a general backup subsystem. Project repositories remain protected independently through their approved GitHub repositories.
 
-## 13. Acceptance criteria
+## 13. Parallel major-stage workstream strategy
+
+Factory's normal execution model uses three parallel major-stage workstreams rather than permanent planning, building, and verification lanes.
+
+Each workstream owns one independent major stage and completes its full internal lifecycle:
+
+```text
+design -> implement -> test -> verify -> handoff
+```
+
+Typical workstream assignments may include:
+
+1. sandbox and execution;
+2. records, retention, and archive;
+3. Dashboard and operator interface.
+
+A stage may run in parallel only when its contracts, dependencies, data boundaries, and integration expectations are stable enough to prevent workers from inventing unfinished interfaces.
+
+Dependent work must wait at a defined dependency or integration gate. A blocked stage must not guess, silently redefine, or bypass another stage's unfinished contract.
+
+Each workstream remains responsible for its own architecture, implementation, tests, verification evidence, checkpointing, recovery state, and handoff package.
+
+Shared coordination gates govern:
+
+- cross-stage dependency approval;
+- interface and contract compatibility;
+- integration testing;
+- conflict resolution;
+- final system verification;
+- promotion into the approved Factory state.
+
+The permanent separation of planning, implementation, and verification into different lanes is not Factory's default model. That temporary lane split may be used only for a single unusually large, complex, or high-risk stage when independent review provides a clear benefit.
+
+## 14. Acceptance criteria
 
 This decision is satisfied only when tests prove that:
 
@@ -211,4 +244,9 @@ This decision is satisfied only when tests prove that:
 15. archived and applied improvements retain complete provenance and measured results;
 16. an Improvement Packet cannot be applied before a new recovery snapshot is successfully created and verified;
 17. a failed or invalid improvement cannot replace or remove the verified pre-improvement recovery snapshot;
-18. the snapshot is limited to Factory recovery state and does not duplicate GitHub project-repository protection.
+18. the snapshot is limited to Factory recovery state and does not duplicate GitHub project-repository protection;
+19. each parallel workstream owns and completes its full design, implementation, testing, verification, and handoff lifecycle;
+20. workstreams cannot begin parallel execution before their shared contracts and dependencies are stable;
+21. dependent stages stop at defined gates rather than inventing or bypassing unfinished interfaces;
+22. integration and final-verification gates detect incompatible or incomplete cross-stage work before promotion;
+23. the temporary planning, building, and verification lane split cannot become the normal execution model without a later explicit architecture decision.
