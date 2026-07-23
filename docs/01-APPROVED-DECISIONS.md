@@ -133,3 +133,22 @@ Inside a disposable sandbox explicitly approved for the current task, the Factor
 The Factory must request user approval before deleting files.
 
 These permissions do not authorize edits outside owned paths, host-level dependency installation, persistent system changes, cloud data transfer, publishing, release, merge to a protected branch, architecture changes, or security-policy changes.
+
+## 12. Automatic checkpoint commits
+
+The Factory may automatically create local checkpoint commits on the task's isolated branch when:
+
+- the commit contains only the task's owned paths;
+- the exact changed-file list is recorded;
+- applicable checkpoint tests and scope checks pass;
+- the commit is labeled as an automatic checkpoint;
+- the parent checkpoint and rollback path are recorded.
+
+Automatic checkpoint commits do not authorize:
+
+- merging into `main` or another protected branch;
+- publishing or releasing;
+- pushing to an unapproved remote;
+- changing approved architecture or security policy.
+
+The Factory must request user approval before merging into `main` or producing a release.
