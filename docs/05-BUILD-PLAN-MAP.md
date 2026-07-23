@@ -151,6 +151,18 @@ Required outputs:
 - clean-machine installation test without Codex, VS Code, OpenHands, or hosted services;
 - final documentation and release package.
 
+## Self-hosting transition gates
+
+The move from bootstrap tools into Factory happens in verified stages:
+
+1. After safe file operations, the file explorer, and Monaco pass, normal browsing and editing move inside the Builder.
+2. After the controlled terminal, command runner, test runner, and evidence capture pass, normal commands and testing move inside.
+3. After the Ollama and Aider bridges pass, normal AI coding and repair move inside.
+4. After Git, worktree, checkpoint, review, evidence, rollback, and recovery controls pass, normal repository management moves inside.
+5. After complete local integration, security, restart, regression, and failure-path testing pass, Factory becomes the primary environment used to continue building and maintaining itself.
+
+A workflow cannot move inside based on interface appearance alone. Its local replacement must pass deterministic acceptance tests first. After a successful cutover, the external workflow becomes an optional emergency or diagnostic fallback rather than a required dependency.
+
 ## Drift-control rules
 
 Every section must follow these rules:
@@ -164,7 +176,8 @@ Every section must follow these rules:
 7. Stop a drifting task, preserve evidence, return to the last safe point, correct the contract, and restart.
 8. Do not claim completion without deterministic evidence.
 9. Do not add an external IDE, Codex, OpenHands, hosted provider, or alternate local runtime as a required dependency.
+10. Move each development workflow into Factory immediately after its local replacement is verified; do not keep external tooling as the normal path without a documented blocker.
 
 ## Current next step
 
-Execute the approved Section 1 implementation plan through the local-first build path, then implement the minimum Builder workspace shell before later normal development moves fully inside the Dashboard.
+Execute the approved Section 1 implementation plan through the local-first build path, then implement the minimum Builder workspace shell and begin the staged self-hosting transition.
