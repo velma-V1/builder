@@ -233,3 +233,25 @@ Canonical JSON is the internal comparison, hashing, caching, signing, and runtim
 The original YAML remains the human-readable source file. Canonical JSON may be regenerated and must not become a competing editable source of truth.
 
 Invalid or ambiguous YAML must fail closed before task creation, permission granting, lane assignment, or execution.
+
+## 17. Immutable activation and automatic safe revisions
+
+An activated contract version is immutable. The Factory must not edit an activated version in place.
+
+A requested change must create a Change Contract that records:
+
+- the contract and version being changed;
+- the reason and source of the change;
+- the exact proposed difference;
+- affected requirements, tasks, paths, interfaces, tests, permissions, and components;
+- whether the change is backward-compatible;
+- required evidence and rollback behavior;
+- whether a protected boundary is crossed.
+
+The Watchdog may automatically validate and activate a new contract version when it can deterministically prove that the change is bounded, reversible, non-destructive, compatible with dependent components, inside approved authority, and supported by all required evidence.
+
+Human approval is required only when the change deletes or replaces protected material, changes intended product behavior, crosses ownership or privacy boundaries, introduces an unresolved breaking interface change, alters architecture or security policy, expands authority, requires persistent host changes, sends private material to cloud services, merges to a protected branch, publishes, releases, spends money, or remains materially ambiguous.
+
+Activation assigns the next runtime generation atomically after validation and any required approval. Ordinary parsing, cache rebuilding, restart, or re-ingestion must not increment generation.
+
+The previous activated version, canonical hash, generation, approval record, evidence, and rollback reference remain available for audit and recovery.
