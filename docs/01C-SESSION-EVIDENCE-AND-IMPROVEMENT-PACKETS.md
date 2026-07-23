@@ -180,7 +180,17 @@ The improvement database stores approved or archived proposals, linked evidence,
 
 A proposal becomes a verified reusable improvement only after controlled testing proves the claimed benefit without reducing a higher-priority requirement. Failed and rejected experiments remain recorded as lessons so Factory does not repeatedly retry disproven approaches without new evidence.
 
-## 12. Acceptance criteria
+## 12. Improvement recovery snapshot policy
+
+Before an approved Improvement Packet is applied to Factory, Factory must create and verify one recovery snapshot of its own configuration, databases, specifications, and required internal state.
+
+The previous recovery snapshot may be replaced only after the new snapshot is complete, readable, integrity-verified, and linked to the Improvement Packet and rollback record.
+
+If application, testing, validation, or regression checks fail, the verified pre-improvement snapshot remains available for restoration until the failure is resolved or the user explicitly approves its replacement.
+
+This is a single rolling recovery snapshot, not a general backup subsystem. Project repositories remain protected independently through their approved GitHub repositories.
+
+## 13. Acceptance criteria
 
 This decision is satisfied only when tests prove that:
 
@@ -198,4 +208,7 @@ This decision is satisfied only when tests prove that:
 12. every proposal contains evidence, benefit, risk, validation, confidence, and rollback information;
 13. proposals cannot auto-apply;
 14. test, apply, archive, and delete actions follow their permission and evidence rules;
-15. archived and applied improvements retain complete provenance and measured results.
+15. archived and applied improvements retain complete provenance and measured results;
+16. an Improvement Packet cannot be applied before a new recovery snapshot is successfully created and verified;
+17. a failed or invalid improvement cannot replace or remove the verified pre-improvement recovery snapshot;
+18. the snapshot is limited to Factory recovery state and does not duplicate GitHub project-repository protection.
