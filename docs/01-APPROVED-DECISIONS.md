@@ -121,3 +121,15 @@ The Factory will be planned and built in eight locked sections:
 8. Dashboard, packaging, and installation
 
 Each section must be divided into small, independently testable tasks before implementation begins.
+
+## 11. Automatic sandbox permissions
+
+Inside a disposable sandbox explicitly approved for the current task, the Factory may automatically:
+
+- create files;
+- edit files within the task's owned paths;
+- install task-required dependencies within the disposable environment.
+
+The Factory must request user approval before deleting files.
+
+These permissions do not authorize edits outside owned paths, host-level dependency installation, persistent system changes, cloud data transfer, publishing, release, merge to a protected branch, architecture changes, or security-policy changes.
