@@ -174,7 +174,7 @@ When any applicable contract requirement or evidence gate fails, the task must r
 
 ## 14. Section 1 contract architecture
 
-Section 1 will use small linked contracts rather than one oversized contract or a database-first design.
+Section 1 will use small linked contracts rather than one oversized contract.
 
 The contract family will separate:
 
@@ -187,3 +187,28 @@ The contract family will separate:
 - approved changes and scope revisions.
 
 All contracts will share stable identifiers, version fields, provenance, status, and references to related contracts. Each contract will have one clear responsibility and will be independently schema-validated.
+
+## 15. Hybrid contract and runtime-state storage
+
+The Factory will use a hybrid architecture:
+
+- approved contracts are versioned, Git-tracked repository files treated as code;
+- high-frequency live execution state is stored in a transactional SQLite database running in WAL mode;
+- the deterministic watchdog is the sole authoritative database writer;
+- lanes, models, tools, and dashboard components submit commands or events and do not directly mutate authoritative shared state.
+
+The repository contracts remain the human- and model-readable source of approved intent, scope, permissions, evidence requirements, and change history.
+
+The runtime database stores at least:
+
+- task, lane, queue, and dependency state;
+- current model assignments and provider availability;
+- request, token, quota, and retry counters;
+- watchdog heartbeats and leases;
+- approval and checkpoint references;
+- append-only audit events;
+- failures, recoveries, and integration state.
+
+State transitions and related counter updates must occur transactionally. Database schemas and migrations are versioned in Git. Runtime database files, WAL files, and local backups are not committed.
+
+A storage interface must isolate the control plane from SQLite-specific calls so a later PostgreSQL migration remains possible without changing contract schemas or watchdog behavior. PostgreSQL is not required for the initial three-lane Factory.
