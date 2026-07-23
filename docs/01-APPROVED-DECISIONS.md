@@ -152,3 +152,22 @@ Automatic checkpoint commits do not authorize:
 - changing approved architecture or security policy.
 
 The Factory must request user approval before merging into `main` or producing a release.
+
+## 13. Task completion gate
+
+A task may enter `COMPLETE` only when every requirement in its approved task contract and every applicable deterministic evidence gate passes.
+
+The completion decision must confirm at least:
+
+- all required deliverables exist;
+- all owned-path and forbidden-path checks pass;
+- required tests pass in the approved environment;
+- required failure-path, security, regression, visual, installation, or launch evidence passes when applicable;
+- Worker and Reviewer records are present;
+- unresolved findings are either cleared or accurately classified as permitted limitations;
+- the exact changed-file list, commands, test results, checkpoint, and rollback path are recorded;
+- no required approval remains outstanding.
+
+Worker approval, Reviewer approval, model agreement, a passing subset of tests, or an apparently working result cannot independently mark a task complete.
+
+When any applicable contract requirement or evidence gate fails, the task must remain active, enter controlled recovery, or be accurately classified as blocked, escalated, or stopped.
