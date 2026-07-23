@@ -171,3 +171,19 @@ The completion decision must confirm at least:
 Worker approval, Reviewer approval, model agreement, a passing subset of tests, or an apparently working result cannot independently mark a task complete.
 
 When any applicable contract requirement or evidence gate fails, the task must remain active, enter controlled recovery, or be accurately classified as blocked, escalated, or stopped.
+
+## 14. Section 1 contract architecture
+
+Section 1 will use small linked contracts rather than one oversized contract or a database-first design.
+
+The contract family will separate:
+
+- project intake and project identity;
+- requirements and traceability;
+- bounded task execution;
+- path ownership and file boundaries;
+- permissions and approvals;
+- required evidence and completion;
+- approved changes and scope revisions.
+
+All contracts will share stable identifiers, version fields, provenance, status, and references to related contracts. Each contract will have one clear responsibility and will be independently schema-validated.
