@@ -14,6 +14,7 @@ Read and follow these files in order:
 5. `docs/specifications/2026-07-23-section-1-requirements-contracts-design.md`
 6. `docs/superpowers/plans/2026-07-23-section-1-requirements-contracts.md`
 7. `docs/06-BUILDER-INTERFACE-AND-LOCAL-TOOLCHAIN.md`
+8. `TASK_1_LOCAL_START.md`
 
 ## Required execution stack
 
