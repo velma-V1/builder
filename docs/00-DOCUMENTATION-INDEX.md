@@ -12,19 +12,21 @@ When documents appear to conflict, use this order:
 3. `docs/01A-LOCAL-BUILDER-STACK-DECISION.md` — approved Ollama, Aider, Dashboard, Monaco, file-explorer, IDE-independence, and OpenHands deferral decision. This file explicitly supersedes conflicting earlier runtime or IDE assumptions.
 4. `docs/01B-SELF-HOSTING-TRANSITION-DECISION.md` — approved capability-by-capability migration from bootstrap tools into the local Builder.
 5. `docs/01C-SESSION-EVIDENCE-AND-IMPROVEMENT-PACKETS.md` — approved disposable-session evidence, raw-log retention, monthly analysis, and user-controlled Improvement Packet rules.
-6. `docs/02-FACTORY-ARCHITECTURE.md` — approved high-level Factory architecture and component boundaries.
-7. `docs/03-MODEL-ROSTER.md` — approved local and hosted model assignments.
-8. `docs/04-RECOVERY-POLICY.md` — checkpoint, rollback, drift, retry, and restart behavior.
-9. `docs/05-BUILD-PLAN-MAP.md` — ordered planning and implementation sections.
-10. `docs/06-BUILDER-INTERFACE-AND-LOCAL-TOOLCHAIN.md` — approved primary interface and local coding-tool boundaries.
-11. Approved section specifications and implementation plans created later.
-12. Code, tests, evidence, audit records, and release records produced from those plans.
+6. `docs/01D-TASK-ENGINE-AND-PARALLEL-WORKSTREAMS.md` — approved major-stage workstreams, lane ownership, resource coordination, integration, and real-time model-testing rules.
+7. `docs/01E-SANDBOX-AND-ISOLATION.md` — approved execution isolation, network, credentials, mounts, resource limits, promotion, and disposal rules.
+8. `docs/02-FACTORY-ARCHITECTURE.md` — approved high-level Factory architecture and component boundaries.
+9. `docs/03-MODEL-ROSTER.md` — approved local and hosted model assignments.
+10. `docs/04-RECOVERY-POLICY.md` — checkpoint, rollback, drift, retry, and restart behavior.
+11. `docs/05-BUILD-PLAN-MAP.md` — ordered planning and implementation sections.
+12. `docs/06-BUILDER-INTERFACE-AND-LOCAL-TOOLCHAIN.md` — approved primary interface and local coding-tool boundaries.
+13. Approved section specifications and implementation plans created later.
+14. Code, tests, evidence, audit records, and release records produced from those plans.
 
 A lower-ranked document cannot silently override a higher-ranked document. A later approved decision may supersede a specific earlier requirement only when the supersession is explicit.
 
 ## Current repository state
 
-The repository contains the complete product definition, approved architecture records, the Section 1 specification and implementation plan, the approved local Builder interface and toolchain direction, the approved transition to a self-hosted local development workflow, and the approved session-evidence and monthly Improvement Packet policy. Product implementation has not started.
+The repository contains the complete product definition, approved architecture records, the Section 1 specification and implementation plan, the approved local Builder interface and toolchain direction, the approved transition to a self-hosted local development workflow, and approved policies for evidence, Improvement Packets, parallel major-stage execution, and sandbox isolation. Product implementation has not started.
 
 ## Required future structure
 
@@ -38,6 +40,8 @@ builder/
 │   ├── 01A-LOCAL-BUILDER-STACK-DECISION.md
 │   ├── 01B-SELF-HOSTING-TRANSITION-DECISION.md
 │   ├── 01C-SESSION-EVIDENCE-AND-IMPROVEMENT-PACKETS.md
+│   ├── 01D-TASK-ENGINE-AND-PARALLEL-WORKSTREAMS.md
+│   ├── 01E-SANDBOX-AND-ISOLATION.md
 │   ├── 02-FACTORY-ARCHITECTURE.md
 │   ├── 03-MODEL-ROSTER.md
 │   ├── 04-RECOVERY-POLICY.md
