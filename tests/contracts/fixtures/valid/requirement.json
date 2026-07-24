@@ -1,0 +1,21 @@
+{
+  "contract_type": "requirement",
+  "id": "REQ-001",
+  "version": 1,
+  "schema_version": "1.0",
+  "project_id": "PROJ-001",
+  "status": "APPROVED",
+  "source": "HUMAN",
+  "created_at": "2026-07-24T00:00:00Z",
+  "created_by": "operator",
+  "related_contracts": [],
+  "statement": "The system must ingest YAML contracts safely.",
+  "rationale": "Enables deterministic automation.",
+  "acceptance_criteria": ["ingestion returns canonical bytes"],
+  "dependencies": [],
+  "priority": "P0",
+  "criticality": "CRITICAL",
+  "evidence_categories": ["UNIT_TEST"],
+  "permitted_limitations": [],
+  "supersession": {}
+}

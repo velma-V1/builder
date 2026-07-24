@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://factory.local/schemas/contracts/requirement/v1.schema.json",
+  "allOf": [
+    {"$ref": "../../common/envelope-v1.schema.json#/$defs/envelope"},
+    {
+      "type": "object",
+      "required": [
+        "statement", "rationale", "acceptance_criteria", "dependencies", "priority",
+        "criticality", "evidence_categories", "permitted_limitations", "supersession"
+      ],
+      "properties": {
+        "statement": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+        "rationale": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+        "acceptance_criteria": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+          "minItems": 1,
+          "maxItems": 4096
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/contractRef"},
+          "maxItems": 4096
+        },
+        "priority": {"enum": ["P0", "P1", "P2", "P3"]},
+        "criticality": {"enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"]},
+        "evidence_categories": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/evidenceCategory"},
+          "minItems": 1,
+          "maxItems": 32
+        },
+        "permitted_limitations": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+          "maxItems": 4096
+        },
+        "supersession": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "supersedes": {"$ref": "../../common/definitions-v1.schema.json#/$defs/contractRef"},
+            "superseded_by": {"$ref": "../../common/definitions-v1.schema.json#/$defs/contractRef"}
+          }
+        }
+      }
+    }
+  ],
+  "unevaluatedProperties": false
+}

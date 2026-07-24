@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://factory.local/schemas/contracts/permission/v1.schema.json",
+  "allOf": [
+    {"$ref": "../../common/envelope-v1.schema.json#/$defs/envelope"},
+    {
+      "type": "object",
+      "required": [
+        "task_id", "tools", "command_classes", "network", "cloud", "secrets",
+        "devices", "processes", "mounts", "environment", "file_operations",
+        "dependency_installation", "approval_required", "denied", "expires_at", "revocation"
+      ],
+      "properties": {
+        "task_id": {"$ref": "../../common/definitions-v1.schema.json#/$defs/taskId"},
+        "tools": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+          "maxItems": 1024
+        },
+        "command_classes": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+          "maxItems": 1024
+        },
+        "network": {"enum": ["NONE", "LOCAL_ONLY", "APPROVED_ROUTES_ONLY"]},
+        "cloud": {"type": "boolean"},
+        "secrets": {"enum": ["NONE", "READ_ONLY", "READ_WRITE"]},
+        "devices": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+          "maxItems": 256
+        },
+        "processes": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+          "maxItems": 256
+        },
+        "mounts": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/pathGlob"},
+          "maxItems": 256
+        },
+        "environment": {
+          "type": "object",
+          "additionalProperties": {"type": "string", "maxLength": 4096},
+          "propertyNames": {"pattern": "^[A-Z_][A-Z0-9_]*$"}
+        },
+        "file_operations": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["create", "modify", "delete"],
+          "properties": {
+            "create": {"type": "boolean"},
+            "modify": {"type": "boolean"},
+            "delete": {"type": "boolean"}
+          }
+        },
+        "dependency_installation": {"type": "boolean"},
+        "approval_required": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+          "maxItems": 1024
+        },
+        "denied": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+          "maxItems": 1024
+        },
+        "expires_at": {"type": ["string", "null"], "format": "date-time"},
+        "revocation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["revoked"],
+          "properties": {
+            "revoked": {"type": "boolean"},
+            "reason": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"}
+          }
+        }
+      }
+    }
+  ],
+  "unevaluatedProperties": false
+}

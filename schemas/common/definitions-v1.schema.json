@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://factory.local/schemas/common/definitions-v1.schema.json",
+  "$defs": {
+    "schemaVersion": {"const": "1.0"},
+    "contractVersion": {"type": "integer", "minimum": 1, "maximum": 2147483647},
+    "projectId": {"type": "string", "pattern": "^PROJ-[A-Z0-9][A-Z0-9-]{1,62}$"},
+    "requirementId": {"type": "string", "pattern": "^REQ-[A-Z0-9][A-Z0-9-]{1,62}$"},
+    "taskId": {"type": "string", "pattern": "^TASK-[A-Z0-9][A-Z0-9-]{1,62}$"},
+    "ownershipId": {"type": "string", "pattern": "^OWN-[A-Z0-9][A-Z0-9-]{1,62}$"},
+    "permissionId": {"type": "string", "pattern": "^PERM-[A-Z0-9][A-Z0-9-]{1,62}$"},
+    "evidenceId": {"type": "string", "pattern": "^EVID-[A-Z0-9][A-Z0-9-]{1,62}$"},
+    "changeId": {"type": "string", "pattern": "^CHG-[A-Z0-9][A-Z0-9-]{1,62}$"},
+    "status": {
+      "enum": ["DRAFT", "VALIDATED", "APPROVAL_REQUIRED", "APPROVED", "SUPERSEDED", "REJECTED", "RETIRED"]
+    },
+    "routeIdentity": {
+      "enum": [
+        "LANE_1_WORKER", "LANE_1_REVIEWER",
+        "LANE_2_WORKER", "LANE_2_REVIEWER",
+        "LANE_3_WORKER", "LANE_3_REVIEWER",
+        "LOCAL_FAST", "LOCAL_SUPERVISOR"
+      ]
+    },
+    "repoPath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^(?![A-Za-z]:)(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\u0000]+$"
+    },
+    "contractRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": {"type": "string", "minLength": 3, "maxLength": 67},
+        "version": {"$ref": "#/$defs/contractVersion"}
+      }
+    },
+    "boundedText": {"type": "string", "maxLength": 65536},
+    "positiveCeiling": {"type": "integer", "minimum": 1, "maximum": 2147483647},
+    "nonNegativeCeiling": {"type": "integer", "minimum": 0, "maximum": 2147483647},
+    "pathGlob": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^(?![A-Za-z]:)(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\u0000]+$"
+    },
+    "operatingEnvironment": {"enum": ["WSL2_DOCKER"]},
+    "privacyLevel": {"enum": ["LOCAL_ONLY", "CLOUD_ALLOWED"]},
+    "evidenceCategory": {
+      "enum": [
+        "UNIT_TEST", "INTEGRATION_TEST", "SECURITY_TEST", "FAILURE_PATH_TEST",
+        "MANUAL_REVIEW", "STATIC_ANALYSIS", "COVERAGE"
+      ]
+    },
+    "verdict": {
+      "enum": ["PASS", "FAIL", "BLOCKED", "INCONCLUSIVE", "NOT_TESTABLE"]
+    },
+    "resourceCeilings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_tokens_per_task", "max_requests_per_task", "max_retries",
+        "max_seconds_per_task", "max_files_per_task"
+      ],
+      "properties": {
+        "max_tokens_per_task": {"$ref": "#/$defs/positiveCeiling"},
+        "max_requests_per_task": {"$ref": "#/$defs/positiveCeiling"},
+        "max_retries": {"$ref": "#/$defs/nonNegativeCeiling"},
+        "max_seconds_per_task": {"$ref": "#/$defs/positiveCeiling"},
+        "max_files_per_task": {"$ref": "#/$defs/positiveCeiling"}
+      }
+    }
+  }
+}

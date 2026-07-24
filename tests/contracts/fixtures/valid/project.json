@@ -1,0 +1,30 @@
+{
+  "contract_type": "project",
+  "id": "PROJ-001",
+  "version": 1,
+  "schema_version": "1.0",
+  "project_id": "PROJ-001",
+  "status": "APPROVED",
+  "source": "HUMAN",
+  "created_at": "2026-07-24T00:00:00Z",
+  "created_by": "operator",
+  "related_contracts": [],
+  "name": "Factory Builder",
+  "project_root": "src",
+  "repository": {"url": "https://example.local/repo.git", "default_branch": "main"},
+  "project_type": "APPLICATION",
+  "deliverables": ["contract subsystem"],
+  "goals": ["deterministic contracts"],
+  "exclusions": ["windows native execution"],
+  "operating_environments": ["WSL2_DOCKER"],
+  "protected_branches": ["main"],
+  "protected_path_classes": ["docs/**"],
+  "privacy": "LOCAL_ONLY",
+  "resource_ceilings": {
+    "max_tokens_per_task": 100000,
+    "max_requests_per_task": 100,
+    "max_retries": 3,
+    "max_seconds_per_task": 3600,
+    "max_files_per_task": 50
+  }
+}

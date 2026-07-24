@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://factory.local/schemas/contracts/ownership/v1.schema.json",
+  "allOf": [
+    {"$ref": "../../common/envelope-v1.schema.json#/$defs/envelope"},
+    {
+      "type": "object",
+      "required": [
+        "task_id", "allowed_paths", "forbidden_paths", "protected_classes",
+        "read_only_paths", "interfaces_consumed", "interfaces_provided",
+        "generated_artifacts", "disposable_artifacts", "overlap_policy",
+        "lease_required", "path_policy"
+      ],
+      "properties": {
+        "task_id": {"$ref": "../../common/definitions-v1.schema.json#/$defs/taskId"},
+        "allowed_paths": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/pathGlob"},
+          "maxItems": 4096
+        },
+        "forbidden_paths": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/pathGlob"},
+          "maxItems": 4096
+        },
+        "protected_classes": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+          "maxItems": 1024
+        },
+        "read_only_paths": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/pathGlob"},
+          "maxItems": 4096
+        },
+        "interfaces_consumed": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+          "maxItems": 4096
+        },
+        "interfaces_provided": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+          "maxItems": 4096
+        },
+        "generated_artifacts": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/pathGlob"},
+          "maxItems": 4096
+        },
+        "disposable_artifacts": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/pathGlob"},
+          "maxItems": 4096
+        },
+        "overlap_policy": {"enum": ["EXCLUSIVE", "SHARED_READ", "DENY"]},
+        "lease_required": {"type": "boolean"},
+        "path_policy": {"enum": ["STRICT_CONTAINMENT"]}
+      }
+    }
+  ],
+  "unevaluatedProperties": false
+}
