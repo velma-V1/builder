@@ -1,0 +1,99 @@
+# Continuation Ledger
+
+**Document ID:** CL-000
+**Repository path:** `docs/planning/00-CONTINUATION-LEDGER.md`
+**Status:** Active — cross-session / cross-pass state of record
+**Authority level:** Derived index (records state; never overrides a governing source)
+**Owner:** Every planning/implementation pass (append + realign)
+**Established:** 2026-07-24 (PH-2 planning, Pass 2)
+
+## 1. Purpose
+
+The single running record of where the project actually is, so any new session or pass can resume without
+relying on chat history. It records the authoritative branch/HEAD, the approval state of each phase, the
+active pass, open decisions, flagged-but-non-blocking items, and the exact next allowed action. It carries no
+technical authority — repository evidence and the governing corpus govern; this ledger points at them.
+
+## 2. Current state of record
+
+| Field | Value |
+|---|---|
+| Date | 2026-07-24 |
+| Active repository | `velma-V1/builder` |
+| PH-1 implementation branch | `claude/builder-handoff-pr8-inc9p8` (HEAD `14f1f5f`) |
+| PH-2 planning branch | `claude/ph2-orchestrator-planning` (forked from `14f1f5f`) |
+| `main` | untouched; no merge performed or authorized |
+| Active phase | PH-2 (planning only; product implementation NOT started) |
+| Active framework | Principal-Architect PH-2 planning framework (10 passes) |
+| Active pass | Pass 10 (Final Integration, Validation, Handoff & Certification) — COMPLETE |
+
+## 3. Phase approval state
+
+| Phase | Implementation | Verification evidence | Promotion (operator) |
+|---|---|---|---|
+| PH-1 (Requirements & Contracts) | Complete | `PASS`, 96.85% cov (`docs/verification/section-1-requirements-contracts.md`, commit `2f37f8d`) | **Promoted for phase-order purposes** by operator (2026-07-24). Final promotion re-verification **flagged as deferred**, non-blocking (`HANDOFF-PH1.md §7`) |
+| PH-2 (Orchestrator: Queue & State Machine) | Not started | — | — |
+| PH-S, PH-3…PH-8 | Not started | — | — |
+
+## 4. Operator decisions on record (this project)
+
+- **Operator Authority policy:** operator's explicit in-conversation approval is authoritative for workflow
+  gates; once given, record and treat as satisfied; do not re-request absent new repository evidence.
+- **PH-1:** "its promoted just flag it for later and move on to ph-2." → PH-1 promoted for phase order;
+  final verify deferred; **do not merge PH-1 or modify `main`**; **do not re-request F-01**.
+- **F-06 resolved:** PH-2 planning authorized now.
+- **PH-2 planning branch:** `claude/ph2-orchestrator-planning` from latest `claude/builder-handoff-pr8-inc9p8`.
+- **Constraint:** do not begin PH-2 *product implementation* yet (planning only).
+- **Pass protocol:** each pass runs the Repository Realignment Protocol, stops after its report, and waits
+  for exactly `CONTINUE` before the next pass.
+
+## 5. Flagged / deferred (non-blocking)
+
+- **DEF-01 — RESOLVED (2026-07-24):** PH-1 final re-verification executed at commit `c3d085e` via
+  `scripts/verify_section1.py`: overall exit 0; ruff/mypy/all suites green; **288 passed / 1 skipped
+  (Windows-only), 96.85% branch coverage** — matches the recorded S1 evidence
+  (`docs/verification/section-1-requirements-contracts.md`). Regenerable manifest at
+  `artifacts/verification/section-1/manifest.json` (gitignored). PH-1 is verified at the current head.
+- **DEF-02 — RESOLVED (2026-07-24):** PR #6 (competing stale Section-1 attempt via local Aider+Ollama,
+  based on pre-freeze `main` `d06c7537`, all task gates unchecked) **closed as superseded** by the completed +
+  verified PH-1 implementation. Supersession comment posted; `main` untouched.
+- **DEF-03** — `HANDOFF-PH1.md §7` forward-references an "expanded section-2 plan"; that expansion lands on
+  the PH-2 planning branch. Reconcile the reference when PH-2 planning merges. Non-blocking.
+- **Planning gaps G-01…G-08** — see `docs/planning/00-PLANNING-AUTHORITY-LEDGER.md §6`. Each owned by a named
+  later pass. Non-blocking for PH-2 planning.
+- **REGR-0002 (OPEN)** — append-only-trigger security test SEC-PH2-02 added in Pass 8; regression flag clears
+  when the test is implemented and passes during PH-2 implementation (Task 2.2/2.6). See REGRESSION-REGISTER.
+- **REGR-0003 (OPEN)** — migration-runner transactional-safety test T-PH2-MIG1 added in Pass 9; clears when
+  implemented and passes during PH-2 implementation (Task 2.2/2.6). See REGRESSION-REGISTER.
+
+## 6. Pass log
+
+| Pass | Scope | Verdict | Artifacts |
+|---|---|---|---|
+| PH-2 Pass 1 | Implementation-readiness realignment | `READY_FOR_PH2_ARCHITECTURE_PLANNING` | (analysis only; no files) |
+| PH-2 Pass 2 | Implementation-planning hierarchy | `PASS_WITH_NONBLOCKING_GAPS` | `00-PLANNING-AUTHORITY-LEDGER.md`, `00-CONTINUATION-LEDGER.md` |
+| PH-2 Pass 3 | Master implementation roadmap (execution companion) | `PASS_WITH_NONBLOCKING_GAPS` | `docs/10A-ROADMAP-EXECUTION-MAP.md` |
+| PH-2 Pass 4 | Component implementation specifications (6 PH-2 components + integration) | `PASS_WITH_NONBLOCKING_GAPS` | `docs/specifications/components/{orchestrator,workstream-state-machine,task-engine,recovery-journal,lease-fencing,memory-core}-spec.md`, `PH2-INTEGRATION.md` |
+| PH-2 Pass 5 | Task-by-task implementation spec (PH-2 T2.1–T2.6 + execution graph + parallel review) | `PASS_WITH_NONBLOCKING_GAPS` | `docs/plans/section-2-task-queue-and-state-machine.md` (expanded) |
+| PH-2 Pass 6 | Verification/evidence/promotion architecture (9 reqs, 11 tests, PROM-PH2, traceability) | `PASS_WITH_NONBLOCKING_GAPS` | `docs/planning/PH2-VERIFICATION-EVIDENCE-PROMOTION.md` |
+| PH-2 Pass 7 | Failure/recovery/rollback/resilience plan (13 failure modes, checkpoints, rollback, recovery, injections, traceability) + Regression Register established | `PASS_WITH_NONBLOCKING_GAPS` | `docs/planning/PH2-FAILURE-RECOVERY-ROLLBACK.md`, `docs/planning/REGRESSION-REGISTER.md` |
+| PH-2 Pass 8 | Security/trust-boundary plan (5 assets, 7 threats, 7 security tests, traceability) + 1 repair (REGR-0002) | `PASS_WITH_NONBLOCKING_GAPS` | `docs/planning/PH2-SECURITY-TRUST-BOUNDARIES.md`; edits to PLAN-S2, VEP-PH2, REGRESSION-REGISTER |
+| PH-2 Pass 9 | Deployment/migration plan (platform footprint, 3 runtime migrations, PH-8 deferral) + 1 repair (REGR-0003) | `PASS_WITH_NONBLOCKING_GAPS` | `docs/planning/PH2-DEPLOYMENT-MIGRATION.md`; edits to PLAN-S2, VEP-PH2, REGRESSION-REGISTER |
+| PH-2 Pass 10 | Final integration/validation/handoff/certification (inventory, 10 audits, handoff, start package, certificate) | `PH2_CERTIFIED_WITH_NONBLOCKING_GAPS` | `docs/planning/PH2-IMPLEMENTATION-READINESS-CERTIFICATE.md` |
+
+## 7. Next allowed action
+
+**PH-2 planning is COMPLETE (Passes 1–10).** Pass 10 produced the Implementation-Readiness Certificate
+(CERT-PH2, verdict `PH2_CERTIFIED_WITH_NONBLOCKING_GAPS`). The entire PH-2 implementation-planning package is
+repository-native and usable without chat history — a future implementer starts at
+`docs/planning/PH2-IMPLEMENTATION-READINESS-CERTIFICATE.md`.
+
+**Required operator action to proceed:** explicit authorization to begin **PH-2 product implementation**
+(first task T2.1, per CERT-PH2 §7). Until then: do not begin implementation, do not merge, do not modify
+`main`, do not open/close/modify PRs, do not promote branches. Open items: REGR-0002 / REGR-0003 (clear
+during implementation); DEF-01 (PH-1 re-verify); DEF-02 (PR #6).
+
+## 8. Update rules
+
+Append/realign at the start and end of every pass. Never delete rows; supersede with a pointer. Correct any
+field that repository evidence contradicts, and record the correction in the pass log.
