@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -151,31 +150,35 @@ def _navigate_parent(document: JsonValue, tokens: Sequence[str]) -> JsonValue:
     return current
 
 
-def _apply_add(document: JsonValue, tokens: Sequence[str], value: JsonValue) -> None:
+def _apply_add(document: JsonValue, tokens: Sequence[str], value: object) -> None:
     if not tokens:
         raise ContractError(ErrorCode.SEMANTIC_REJECTED, "cannot replace the document root")
     parent = _navigate_parent(document, tokens)
     last = tokens[-1]
+    # `value` may come from a frozen (MappingProxyType/tuple) Change document, so it must be
+    # thawed back into plain dict/list before it is spliced into the mutable patched document.
+    thawed_value = _thaw(value)
     if isinstance(parent, dict):
-        parent[last] = copy.deepcopy(value)
+        parent[last] = thawed_value
     elif isinstance(parent, list):
-        parent.insert(_list_index(last, len(parent), for_insert=True), copy.deepcopy(value))
+        parent.insert(_list_index(last, len(parent), for_insert=True), thawed_value)
     else:
         raise ContractError(ErrorCode.SEMANTIC_REJECTED, "cannot add beneath a scalar value")
 
 
-def _apply_replace(document: JsonValue, tokens: Sequence[str], value: JsonValue) -> None:
+def _apply_replace(document: JsonValue, tokens: Sequence[str], value: object) -> None:
     if not tokens:
         raise ContractError(ErrorCode.SEMANTIC_REJECTED, "cannot replace the document root")
     parent = _navigate_parent(document, tokens)
     last = tokens[-1]
+    thawed_value = _thaw(value)
     if isinstance(parent, dict):
         if last not in parent:
             message = f"cannot replace missing field: {last!r}"
             raise ContractError(ErrorCode.SEMANTIC_REJECTED, message)
-        parent[last] = copy.deepcopy(value)
+        parent[last] = thawed_value
     elif isinstance(parent, list):
-        parent[_list_index(last, len(parent), for_insert=False)] = copy.deepcopy(value)
+        parent[_list_index(last, len(parent), for_insert=False)] = thawed_value
     else:
         raise ContractError(ErrorCode.SEMANTIC_REJECTED, "cannot replace beneath a scalar value")
 

@@ -60,3 +60,21 @@ def test_validation_does_not_mutate_input() -> None:
     original = json.loads(json.dumps(document))
     validator.validate(document)
     assert document == original
+
+
+def test_missing_schema_version_is_rejected() -> None:
+    validator = StructuralValidator(SchemaRegistry.load(SCHEMA_ROOT))
+    document = _load("project.json", "valid")
+    del document["schema_version"]
+    report = validator.validate(document)
+    assert not report.valid
+    assert report.issues[0].path == "/schema_version"
+
+
+def test_nested_field_type_error_produces_a_populated_json_pointer() -> None:
+    validator = StructuralValidator(SchemaRegistry.load(SCHEMA_ROOT))
+    document = _load("project.json", "valid")
+    document["resource_ceilings"]["max_tokens_per_task"] = "not-an-integer"
+    report = validator.validate(document)
+    assert not report.valid
+    assert any(issue.path == "/resource_ceilings/max_tokens_per_task" for issue in report.issues)

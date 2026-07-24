@@ -7,7 +7,13 @@ import yaml
 
 from factory.contracts.errors import ContractError
 from factory.contracts.impact.analyzer import ImpactAnalyzer
-from factory.contracts.models import ContractType, ErrorCode, PolicyOutcome
+from factory.contracts.models import (
+    CanonicalContract,
+    ContractType,
+    ErrorCode,
+    PolicyOutcome,
+    ValidationReport,
+)
 from factory.contracts.policy.engine import PolicyEngine
 from factory.contracts.references.resolver import ReferenceResolver
 from factory.contracts.repository.filesystem import ContractFileRepository
@@ -221,6 +227,90 @@ def test_apply_never_overwrites_an_existing_version(
             rollback_available=True,
         )
     assert raised.value.code is ErrorCode.REFERENCE_REJECTED
+
+
+def _raw_change_contract(document: dict[str, Any]) -> CanonicalContract:
+    # `ChangeApplicationService.apply` is a boundary that only ever receives contracts already
+    # schema-validated by `ContractService.ingest`, which would itself reject a document missing
+    # "target"/"operations" or with a malformed target reference before apply() is ever reached.
+    # These two defense-in-depth guards are exercised here by constructing the CanonicalContract
+    # directly, bypassing ingestion, since that's the only way to reach them.
+    return CanonicalContract(
+        source_path=Path("change.yaml"),
+        contract_type=ContractType.CHANGE,
+        contract_id=document.get("id", "CHG-001"),
+        version=document.get("version", 1),
+        schema_version="1.0",
+        project_id=document.get("project_id", "PROJ-001"),
+        canonical_bytes=b"{}",
+        content_hash="0" * 64,
+        document=document,
+        validation=ValidationReport(valid=True, issues=()),
+    )
+
+
+def test_apply_rejects_change_missing_target_or_operations(
+    repository: ContractFileRepository, change_service: ChangeApplicationService
+) -> None:
+    _seed_full_set(repository)
+    document = _load_fixture("change.json")
+    del document["target"]
+    change = _raw_change_contract(document)
+
+    with pytest.raises(ContractError) as raised:
+        change_service.apply(
+            change,
+            target_type=ContractType.TASK,
+            active_ownership={},
+            evidence_passed=True,
+            rollback_available=True,
+        )
+    assert raised.value.code is ErrorCode.SEMANTIC_REJECTED
+
+
+def test_apply_rejects_malformed_target_reference(
+    repository: ContractFileRepository, change_service: ChangeApplicationService
+) -> None:
+    _seed_full_set(repository)
+    document = _load_fixture("change.json")
+    document["target"] = {"id": "TASK-001", "version": "not-an-int"}
+    change = _raw_change_contract(document)
+
+    with pytest.raises(ContractError) as raised:
+        change_service.apply(
+            change,
+            target_type=ContractType.TASK,
+            active_ownership={},
+            evidence_passed=True,
+            rollback_available=True,
+        )
+    assert raised.value.code is ErrorCode.SEMANTIC_REJECTED
+
+
+def test_apply_denies_and_does_not_write_when_policy_is_a_security_violation(
+    repository: ContractFileRepository, change_service: ChangeApplicationService
+) -> None:
+    _seed_full_set(repository)
+    document = _load_fixture("change.json")
+    document["target"] = {"id": "OWN-001", "version": 1}
+    document["operations"] = [
+        {"op": "replace", "path": "/allowed_paths", "value": ["src/file.txt:hidden-stream"]}
+    ]
+    document["resulting_version"] = 2
+    path = repository.root.parent / "ownership_change.yaml"
+    path.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
+    change = repository.service.ingest(path)
+
+    with pytest.raises(ContractError) as raised:
+        change_service.apply(
+            change,
+            target_type=ContractType.OWNERSHIP,
+            active_ownership={},
+            evidence_passed=True,
+            rollback_available=True,
+        )
+    assert raised.value.code is ErrorCode.SECURITY_DENIED
+    assert repository.list_versions(ContractType.OWNERSHIP, "PROJ-001", "OWN-001") == (1,)
 
     original_v1 = repository.load(ContractType.TASK, "PROJ-001", "TASK-001", 1)
     assert original_v1.document["objective"] == "Implement contract ingestion."

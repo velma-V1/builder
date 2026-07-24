@@ -79,3 +79,13 @@ def test_canonicalization_is_deterministic(document: dict[str, object]) -> None:
     assert first.canonical_bytes == second.canonical_bytes
     assert first.content_hash == second.content_hash
     assert math.isfinite(len(first.canonical_bytes))
+
+
+def test_unsupported_value_type_is_rejected() -> None:
+    with pytest.raises(ContractError):
+        canonicalize({"x": object()})  # type: ignore[dict-item]
+
+
+def test_top_level_non_object_document_is_rejected() -> None:
+    with pytest.raises(ContractError):
+        canonicalize(["not", "an", "object"])  # type: ignore[arg-type]

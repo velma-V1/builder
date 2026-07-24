@@ -6,11 +6,29 @@ import pytest
 import yaml
 
 from factory.contracts.errors import ContractError
-from factory.contracts.models import ContractType, ErrorCode
+from factory.contracts.models import CanonicalContract, ContractType, ErrorCode, ValidationReport
 from factory.contracts.references.resolver import ReferenceResolver
 from factory.contracts.repository.filesystem import ContractFileRepository
 from factory.contracts.service import ContractService
 from factory.contracts.validation.schema_registry import SchemaRegistry
+
+
+def _raw_contract(
+    contract_type: ContractType, contract_id: str, document: dict[str, Any]
+) -> CanonicalContract:
+    return CanonicalContract(
+        source_path=Path(f"{contract_id}.yaml"),
+        contract_type=contract_type,
+        contract_id=contract_id,
+        version=document.get("version", 1),
+        schema_version="1.0",
+        project_id="PROJ-001",
+        canonical_bytes=b"{}",
+        content_hash="0" * 64,
+        document=document,
+        validation=ValidationReport(valid=True, issues=()),
+    )
+
 
 SCHEMA_ROOT = Path("schemas")
 FIXTURES_ROOT = Path("tests/contracts/fixtures/valid")
@@ -135,3 +153,70 @@ def test_resolve_dependency_graph_rejects_cycles(
         resolver.resolve_dependency_graph(task_a)
     assert raised.value.code is ErrorCode.REFERENCE_REJECTED
     assert "cycle" in raised.value.message.lower()
+
+
+def test_resolve_rejects_a_non_mapping_reference(resolver: ReferenceResolver) -> None:
+    with pytest.raises(ContractError) as raised:
+        resolver.resolve("not-a-mapping", ContractType.REQUIREMENT, "PROJ-001")  # type: ignore[arg-type]
+    assert raised.value.code is ErrorCode.REFERENCE_REJECTED
+
+
+@pytest.mark.parametrize(
+    "reference", [{}, {"id": 123, "version": 1}, {"id": "REQ-001", "version": "1"}]
+)
+def test_resolve_rejects_malformed_id_or_version(
+    resolver: ReferenceResolver, reference: dict[str, Any]
+) -> None:
+    with pytest.raises(ContractError) as raised:
+        resolver.resolve(reference, ContractType.REQUIREMENT, "PROJ-001")
+    assert raised.value.code is ErrorCode.REFERENCE_REJECTED
+
+
+def test_resolve_all_skips_absent_and_malformed_fields(resolver: ReferenceResolver) -> None:
+    document = {
+        "parent_requirements": "not-a-list",
+        "ownership_contract": "not-a-mapping",
+        # permission_contract, evidence_contract, dependencies are simply absent.
+    }
+    contract = _raw_contract(ContractType.TASK, "TASK-001", document)
+    resolved = resolver.resolve_all(contract)
+    assert resolved == {}
+
+
+def test_resolve_all_skips_non_mapping_items_within_a_list_field(
+    repository: ContractFileRepository, resolver: ReferenceResolver
+) -> None:
+    _write_requirement(repository)
+    document = {"parent_requirements": ["not-a-mapping", {"id": "REQ-001", "version": 1}]}
+    contract = _raw_contract(ContractType.TASK, "TASK-001", document)
+    resolved = resolver.resolve_all(contract)
+    assert {c.contract_id for c in resolved.values()} == {"REQ-001"}
+
+
+def test_resolve_dependency_graph_revisits_a_diamond_dependency_only_once(
+    repository: ContractFileRepository, resolver: ReferenceResolver
+) -> None:
+    _write_task(repository, "TASK-D")
+    _write_task(repository, "TASK-B", dependencies=[{"id": "TASK-D", "version": 1}])
+    _write_task(repository, "TASK-C", dependencies=[{"id": "TASK-D", "version": 1}])
+    _write_task(
+        repository,
+        "TASK-A",
+        dependencies=[{"id": "TASK-B", "version": 1}, {"id": "TASK-C", "version": 1}],
+    )
+
+    task_a = repository.load(ContractType.TASK, "PROJ-001", "TASK-A", 1)
+    graph = resolver.resolve_dependency_graph(task_a)
+    assert {c.contract_id for c in graph.values()} == {"TASK-B", "TASK-C", "TASK-D"}
+
+
+def test_resolve_dependency_graph_ignores_malformed_dependencies_field(
+    resolver: ReferenceResolver,
+) -> None:
+    contract = _raw_contract(ContractType.TASK, "TASK-001", {"dependencies": "not-a-list"})
+    assert resolver.resolve_dependency_graph(contract) == {}
+
+    contract_with_bad_item = _raw_contract(
+        ContractType.TASK, "TASK-002", {"dependencies": ["not-a-mapping"]}
+    )
+    assert resolver.resolve_dependency_graph(contract_with_bad_item) == {}

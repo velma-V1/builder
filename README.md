@@ -6,11 +6,13 @@ Factory is a standalone, local-first AI software-production system designed to b
 
 ## Status
 
-**Full architecture, all planning resolutions (R1–R5 and the autonomy, deletion, and Windows-native decisions), and a complete pre-implementation planning system are recorded. Implementation has not started.**
+**Full architecture, all planning resolutions (R1–R5 and the autonomy, deletion, and Windows-native decisions), and a complete pre-implementation planning system are recorded. Section 1 (Requirements & Contracts) is implemented and verified — `PASS` (96.85% coverage, ruff/mypy clean). Sections 2+ have not started.**
 
 Start here to continue the work:
 
-- [`HANDOFF-PH1.md`](HANDOFF-PH1.md) — the current entry point: what's done, the binding decisions in force, and the exact next step (execute `docs/plans/section-1-requirements-contracts.md`).
+- [`docs/verification/section-1-requirements-contracts.md`](docs/verification/section-1-requirements-contracts.md) — Section 1 verification report: evidence traceability manifest, threat matrix, and Section 2 interfaces.
+- [`docs/plans/section-1-requirements-contracts.md`](docs/plans/section-1-requirements-contracts.md) — the implementation plan that was executed (`src/factory/contracts/`, `schemas/`, `migrations/contracts/`).
+- [`HANDOFF-PH1.md`](HANDOFF-PH1.md) — the PH-1 handoff record: what was done, the binding decisions in force, and the schema-freeze / phase-exit approval this verification is waiting on before PH-2 begins.
 - [`docs/01R-PLANNING-RESOLUTIONS-AND-AMENDMENTS.md`](docs/01R-PLANNING-RESOLUTIONS-AND-AMENDMENTS.md) — the resolutions and decisions that amend the frozen architecture below.
 - [`docs/10-IMPLEMENTATION-ROADMAP.md`](docs/10-IMPLEMENTATION-ROADMAP.md) — the nine-phase build order, gates, and critical path.
 
@@ -110,4 +112,4 @@ The full pre-implementation planning system — master roadmap, glossary, contra
 
 ## Next work
 
-Planning is complete and readiness-verified (`READY_TO_BEGIN_PH1`). See [`HANDOFF-PH1.md`](HANDOFF-PH1.md) for the exact starting point: execute [`docs/plans/section-1-requirements-contracts.md`](docs/plans/section-1-requirements-contracts.md) task-by-task, then build the minimum Builder shell and move each verified workflow inside Factory.
+Section 1 (Requirements & Contracts) is implemented and verified — see [`docs/verification/section-1-requirements-contracts.md`](docs/verification/section-1-requirements-contracts.md). Per `HANDOFF-PH1.md` and `docs/10-IMPLEMENTATION-ROADMAP.md §15`, this is the PH-1 exit gate: do not begin PH-2 (the minimum Builder shell, task queue/state machine, and deterministic watchdog) without explicit schema-freeze / phase-exit approval.

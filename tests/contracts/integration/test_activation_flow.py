@@ -1,3 +1,4 @@
+import dataclasses
 import json
 from pathlib import Path
 from typing import Any
@@ -186,3 +187,83 @@ def test_rollback_reverts_active_version_and_quarantines_cache(
     with pytest.raises(ContractError) as raised:
         activation.cache.get(v1.project_id, v1.contract_id, reader)
     assert raised.value.code is ErrorCode.CACHE_QUARANTINED
+
+
+def test_activate_rejects_a_candidate_that_is_not_validated(
+    service: ContractService, activation_service: tuple[ActivationService, Path], tmp_path: Path
+) -> None:
+    activation, _ = activation_service
+    contract = _ingest(service, tmp_path, "task.yaml", _load_fixture("task.json"))
+    from factory.contracts.models import ValidationReport
+
+    unvalidated = dataclasses.replace(contract, validation=ValidationReport(valid=False, issues=()))
+
+    with pytest.raises(ContractError) as raised:
+        activation.activate(
+            unvalidated,
+            impact=_fresh_impact(contract),
+            policy=_allow_decision(),
+            evidence={},
+            expected_generation=0,
+        )
+    assert raised.value.code is ErrorCode.SCHEMA_REJECTED
+
+
+def test_activate_rejects_a_candidate_with_an_unstable_content_hash(
+    service: ContractService, activation_service: tuple[ActivationService, Path], tmp_path: Path
+) -> None:
+    activation, _ = activation_service
+    contract = _ingest(service, tmp_path, "task.yaml", _load_fixture("task.json"))
+    tampered = dataclasses.replace(contract, content_hash="f" * 64)
+
+    with pytest.raises(ContractError) as raised:
+        activation.activate(
+            tampered,
+            impact=_fresh_impact(contract),
+            policy=_allow_decision(),
+            evidence={},
+            expected_generation=0,
+        )
+    assert raised.value.code is ErrorCode.CACHE_QUARANTINED
+
+
+class _FlakyOnceCache:
+    """A cache stand-in whose first publish() call fails, simulating a transient
+    in-process cache failure right after a successful, already-committed activation."""
+
+    def __init__(self, real_cache: RuntimeContractCache) -> None:
+        self._real_cache = real_cache
+        self._has_failed_once = False
+
+    def publish(self, entry: Any) -> None:
+        if not self._has_failed_once:
+            self._has_failed_once = True
+            raise RuntimeError("simulated transient cache failure")
+        self._real_cache.publish(entry)
+
+    def get(self, project_id: str, contract_id: str, reader: Any) -> Any:
+        return self._real_cache.get(project_id, contract_id, reader)
+
+    def quarantine(self, project_id: str, contract_id: str, reason: str) -> None:
+        self._real_cache.quarantine(project_id, contract_id, reason)
+
+
+def test_activate_recovers_from_a_transient_cache_publish_failure(
+    service: ContractService, activation_service: tuple[ActivationService, Path], tmp_path: Path
+) -> None:
+    activation, db_path = activation_service
+    activation.cache = _FlakyOnceCache(activation.cache)  # type: ignore[assignment]
+    contract = _ingest(service, tmp_path, "task.yaml", _load_fixture("task.json"))
+
+    record = activation.activate(
+        contract,
+        impact=_fresh_impact(contract),
+        policy=_allow_decision(),
+        evidence={},
+        expected_generation=0,
+    )
+    assert record.generation == 1
+
+    reader = SQLiteActivationReader(db_path)
+    cached = activation.cache.get(contract.project_id, contract.contract_id, reader)
+    assert cached.record.contract_version == contract.version
