@@ -38,6 +38,7 @@ contradiction requiring deterministic repair (each pass verdict was `PASS_WITH_N
 |---|---|---|---|---|---|---|
 | REGR-0001 | 2026-07-24 | pre-framework | (doc) | `HANDOFF-PH1.md §4` stale branch ref | corrected to `claude/builder-handoff-pr8-inc9p8` (commit `4920a2b`) | CLEARED (inspection) |
 | REGR-0002 | 2026-07-24 | Pass 8 | THR-PH2-02 | security control without verification: append-only journal triggers (`task_state_events`) specified in the Task 2.2 migration DDL but untested | added security test SEC-PH2-02 (direct `UPDATE`/`DELETE` on `task_state_events` must raise) to PLAN-S2 Task 2.2 + VEP-PH2 §2 (T-PH2-SEC2) + SEC-PH2 §5 | **OPEN** — clear when SEC-PH2-02 is implemented and passes during PH-2 implementation (Task 2.2/2.6) |
+| REGR-0003 | 2026-07-24 | Pass 9 | (migration verification) | migration without verification: PH-2 defines 3 runtime migrations but the runner's transactional-safety behavior (`01O §2.19`: version recorded only on success; failed migration leaves no partial schema) had no explicit test | added migration-runner test (T-PH2-MIG1) to PLAN-S2 Task 2.2 + VEP-PH2 §2 | **OPEN** — clear when T-PH2-MIG1 is implemented and passes during PH-2 implementation (Task 2.2/2.6) |
 
 ### REGR-0002 detail (repair-first record)
 

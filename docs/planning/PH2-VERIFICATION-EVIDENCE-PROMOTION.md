@@ -59,6 +59,7 @@ regression = re-run in Task 2.6 full suite and on any change (`01G §2.4`); prom
 | T-PH2-U5 | `unit/test_scheduler.py` | scheduler, concurrency | TASKENG | T2.5 | 06,07 | readiness gating; deterministic order; cancellation transitions |
 | T-PH2-U6 | `unit/test_memory_records.py` | contract, unit | MEM | T2.5 | 08 | status lifecycle; supersede-by-insert; exact field set |
 | T-PH2-INT1 | `integration/test_orchestrator_lifecycle.py` | integration, interface, crash | all | T2.5 | 01-08 | full lifecycle + restart + reconciliation + memory |
+| T-PH2-MIG1 | `unit/test_runtime_state_store.py` (migration-runner assertion) | migration, schema | ORCH | T2.2 | 09 | `apply_migrations` records version only on success; failed migration leaves no partial schema/version row (REGR-0003) |
 | T-PH2-SYS1 | `scripts/verify_section2.py` | system, regression, migration, evidence-integrity | all | T2.6 | 09 | exit 0; ≥95% cov; manifest hashes recorded |
 
 ## 3. Required-test-category applicability to PH-2

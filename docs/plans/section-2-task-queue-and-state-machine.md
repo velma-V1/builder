@@ -127,6 +127,9 @@ restate them (single authority: the specs own the shapes, the plan owns the buil
      `mode=ro` reader denies INSERT/UPDATE/DELETE/CREATE/DROP/ALTER (reuse PH-1 `_reader_authorizer`);
      **append-only enforcement (SEC-PH2-02): a direct `UPDATE`/`DELETE` on `task_state_events` — even via a
      writable connection — raises (`BEFORE UPDATE/DELETE` triggers `RAISE(ABORT)`);**
+     **migration-runner transactional safety (REGR-0003): `apply_migrations` records the `schema_migrations`
+     version only after a successful apply, and a migration forced to fail mid-apply leaves no partial schema
+     and no version row (one transaction);**
      forced pre-commit failure leaves state+sequence unchanged, no event row.
   3. Implement `apply_migrations` (SHA-256-pinned, one tx), `SQLiteOrchestratorStateReader`,
      `_OrchestratorStateWriter.apply_transition` (`BEGIN IMMEDIATE` → idempotency short-circuit → read →
