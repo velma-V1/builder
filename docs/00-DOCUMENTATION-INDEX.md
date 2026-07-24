@@ -22,19 +22,20 @@ When documents appear to conflict, use this order:
 13. `docs/01K-TOOLS-PERMISSIONS-AND-SECURITY.md` — approved tool registry, least privilege, scoped approvals, secret handling, path safety, quarantine, audit, and emergency controls.
 14. `docs/01L-DASHBOARD-UI-AND-OPERATOR-EXPERIENCE.md` — approved primary Dashboard, workstream visibility, approvals, controlled terminal and editing, offline operation, and operator controls.
 15. `docs/01M-RECOVERY-RELIABILITY-AND-WATCHDOG.md` — approved independent monitoring, reconciliation, restart, containment, degraded operation, recovery drills, restore testing, and fail-closed reliability rules.
-16. `docs/02-FACTORY-ARCHITECTURE.md` — approved high-level Factory architecture and component boundaries.
-17. `docs/03-MODEL-ROSTER.md` — approved local and hosted model assignments.
-18. `docs/04-RECOVERY-POLICY.md` — checkpoint, rollback, drift, retry, and restart behavior.
-19. `docs/05-BUILD-PLAN-MAP.md` — ordered planning and implementation sections.
-20. `docs/06-BUILDER-INTERFACE-AND-LOCAL-TOOLCHAIN.md` — approved primary interface and local coding-tool boundaries.
-21. Approved section specifications and implementation plans created later.
-22. Code, tests, evidence, audit records, and release records produced from those plans.
+16. `docs/01N-WINDOWS-ACTIVATION-INDEPENDENCE.md` — approved full Windows 11 Home operation regardless of activation status and explicit removal of activation from all Factory prerequisites and release gates.
+17. `docs/02-FACTORY-ARCHITECTURE.md` — approved high-level Factory architecture and component boundaries.
+18. `docs/03-MODEL-ROSTER.md` — approved local and hosted model assignments.
+19. `docs/04-RECOVERY-POLICY.md` — checkpoint, rollback, drift, retry, and restart behavior.
+20. `docs/05-BUILD-PLAN-MAP.md` — ordered planning and implementation sections.
+21. `docs/06-BUILDER-INTERFACE-AND-LOCAL-TOOLCHAIN.md` — approved primary interface and local coding-tool boundaries.
+22. Approved section specifications and implementation plans created later.
+23. Code, tests, evidence, audit records, and release records produced from those plans.
 
 A lower-ranked document cannot silently override a higher-ranked document. A later approved decision may supersede a specific earlier requirement only when the supersession is explicit.
 
 ## Current repository state
 
-The repository contains the complete product definition, approved architecture records, the Section 1 specification and implementation plan, the approved local Builder interface and toolchain direction, the approved transition to a self-hosted local development workflow, and approved policies for evidence retention, Improvement Packets, parallel major-stage execution, sandbox isolation, memory authority, verification, controlled self-improvement, Git and project management, model routing, tools and permissions, the Dashboard operator experience, and recovery, reliability, and Watchdog behavior. Product implementation has not started.
+The repository contains the complete product definition, approved architecture records, the Section 1 specification and implementation plan, the approved local Builder interface and toolchain direction, the approved transition to a self-hosted local development workflow, and approved policies for evidence retention, Improvement Packets, parallel major-stage execution, sandbox isolation, memory authority, verification, controlled self-improvement, Git and project management, model routing, tools and permissions, the Dashboard operator experience, recovery, reliability, Watchdog behavior, and Windows activation-independent operation. Product implementation has not started.
 
 ## Required future structure
 
@@ -58,6 +59,7 @@ builder/
 │   ├── 01K-TOOLS-PERMISSIONS-AND-SECURITY.md
 │   ├── 01L-DASHBOARD-UI-AND-OPERATOR-EXPERIENCE.md
 │   ├── 01M-RECOVERY-RELIABILITY-AND-WATCHDOG.md
+│   ├── 01N-WINDOWS-ACTIVATION-INDEPENDENCE.md
 │   ├── 02-FACTORY-ARCHITECTURE.md
 │   ├── 03-MODEL-ROSTER.md
 │   ├── 04-RECOVERY-POLICY.md
