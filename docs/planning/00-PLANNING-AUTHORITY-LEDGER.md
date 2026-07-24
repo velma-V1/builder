@@ -92,8 +92,10 @@ present and adequate), `PARTIAL` (present as a stub/outline needing expansion in
 | 22 | Decision Register | `docs/01-APPROVED-DECISIONS.md` + `docs/01R-PLANNING-RESOLUTIONS-AND-AMENDMENTS.md` | EXISTS |
 | 23 | Operator Approval Templates | `docs/templates/approval/APPROVAL-CARD.template.md` | EXISTS |
 | 24 | Promotion Package Template | `docs/templates/promotion/PROMOTION-PACKAGE.template.md` | EXISTS |
-| 25 | Rollback Package Template | `docs/templates/ROLLBACK-PACKAGE.template.md` | MISSING (gap G-03) |
-| 26 | Recovery Package Template | `docs/templates/RECOVERY-PACKAGE.template.md` | MISSING (gap G-04) |
+| 25 | Rollback Package Template | `docs/templates/ROLLBACK-PACKAGE.template.md`; PH-2 rollback architecture in `docs/planning/PH2-FAILURE-RECOVERY-ROLLBACK.md §4` | MISSING template (gap G-03); PH-2 architecture authored |
+| 26 | Recovery Package Template | `docs/templates/RECOVERY-PACKAGE.template.md`; PH-2 recovery architecture in `docs/planning/PH2-FAILURE-RECOVERY-ROLLBACK.md §5` | MISSING template (gap G-04); PH-2 architecture authored |
+| 41 | Regression Register | `docs/planning/REGRESSION-REGISTER.md` | EXISTS (established Pass 7, seeded) |
+| 42 | PH-2 Failure/Recovery/Rollback Plan | `docs/planning/PH2-FAILURE-RECOVERY-ROLLBACK.md` | EXISTS (Pass 7) |
 | 27 | Implementation Checklist | `docs/templates/checklist/COMPLETION-CHECKLIST.template.md` | EXISTS |
 | 28 | Phase Exit Checklist | `docs/templates/checklist/PHASE-EXIT-CHECKLIST.template.md` | MISSING (gap G-05) |
 | 29 | Implementation Handoff Template | `docs/templates/handoff/SECTION-HANDOFF.template.md`; `WORKSTREAM-HANDOFF.template.md` | EXISTS |
@@ -133,6 +135,8 @@ inherit the standing values in §2.
 | MATRIX-VERIF | `docs/planning/VERIFICATION-MATRIX.md` | Criterion→test/acceptance rows | Registry | Planning | `01G`,phase plans → verification rows |
 | STRAT-TEST | `docs/planning/TEST-STRATEGY.md` | Test taxonomy & gates | Registry | Planning | `01G` → test strategy |
 | VEP-PH2 | `docs/planning/PH2-VERIFICATION-EVIDENCE-PROMOTION.md` | PH-2 verification/evidence/promotion architecture + traceability | Plan (subordinate to `01G`/matrix) | PH-2 planning | PLAN-S2, specs, matrix → PH-2 req/test/evidence/promotion |
+| FRR-PH2 | `docs/planning/PH2-FAILURE-RECOVERY-ROLLBACK.md` | PH-2 failure/recovery/rollback/resilience plan + traceability | Plan (subordinate to `01M`/`04`/ROLLBACK-PLAN) | PH-2 planning | `01M`,`04`,ROLLBACK-PLAN,specs → PH-2 failure modes/recovery/rollback |
+| REGR-000 | `docs/planning/REGRESSION-REGISTER.md` | Repair + mandatory-regression ledger | Derived index | every repairing pass/task | repairs → regression flags |
 | REG-RISK | `docs/planning/RISK-REGISTER.md` | Risk inventory & mitigations | Registry | Planning | all → risks |
 | SPEC-COMPONENT-MAP | `docs/specifications/components/00-COMPONENT-MAP.md` | Component inventory & boundaries | Registry | Planning | `02`,`01*` → component map |
 | PAL-000 | `docs/planning/00-PLANNING-AUTHORITY-LEDGER.md` | This catalog | Derived index | Planning system | corpus → coverage/authority map |
