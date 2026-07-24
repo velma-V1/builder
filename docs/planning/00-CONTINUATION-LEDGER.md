@@ -61,10 +61,24 @@ technical authority — repository evidence and the governing corpus govern; thi
   the PH-2 planning branch. Reconcile the reference when PH-2 planning merges. Non-blocking.
 - **Planning gaps G-01…G-08** — see `docs/planning/00-PLANNING-AUTHORITY-LEDGER.md §6`. Each owned by a named
   later pass. Non-blocking for PH-2 planning.
-- **REGR-0002 (OPEN)** — append-only-trigger security test SEC-PH2-02 added in Pass 8; regression flag clears
-  when the test is implemented and passes during PH-2 implementation (Task 2.2/2.6). See REGRESSION-REGISTER.
-- **REGR-0003 (OPEN)** — migration-runner transactional-safety test T-PH2-MIG1 added in Pass 9; clears when
-  implemented and passes during PH-2 implementation (Task 2.2/2.6). See REGRESSION-REGISTER.
+- **REGR-0002 — CLEARED (T2.2):** append-only-trigger tests implemented and passing in
+  `tests/orchestrator/security/test_read_only_state_access.py`.
+- **REGR-0003 — CLEARED (T2.2):** migration-runner transactional-safety tests implemented and passing in
+  `tests/orchestrator/unit/test_runtime_state_store.py`.
+
+## 5a. PH-2 implementation progress (branch `claude/ph2-orchestrator-implementation`)
+
+DEF-01/DEF-02 resolved; PH-2 planning merged via **PR #9** into `claude/builder-handoff-pr8-inc9p8`
+(`9280d24`); implementation branch cut from there. `main` untouched throughout.
+
+| Task | Component | Status | Commit |
+|---|---|---|---|
+| T2.1 | CMP-WSSM (states + transition policy) | DONE (43 tests) | `1a96f46` |
+| T2.2 | CMP-ORCH (runtime store + writer) | DONE (62 tests cumulative; REGR-0002/0003 cleared) | (this commit) |
+| T2.3 | CMP-JOURNAL (reconciliation) | pending | — |
+| T2.4 | CMP-LEASE (fenced leases) | pending | — |
+| T2.5 | CMP-TASKENG + CMP-MEM | pending | — |
+| T2.6 | verification + evidence report | pending | — |
 
 ## 6. Pass log
 
