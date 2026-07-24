@@ -71,7 +71,7 @@ present and adequate), `PARTIAL` (present as a stub/outline needing expansion in
 | 1 | Master Implementation Roadmap | `docs/10-IMPLEMENTATION-ROADMAP.md` (+ execution companion `docs/10A-ROADMAP-EXECUTION-MAP.md`) | EXISTS |
 | 2 | Implementation Phase Plans | `docs/plans/*.md` (9: shell + section-1…8) | PARTIAL (S1 full; S2 stub; S3–8+shell stubs) |
 | 3 | Implementation Task Specifications | `docs/templates/task/TASK-SPECIFICATION.template.md` → per-task instances | EXISTS (template); instances per phase |
-| 4 | Component Specifications | `docs/templates/component/COMPONENT-SPECIFICATION.template.md`; `docs/specifications/components/00-COMPONENT-MAP.md` | EXISTS (template+map); per-component instances PARTIAL |
+| 4 | Component Specifications | `docs/templates/component/COMPONENT-SPECIFICATION.template.md`; `docs/specifications/components/00-COMPONENT-MAP.md` (index of 39); per-component `*-spec.md` authored per phase | EXISTS (template+map); PH-2 instances authored (6 specs + `PH2-INTEGRATION.md`); later-phase instances authored in their phases |
 | 5 | Interface Specifications | Per-phase plan "Public Interfaces" blocks (precedent: S1 plan) | PARTIAL (defined inside phase plans) |
 | 6 | Shared Contract Registry | `docs/planning/CONTRACT-REGISTRY.md` | EXISTS |
 | 7 | Schema Registry | `docs/planning/SCHEMA-REGISTRY.md` | EXISTS |

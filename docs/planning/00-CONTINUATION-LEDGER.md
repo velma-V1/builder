@@ -25,7 +25,7 @@ technical authority — repository evidence and the governing corpus govern; thi
 | `main` | untouched; no merge performed or authorized |
 | Active phase | PH-2 (planning only; product implementation NOT started) |
 | Active framework | Principal-Architect PH-2 planning framework (10 passes) |
-| Active pass | Pass 3 (Master Implementation Roadmap) |
+| Active pass | Pass 4 (Component Implementation Specifications) |
 
 ## 3. Phase approval state
 
@@ -64,13 +64,14 @@ technical authority — repository evidence and the governing corpus govern; thi
 |---|---|---|---|
 | PH-2 Pass 1 | Implementation-readiness realignment | `READY_FOR_PH2_ARCHITECTURE_PLANNING` | (analysis only; no files) |
 | PH-2 Pass 2 | Implementation-planning hierarchy | `PASS_WITH_NONBLOCKING_GAPS` | `00-PLANNING-AUTHORITY-LEDGER.md`, `00-CONTINUATION-LEDGER.md` |
-| PH-2 Pass 3 | Master implementation roadmap (execution companion) | (recorded at pass end) | `docs/10A-ROADMAP-EXECUTION-MAP.md` |
+| PH-2 Pass 3 | Master implementation roadmap (execution companion) | `PASS_WITH_NONBLOCKING_GAPS` | `docs/10A-ROADMAP-EXECUTION-MAP.md` |
+| PH-2 Pass 4 | Component implementation specifications (6 PH-2 components + integration) | (recorded at pass end) | `docs/specifications/components/{orchestrator,workstream-state-machine,task-engine,recovery-journal,lease-fencing,memory-core}-spec.md`, `PH2-INTEGRATION.md` |
 
 ## 7. Next allowed action
 
-Pass 3 produced `docs/10A-ROADMAP-EXECUTION-MAP.md` and stops for `CONTINUE`. The Pass 4 specification
-(Component Implementation Specifications) has been received and is **queued, not started** — it is gated
-behind its own `CONTINUE`. Do not begin Pass 4 until that token arrives.
+Pass 4 produced 6 PH-2 component specs + `PH2-INTEGRATION.md` and stops for `CONTINUE`. The Pass 5
+specification has not yet been received. Await the next `SECTION N OF 10` spec and its own `CONTINUE` before
+beginning the next pass. Do not begin PH-2 product implementation (operator-gated).
 
 ## 8. Update rules
 
