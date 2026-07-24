@@ -86,7 +86,7 @@ present and adequate), `PARTIAL` (present as a stub/outline needing expansion in
 | 16 | Repository Layout Map | `docs/00-DOCUMENTATION-INDEX.md` "Required future structure" | EXISTS |
 | 17 | Verification Matrix | `docs/planning/VERIFICATION-MATRIX.md` | EXISTS |
 | 18 | Acceptance Matrix | `docs/planning/VERIFICATION-MATRIX.md` (acceptance rows) | EXISTS |
-| 19 | Evidence Traceability Matrix | `docs/templates/evidence/EVIDENCE-TRACEABILITY-MANIFEST.template.md` → per-phase verification reports | EXISTS (template); instances per phase |
+| 19 | Evidence Traceability Matrix | `docs/templates/evidence/EVIDENCE-TRACEABILITY-MANIFEST.template.md` → per-phase verification reports; PH-2 architecture in `docs/planning/PH2-VERIFICATION-EVIDENCE-PROMOTION.md` | EXISTS (template); PH-2 architecture authored |
 | 20 | Testing Strategy | `docs/planning/TEST-STRATEGY.md` | EXISTS |
 | 21 | Risk Register | `docs/planning/RISK-REGISTER.md` | EXISTS |
 | 22 | Decision Register | `docs/01-APPROVED-DECISIONS.md` + `docs/01R-PLANNING-RESOLUTIONS-AND-AMENDMENTS.md` | EXISTS |
@@ -132,6 +132,7 @@ inherit the standing values in §2.
 | MAP-WORKSTREAM | `docs/planning/WORKSTREAM-MAP.md` | Parallel-safety/independence | Registry | Planning | `01D`,roadmap → parallel map |
 | MATRIX-VERIF | `docs/planning/VERIFICATION-MATRIX.md` | Criterion→test/acceptance rows | Registry | Planning | `01G`,phase plans → verification rows |
 | STRAT-TEST | `docs/planning/TEST-STRATEGY.md` | Test taxonomy & gates | Registry | Planning | `01G` → test strategy |
+| VEP-PH2 | `docs/planning/PH2-VERIFICATION-EVIDENCE-PROMOTION.md` | PH-2 verification/evidence/promotion architecture + traceability | Plan (subordinate to `01G`/matrix) | PH-2 planning | PLAN-S2, specs, matrix → PH-2 req/test/evidence/promotion |
 | REG-RISK | `docs/planning/RISK-REGISTER.md` | Risk inventory & mitigations | Registry | Planning | all → risks |
 | SPEC-COMPONENT-MAP | `docs/specifications/components/00-COMPONENT-MAP.md` | Component inventory & boundaries | Registry | Planning | `02`,`01*` → component map |
 | PAL-000 | `docs/planning/00-PLANNING-AUTHORITY-LEDGER.md` | This catalog | Derived index | Planning system | corpus → coverage/authority map |
