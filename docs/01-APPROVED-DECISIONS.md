@@ -194,6 +194,8 @@ All contracts will share stable identifiers, version fields, provenance, status,
 
 ## 15. Hybrid contract and runtime-state storage
 
+> **Amended by `docs/01R` (R1), 2026-07-24:** below, "the deterministic watchdog is the sole authoritative database writer" means the **Orchestrator**; the Watchdog is a separate, normally read-only supervisor (`01M`).
+
 The Factory will use a hybrid architecture:
 
 - approved contracts are versioned, Git-tracked repository files treated as code;

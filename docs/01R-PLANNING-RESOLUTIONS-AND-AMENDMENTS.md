@@ -30,7 +30,7 @@ Planning artifacts are authored on branch `claude/factory-arch-planning-n1a7gn`,
 
 ## R5 — Section 1 reconciliation (to apply when the Section 1 spec/plan are materialized)
 
-The Section 1 specification (`docs/specifications/2026-07-23-section-1-requirements-contracts-design.md`) and implementation plan (`docs/superpowers/plans/2026-07-23-section-1-requirements-contracts.md`, to be relocated to `docs/plans/`) must conform to the higher-authority supplements:
+The Section 1 specification (`docs/specifications/2026-07-23-section-1-requirements-contracts-design.md`) and implementation plan (`docs/plans/section-1-requirements-contracts.md`) must conform to the higher-authority supplements:
 
 - **Verdicts:** adopt the `docs/01G §3.3` five-value set `PASS` / `FAIL` / `BLOCKED` / `INCONCLUSIVE` / `NOT_TESTABLE` (replacing the plan's `VERIFIED` / `UNVERIFIED` / `FAILED` / `NOT TESTABLE`).
 - **Task risk class:** add `risk_class` to the Task Contract schema (`docs/01M §3.11`).
