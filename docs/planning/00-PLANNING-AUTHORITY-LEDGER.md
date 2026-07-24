@@ -136,6 +136,7 @@ inherit the standing values in §2.
 | STRAT-TEST | `docs/planning/TEST-STRATEGY.md` | Test taxonomy & gates | Registry | Planning | `01G` → test strategy |
 | VEP-PH2 | `docs/planning/PH2-VERIFICATION-EVIDENCE-PROMOTION.md` | PH-2 verification/evidence/promotion architecture + traceability | Plan (subordinate to `01G`/matrix) | PH-2 planning | PLAN-S2, specs, matrix → PH-2 req/test/evidence/promotion |
 | FRR-PH2 | `docs/planning/PH2-FAILURE-RECOVERY-ROLLBACK.md` | PH-2 failure/recovery/rollback/resilience plan + traceability | Plan (subordinate to `01M`/`04`/ROLLBACK-PLAN) | PH-2 planning | `01M`,`04`,ROLLBACK-PLAN,specs → PH-2 failure modes/recovery/rollback |
+| SEC-PH2 | `docs/planning/PH2-SECURITY-TRUST-BOUNDARIES.md` | PH-2 security/assets/threats/trust-boundaries + traceability | Plan (subordinate to `01K`/`01E`/`01M`) | PH-2 planning | `01K`,`01E`,`01M`,specs → PH-2 assets/threats/security tests |
 | REGR-000 | `docs/planning/REGRESSION-REGISTER.md` | Repair + mandatory-regression ledger | Derived index | every repairing pass/task | repairs → regression flags |
 | REG-RISK | `docs/planning/RISK-REGISTER.md` | Risk inventory & mitigations | Registry | Planning | all → risks |
 | SPEC-COMPONENT-MAP | `docs/specifications/components/00-COMPONENT-MAP.md` | Component inventory & boundaries | Registry | Planning | `02`,`01*` → component map |

@@ -51,6 +51,7 @@ regression = re-run in Task 2.6 full suite and on any change (`01G §2.4`); prom
 | T-PH2-U1 | `unit/test_transition_policy.py` | unit, contract, interface | WSSM | T2.1 | 01 | exhaustive legal/illegal matrix holds |
 | T-PH2-U2 | `unit/test_runtime_state_store.py` | unit, schema | ORCH | T2.2 | 01,02 | legal applies+events; illegal audited; expected-state mismatch rejected |
 | T-PH2-SEC1 | `security/test_read_only_state_access.py` | security, permission | ORCH | T2.2 | 03 | read-only reader cannot mutate |
+| T-PH2-SEC2 | `security/test_read_only_state_access.py` (append-only assertion) | security, audit-chain | ORCH | T2.2 | 02,03 | direct UPDATE/DELETE on `task_state_events` raises (append-only triggers) — SEC-PH2-02 |
 | T-PH2-FP1 | `failure_paths/test_atomic_transition_rollback.py` | rollback, failure-path | ORCH | T2.2 | 02 | forced pre-commit failure → no state change, no event row |
 | T-PH2-U3 | `unit/test_journal_reconciliation.py` | recovery, journal-replay | JOURNAL | T2.3 | 04 | mapping table holds; mismatch→QUARANTINED |
 | T-PH2-FP2 | `failure_paths/test_startup_reconciliation_after_crash.py` | crash-recovery | JOURNAL | T2.3 | 04 | WAL crash-consistency; no silent resume |

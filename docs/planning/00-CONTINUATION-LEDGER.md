@@ -25,7 +25,7 @@ technical authority — repository evidence and the governing corpus govern; thi
 | `main` | untouched; no merge performed or authorized |
 | Active phase | PH-2 (planning only; product implementation NOT started) |
 | Active framework | Principal-Architect PH-2 planning framework (10 passes) |
-| Active pass | Pass 7 (Failure, Recovery, Rollback & Resilience Planning) |
+| Active pass | Pass 8 (Security, Permissions, Sandbox & Trust-Boundary Planning) |
 
 ## 3. Phase approval state
 
@@ -57,6 +57,8 @@ technical authority — repository evidence and the governing corpus govern; thi
   the PH-2 planning branch. Reconcile the reference when PH-2 planning merges. Non-blocking.
 - **Planning gaps G-01…G-08** — see `docs/planning/00-PLANNING-AUTHORITY-LEDGER.md §6`. Each owned by a named
   later pass. Non-blocking for PH-2 planning.
+- **REGR-0002 (OPEN)** — append-only-trigger security test SEC-PH2-02 added in Pass 8; regression flag clears
+  when the test is implemented and passes during PH-2 implementation (Task 2.2/2.6). See REGRESSION-REGISTER.
 
 ## 6. Pass log
 
@@ -68,15 +70,16 @@ technical authority — repository evidence and the governing corpus govern; thi
 | PH-2 Pass 4 | Component implementation specifications (6 PH-2 components + integration) | `PASS_WITH_NONBLOCKING_GAPS` | `docs/specifications/components/{orchestrator,workstream-state-machine,task-engine,recovery-journal,lease-fencing,memory-core}-spec.md`, `PH2-INTEGRATION.md` |
 | PH-2 Pass 5 | Task-by-task implementation spec (PH-2 T2.1–T2.6 + execution graph + parallel review) | `PASS_WITH_NONBLOCKING_GAPS` | `docs/plans/section-2-task-queue-and-state-machine.md` (expanded) |
 | PH-2 Pass 6 | Verification/evidence/promotion architecture (9 reqs, 11 tests, PROM-PH2, traceability) | `PASS_WITH_NONBLOCKING_GAPS` | `docs/planning/PH2-VERIFICATION-EVIDENCE-PROMOTION.md` |
-| PH-2 Pass 7 | Failure/recovery/rollback/resilience plan (13 failure modes, checkpoints, rollback, recovery, injections, traceability) + Regression Register established | (recorded at pass end) | `docs/planning/PH2-FAILURE-RECOVERY-ROLLBACK.md`, `docs/planning/REGRESSION-REGISTER.md` |
+| PH-2 Pass 7 | Failure/recovery/rollback/resilience plan (13 failure modes, checkpoints, rollback, recovery, injections, traceability) + Regression Register established | `PASS_WITH_NONBLOCKING_GAPS` | `docs/planning/PH2-FAILURE-RECOVERY-ROLLBACK.md`, `docs/planning/REGRESSION-REGISTER.md` |
+| PH-2 Pass 8 | Security/trust-boundary plan (5 assets, 7 threats, 7 security tests, traceability) + 1 repair (REGR-0002) | (recorded at pass end) | `docs/planning/PH2-SECURITY-TRUST-BOUNDARIES.md`; edits to PLAN-S2, VEP-PH2, REGRESSION-REGISTER |
 
 ## 7. Next allowed action
 
-Pass 7 produced the PH-2 failure/recovery/rollback/resilience plan (FRR-PH2) and established the Regression
-Register (REGR-000, seeded, no repairs recorded) and stops for `CONTINUE`. The Pass 8 specification has not
-yet been received. Await the next `SECTION N OF 10` spec and its own `CONTINUE` before beginning the next
-pass. Do not begin PH-2 product implementation (operator-gated). Later-phase failure/recovery detail remains
-deferred to their phase-planning passes.
+Pass 8 produced the PH-2 security/trust-boundary plan (SEC-PH2), applied one repair-first repair (REGR-0002,
+OPEN), and stops for `CONTINUE`. The Pass 9 specification has not yet been received. Await the next
+`SECTION N OF 10` spec and its own `CONTINUE` before beginning the next pass. Do not begin PH-2 product
+implementation (operator-gated). Sandbox/permission-token/tool/model/network security detail remains deferred
+to its owners (`01K`/`01E`/`01M`) at PH-3/4/5.
 
 ## 8. Update rules
 

@@ -37,6 +37,28 @@ contradiction requiring deterministic repair (each pass verdict was `PASS_WITH_N
 | Regr ID | Date | Pass/Task | Failure ID | Affected area | Repair | Regression flag |
 |---|---|---|---|---|---|---|
 | REGR-0001 | 2026-07-24 | pre-framework | (doc) | `HANDOFF-PH1.md §4` stale branch ref | corrected to `claude/builder-handoff-pr8-inc9p8` (commit `4920a2b`) | CLEARED (inspection) |
+| REGR-0002 | 2026-07-24 | Pass 8 | THR-PH2-02 | security control without verification: append-only journal triggers (`task_state_events`) specified in the Task 2.2 migration DDL but untested | added security test SEC-PH2-02 (direct `UPDATE`/`DELETE` on `task_state_events` must raise) to PLAN-S2 Task 2.2 + VEP-PH2 §2 (T-PH2-SEC2) + SEC-PH2 §5 | **OPEN** — clear when SEC-PH2-02 is implemented and passes during PH-2 implementation (Task 2.2/2.6) |
+
+### REGR-0002 detail (repair-first record)
+
+- **Failure / finding:** append-only enforcement of `task_state_events` is a declared security control
+  (THR-PH2-02, ASSET-PH2-JOURNAL) but had no explicit verification — violates "no security control without
+  verification."
+- **Root cause:** the Task 2.2 test list covered the `mode=ro` reader authorizer but not the DDL-level
+  `BEFORE UPDATE/DELETE` triggers (a distinct control that also blocks a *writable* connection).
+- **Affected area:** `docs/plans/section-2-task-queue-and-state-machine.md` (Task 2.2 tests),
+  `docs/planning/PH2-VERIFICATION-EVIDENCE-PROMOTION.md` (§2), `docs/planning/PH2-SECURITY-TRUST-BOUNDARIES.md`
+  (§5 SEC-PH2-02).
+- **Reverted state:** none needed (planning-doc addition, not a code revert).
+- **Repair applied:** added SEC-PH2-02 test specification in all three places; mapped to THR-PH2-02.
+- **Files changed:** the three docs above.
+- **Tests re-run / verification re-run:** planning-consistency audit re-run (path/reference checks) — passes.
+- **Result:** control now has a verification path.
+- **Evidence location:** this register + the SEC-PH2 §7 repair note + commit history.
+- **Regression flag:** OPEN — the actual test does not exist yet (no PH-2 product code); it will be authored
+  and must pass in PH-2 implementation, at which point this flag is CLEARED with an ETM pointer.
+- **Remaining risk:** low — the control (triggers) is already in the migration DDL; only its *test* was
+  missing, now specified.
 
 ## 4. Update rules
 

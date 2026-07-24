@@ -125,6 +125,8 @@ restate them (single authority: the specs own the shapes, the plan owns the buil
   2. Write failing tests: legal transition updates state + appends one `accepted=1` event, `sequence` +1;
      illegal transition leaves state, appends one `accepted=0` audit event; expected-state mismatch rejected;
      `mode=ro` reader denies INSERT/UPDATE/DELETE/CREATE/DROP/ALTER (reuse PH-1 `_reader_authorizer`);
+     **append-only enforcement (SEC-PH2-02): a direct `UPDATE`/`DELETE` on `task_state_events` — even via a
+     writable connection — raises (`BEFORE UPDATE/DELETE` triggers `RAISE(ABORT)`);**
      forced pre-commit failure leaves state+sequence unchanged, no event row.
   3. Implement `apply_migrations` (SHA-256-pinned, one tx), `SQLiteOrchestratorStateReader`,
      `_OrchestratorStateWriter.apply_transition` (`BEGIN IMMEDIATE` → idempotency short-circuit → read →
