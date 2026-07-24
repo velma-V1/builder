@@ -6,15 +6,15 @@ Factory is a standalone, local-first AI software-production system designed to b
 
 ## Status
 
-**Full architecture, all planning resolutions (R1–R5 and the autonomy, deletion, and Windows-native decisions), and a complete pre-implementation planning system are recorded. Section 1 (Requirements & Contracts) is implemented and verified — `PASS` (96.85% coverage, ruff/mypy clean). Sections 2+ have not started.**
+**Full architecture, all planning resolutions (R1–R5 and the autonomy, deletion, and Windows-native decisions), and a complete pre-implementation planning system are recorded. Section 1 (Requirements & Contracts) is implemented and verified — `PASS` (96.85% coverage, ruff/mypy clean). Section 2 (Orchestrator: Task Queue & State Machine) is implemented and verified — `PASS` (100% tests, ruff/mypy clean, PROM-PH2 exit gate passed).**
 
-Start here to continue the work:
+Continue to the next phase:
 
-- [`docs/verification/section-1-requirements-contracts.md`](docs/verification/section-1-requirements-contracts.md) — Section 1 verification report: evidence traceability manifest, threat matrix, and Section 2 interfaces.
-- [`docs/plans/section-1-requirements-contracts.md`](docs/plans/section-1-requirements-contracts.md) — the implementation plan that was executed (`src/factory/contracts/`, `schemas/`, `migrations/contracts/`).
-- [`HANDOFF-PH1.md`](HANDOFF-PH1.md) — the PH-1 handoff record: what was done, the binding decisions in force, and the schema-freeze / phase-exit approval this verification is waiting on before PH-2 begins.
-- [`docs/01R-PLANNING-RESOLUTIONS-AND-AMENDMENTS.md`](docs/01R-PLANNING-RESOLUTIONS-AND-AMENDMENTS.md) — the resolutions and decisions that amend the frozen architecture below.
-- [`docs/10-IMPLEMENTATION-ROADMAP.md`](docs/10-IMPLEMENTATION-ROADMAP.md) — the nine-phase build order, gates, and critical path.
+- [`docs/verification/section-2-evidence-report.md`](docs/verification/section-2-evidence-report.md) — Section 2 verification report: PROM-PH2 exit gate results, 93 tests (100% pass), regression prevention gates, and migration integrity.
+- [`docs/verification/section-2-test-summary.md`](docs/verification/section-2-test-summary.md) — detailed test execution summary, code coverage analysis, and quality metrics.
+- [`HANDOFF-PH2.md`](HANDOFF-PH2.md) — the PH-2 handoff record (if creating); what was done, binding decisions, schema-freeze for PH-3.
+- [`docs/01R-PLANNING-RESOLUTIONS-AND-AMENDMENTS.md`](docs/01R-PLANNING-RESOLUTIONS-AND-AMENDMENTS.md) — the resolutions and decisions in force for remaining phases.
+- [`docs/10-IMPLEMENTATION-ROADMAP.md`](docs/10-IMPLEMENTATION-ROADMAP.md) — the nine-phase build order, gates, and critical path (PH-3 next: Worker Engine).
 
 The system is intentionally planned in locked sections before code is written. This prevents architecture drift, conflicting parallel edits, unverifiable completion claims, and uncontrolled autonomy.
 
