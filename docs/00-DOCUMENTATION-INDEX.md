@@ -1,7 +1,7 @@
 # Factory Documentation Index
 
 **Status:** Active source map  
-**Last updated:** July 23, 2026
+**Last updated:** July 24, 2026
 
 ## Authority order
 
@@ -9,6 +9,7 @@ When documents appear to conflict, use this order:
 
 1. `PROJECT_DEFINITION.md` — governing purpose, boundaries, priorities, controls, and success criteria.
 2. `docs/01-APPROVED-DECISIONS.md` — later decisions that explicitly resolve or supersede previously open items.
+2R. `docs/01R-PLANNING-RESOLUTIONS-AND-AMENDMENTS.md` — approved planning resolutions (R1–R5) and decisions (autonomy, deletion, isolation). Explicitly supersedes the named clauses in `PROJECT_DEFINITION.md §21`, `01 §2/§3/§15`, `02 §4/§14`, and `05` Section 6 as listed in that file; this amendment record governs those clauses.
 3. `docs/01A-LOCAL-BUILDER-STACK-DECISION.md` — approved Ollama, Aider, Dashboard, Monaco, file-explorer, IDE-independence, and OpenHands deferral decision. This file explicitly supersedes conflicting earlier runtime or IDE assumptions.
 4. `docs/01B-SELF-HOSTING-TRANSITION-DECISION.md` — approved capability-by-capability migration from bootstrap tools into the local Builder.
 5. `docs/01C-SESSION-EVIDENCE-AND-IMPROVEMENT-PACKETS.md` — approved disposable-session evidence, raw-log retention, monthly analysis, and user-controlled Improvement Packet rules.
@@ -49,6 +50,7 @@ builder/
 ├── docs/
 │   ├── 00-DOCUMENTATION-INDEX.md
 │   ├── 01-APPROVED-DECISIONS.md
+│   ├── 01R-PLANNING-RESOLUTIONS-AND-AMENDMENTS.md
 │   ├── 01A-LOCAL-BUILDER-STACK-DECISION.md
 │   ├── 01B-SELF-HOSTING-TRANSITION-DECISION.md
 │   ├── 01C-SESSION-EVIDENCE-AND-IMPROVEMENT-PACKETS.md
@@ -71,8 +73,13 @@ builder/
 │   ├── 04-RECOVERY-POLICY.md
 │   ├── 05-BUILD-PLAN-MAP.md
 │   ├── 06-BUILDER-INTERFACE-AND-LOCAL-TOOLCHAIN.md
+│   ├── 10-IMPLEMENTATION-ROADMAP.md
+│   ├── 11-CONTROLLED-GLOSSARY-AND-CROSSWALKS.md
 │   ├── specifications/
 │   ├── plans/
+│   ├── planning/
+│   ├── release/
+│   ├── templates/
 │   ├── decisions/
 │   └── verification/
 ├── src/

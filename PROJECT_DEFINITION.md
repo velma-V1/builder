@@ -136,6 +136,8 @@ All applicable final deliverables must be produced:
 
 ## 8. Autonomy control
 
+> **Amended by `docs/01R` (Decision A), 2026-07-24:** the 1–100% autonomy control is assigned to permission enforcement, the approval engine, the Orchestrator, and the Dashboard as a permission/approval-envelope parameter carried on the Task and Permission contracts.
+
 Autonomy must be selectable from **1% through 100%** rather than fixed to a single operating mode.
 
 At low autonomy, the builder primarily explains, recommends, and waits for instructions.
@@ -405,6 +407,8 @@ Possible execution environments include:
 
 The final isolation design has not yet been selected.
 
+> **Amended by `docs/01R` (Decision C), 2026-07-24:** for v1 the isolation path is **WSL2 + Docker Linux containers only**; restricted Windows-native execution is excluded from v1.
+
 Temporary dependency changes and experimental environments must have rollback protection. Temporary rollback points may be removed only after the relevant tests prove the change stable.
 
 ## 19. Security requirements
@@ -481,6 +485,8 @@ Every stored fact must retain:
 A model-generated statement is not automatically a fact.
 
 ## 21. Automatic acceptance of significant improvements
+
+> **Amended by `docs/01R` (R3), 2026-07-24:** superseded — Factory may automatically *propose* and sandbox-test improvements but **never auto-applies** them (application requires approval); only pre-approved rollback is automatic. The conditions below are retained as proposal-eligibility criteria.
 
 The builder may automatically accept and retain a skill, tool, lesson, workflow, rule, configuration, or knowledge item when it proves and verifies that the item adds significant value to the builder's uses, functions, knowledge, results, or capabilities.
 
