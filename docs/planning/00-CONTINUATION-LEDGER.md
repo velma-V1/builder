@@ -76,7 +76,7 @@ DEF-01/DEF-02 resolved; PH-2 planning merged via **PR #9** into `claude/builder-
 | T2.1 | CMP-WSSM (states + transition policy) | DONE (43 tests) | `1a96f46` |
 | T2.2 | CMP-ORCH (runtime store + writer) | DONE (62 tests cumulative; REGR-0002/0003 cleared) | (this commit) |
 | T2.3 | CMP-JOURNAL (reconciliation) | DONE (68 tests cumulative) | (this commit) |
-| T2.4 | CMP-LEASE (fenced leases) | pending | — |
+| T2.4 | CMP-LEASE (fenced leases) | DONE (76 tests cumulative) | (this commit) |
 | T2.5 | CMP-TASKENG + CMP-MEM | pending | — |
 | T2.6 | verification + evidence report | pending | — |
 

@@ -40,6 +40,7 @@ from factory.orchestrator.state.transitions import TransitionPolicy
 # git-tracked, human-editable SQL script).
 _EXPECTED_MIGRATION_HASHES: Mapping[str, str] = {
     "0001_state.sql": "2fd4ecda34c05265be99de9c8aa36518cc9ac540c4038286c5da9cfb1fbd5f4c",
+    "0002_leases.sql": "a3a143e4b225655b68aadb5bc677acae7a99cf99b8c047e6c3113deb34b32ba6",
 }
 
 
