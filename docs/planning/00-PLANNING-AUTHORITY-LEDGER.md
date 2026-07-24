@@ -68,7 +68,7 @@ present and adequate), `PARTIAL` (present as a stub/outline needing expansion in
 
 | # | Required hierarchy element | Authoritative artifact | Status |
 |---|---|---|---|
-| 1 | Master Implementation Roadmap | `docs/10-IMPLEMENTATION-ROADMAP.md` | EXISTS |
+| 1 | Master Implementation Roadmap | `docs/10-IMPLEMENTATION-ROADMAP.md` (+ execution companion `docs/10A-ROADMAP-EXECUTION-MAP.md`) | EXISTS |
 | 2 | Implementation Phase Plans | `docs/plans/*.md` (9: shell + section-1…8) | PARTIAL (S1 full; S2 stub; S3–8+shell stubs) |
 | 3 | Implementation Task Specifications | `docs/templates/task/TASK-SPECIFICATION.template.md` → per-task instances | EXISTS (template); instances per phase |
 | 4 | Component Specifications | `docs/templates/component/COMPONENT-SPECIFICATION.template.md`; `docs/specifications/components/00-COMPONENT-MAP.md` | EXISTS (template+map); per-component instances PARTIAL |
@@ -121,6 +121,7 @@ inherit the standing values in §2.
 | Document ID | Path | Purpose (single) | Authority | Owner | Key inputs → outputs |
 |---|---|---|---|---|---|
 | ROADMAP-10 | `docs/10-IMPLEMENTATION-ROADMAP.md` | Phase order, gates, critical path | Plan (governing order) | Roadmap pass (PH-x planning) | `05`,`01*`,`01R` → 9-phase order, gates §15 |
+| ROADMAP-10A | `docs/10A-ROADMAP-EXECUTION-MAP.md` | Per-phase execution environment + order-validation record | Plan (companion, subordinate to ROADMAP-10) | Roadmap pass | `10`,`DEPENDENCY-MAP`,`WORKSTREAM-MAP` → per-phase env map |
 | GLOSSARY-11 | `docs/11-CONTROLLED-GLOSSARY-AND-CROSSWALKS.md` | Term/state/stage-section crosswalk | Derived index | Planning | `01*` → controlled vocab |
 | PLAN-S1 | `docs/plans/section-1-requirements-contracts.md` | PH-1 executable TDD plan | Plan | PH-1 | design → executed plan (done) |
 | PLAN-S2 | `docs/plans/section-2-task-queue-and-state-machine.md` | PH-2 executable TDD plan | Plan | PH-2 planning | `01L/01D/01M/02/01F`,`01R` → PH-2 tasks |

@@ -25,7 +25,7 @@ technical authority — repository evidence and the governing corpus govern; thi
 | `main` | untouched; no merge performed or authorized |
 | Active phase | PH-2 (planning only; product implementation NOT started) |
 | Active framework | Principal-Architect PH-2 planning framework (10 passes) |
-| Active pass | Pass 2 (Implementation-Planning Hierarchy) |
+| Active pass | Pass 3 (Master Implementation Roadmap) |
 
 ## 3. Phase approval state
 
@@ -63,13 +63,14 @@ technical authority — repository evidence and the governing corpus govern; thi
 | Pass | Scope | Verdict | Artifacts |
 |---|---|---|---|
 | PH-2 Pass 1 | Implementation-readiness realignment | `READY_FOR_PH2_ARCHITECTURE_PLANNING` | (analysis only; no files) |
-| PH-2 Pass 2 | Implementation-planning hierarchy | (recorded at pass end) | `00-PLANNING-AUTHORITY-LEDGER.md`, `00-CONTINUATION-LEDGER.md` |
+| PH-2 Pass 2 | Implementation-planning hierarchy | `PASS_WITH_NONBLOCKING_GAPS` | `00-PLANNING-AUTHORITY-LEDGER.md`, `00-CONTINUATION-LEDGER.md` |
+| PH-2 Pass 3 | Master implementation roadmap (execution companion) | (recorded at pass end) | `docs/10A-ROADMAP-EXECUTION-MAP.md` |
 
 ## 7. Next allowed action
 
-Pass 2 is producing this ledger and the Planning Authority Ledger, then stops for `CONTINUE`. The Pass 3
-specification (Master Implementation Roadmap) has been received and is **queued, not started** — it is gated
-behind its own `CONTINUE`. Do not begin Pass 3 until that token arrives.
+Pass 3 produced `docs/10A-ROADMAP-EXECUTION-MAP.md` and stops for `CONTINUE`. The Pass 4 specification
+(Component Implementation Specifications) has been received and is **queued, not started** — it is gated
+behind its own `CONTINUE`. Do not begin Pass 4 until that token arrives.
 
 ## 8. Update rules
 
