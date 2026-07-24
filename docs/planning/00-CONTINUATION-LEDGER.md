@@ -49,8 +49,11 @@ technical authority — repository evidence and the governing corpus govern; thi
 
 ## 5. Flagged / deferred (non-blocking)
 
-- **DEF-01** — PH-1 final promotion re-verification: re-run `scripts/verify_section1.py` fresh and reconcile
-  against the S1 report before formal close-out. Owner: whoever performs PH-1 formal promotion. Non-blocking.
+- **DEF-01 — RESOLVED (2026-07-24):** PH-1 final re-verification executed at commit `c3d085e` via
+  `scripts/verify_section1.py`: overall exit 0; ruff/mypy/all suites green; **288 passed / 1 skipped
+  (Windows-only), 96.85% branch coverage** — matches the recorded S1 evidence
+  (`docs/verification/section-1-requirements-contracts.md`). Regenerable manifest at
+  `artifacts/verification/section-1/manifest.json` (gitignored). PH-1 is verified at the current head.
 - **DEF-02** — PR #6 (competing stale Section-1 attempt via local Aider+Ollama) still open; likely needs
   closure. Owner: operator. Non-blocking.
 - **DEF-03** — `HANDOFF-PH1.md §7` forward-references an "expanded section-2 plan"; that expansion lands on
