@@ -10,6 +10,8 @@
 - Full governing corpus present: `PROJECT_DEFINITION.md`, `docs/00`–`06`, supplements `docs/01A`–`01Q`, `HANDOFF.md`.
 - Planning system built (`docs/10`, `docs/11`, `docs/planning/*`, `docs/release/*`, `docs/templates/*`, `docs/specifications/components/00-COMPONENT-MAP.md`, `docs/plans/*`).
 - Resolutions **R1–R5** and **Decisions A–C** recorded in `docs/01R-PLANNING-RESOLUTIONS-AND-AMENDMENTS.md` and registered in the index; supersession pointers placed in the amended governing docs. Readiness-review hygiene findings F1/F2/F3 are patched.
+- Discoverability fixed: `README.md` and `HANDOFF.md` updated and cross-linked to this file so a reader starting from either lands here.
+- **Verified on GitHub** (2026-07-24): PR #8 open, draft, `mergeable_state: clean`, head `72a5a4f`, base `agent/minimum-builder-shell-design` @ `8f9dd99` unchanged. Working tree clean, local and remote branch heads in sync.
 
 ## 2. Authority in force (read before starting)
 Read in this order: `docs/00-DOCUMENTATION-INDEX.md` → `HANDOFF.md` → `docs/01R` → `docs/10-IMPLEMENTATION-ROADMAP.md` → `docs/plans/section-1-requirements-contracts.md`.
@@ -32,7 +34,7 @@ Execute **`docs/plans/section-1-requirements-contracts.md`** task-by-task, step-
 
 ## 4. Guardrails — do NOT
 - Do **not** start the Dashboard (PH-S/PH-8), Model Router or adapters (PH-4), Installer/updater/packaging (PH-8), Git/sandbox isolation (PH-5), Watchdog/Orchestrator engine (PH-2/PH-3), lanes/workstreams (PH-6), or any phase other than PH-1.
-- Do **not** merge to `main`, open or modify a pull request, or promote. PR #7 on `agent/minimum-builder-shell-design` must stay untouched.
+- Do **not** merge to `main` or `agent/minimum-builder-shell-design`, mark PR #8 ready, merge or close PR #8, or open an additional pull request. PR #7 on `agent/minimum-builder-shell-design` must stay untouched. Pushing new commits to `claude/factory-arch-planning-n1a7gn` is fine — it updates PR #8's diff automatically.
 - Do **not** push to any branch other than `claude/factory-arch-planning-n1a7gn` (use an explicit refspec).
 - Do **not** weaken any acceptance criterion/test after implementation-start except through the `01G §3.2` process.
 - Do **not** proceed past PH-1's **schema-freeze operator approval** (`docs/10 §15` #2) or its **exit gate** without explicit approval. Do not roll into PH-2.
