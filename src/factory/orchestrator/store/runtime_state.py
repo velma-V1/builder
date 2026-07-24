@@ -41,6 +41,7 @@ from factory.orchestrator.state.transitions import TransitionPolicy
 _EXPECTED_MIGRATION_HASHES: Mapping[str, str] = {
     "0001_state.sql": "2fd4ecda34c05265be99de9c8aa36518cc9ac540c4038286c5da9cfb1fbd5f4c",
     "0002_leases.sql": "a3a143e4b225655b68aadb5bc677acae7a99cf99b8c047e6c3113deb34b32ba6",
+    "0003_memory.sql": "65e0a4d16b84a49b205b1f2e48c91e11ae6dc48e9c179e318da3026283e10587",
 }
 
 

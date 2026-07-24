@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from factory.memory.core import MemoryStore
 from factory.orchestrator.store.runtime_state import (
     SQLiteOrchestratorStateReader,
     _OrchestratorStateWriter,
@@ -35,3 +36,10 @@ def writer(db_path: Path) -> _OrchestratorStateWriter:
 @pytest.fixture
 def reader(db_path: Path) -> SQLiteOrchestratorStateReader:
     return SQLiteOrchestratorStateReader(database_path=db_path)
+
+
+@pytest.fixture
+def memory_store(tmp_path: Path) -> MemoryStore:
+    memory_db = tmp_path / "memory.db"
+    apply_migrations(memory_db, MIGRATIONS_ROOT)
+    return MemoryStore(database_path=memory_db)
