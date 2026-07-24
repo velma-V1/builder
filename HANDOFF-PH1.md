@@ -2,8 +2,9 @@
 
 **Repository:** `velma-V1/builder`
 **Branch:** `claude/factory-arch-planning-n1a7gn` (based on `agent/minimum-builder-shell-design`)
+**Pull request:** Draft PR #8 (`claude/factory-arch-planning-n1a7gn` → `agent/minimum-builder-shell-design`) — draft; do not mark ready or merge without explicit approval.
 **Status at handoff:** Planning complete and readiness-verified. Readiness verdict: **`READY_TO_BEGIN_PH1`**. Product implementation has **not** started (no `src/`, `schemas/`, or `migrations/` exist yet).
-**For a new session/window:** read this file first, then the authority documents named below, then begin **only** PH-1.
+**For a new session/window:** read this file first, then the authority documents named below, then begin **only** PH-1. `HANDOFF.md` at the repository root records the earlier architecture-freeze state (PR #7) for historical background; this file supersedes it for continuing the work.
 
 ## 1. What is done
 - Full governing corpus present: `PROJECT_DEFINITION.md`, `docs/00`–`06`, supplements `docs/01A`–`01Q`, `HANDOFF.md`.

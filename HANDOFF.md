@@ -1,5 +1,7 @@
 # Factory Planning Handoff
 
+> **Superseded for continuing the work, 2026-07-24:** this file records the architecture-freeze state of `agent/minimum-builder-shell-design` / PR #7. Since then, `docs/01R-PLANNING-RESOLUTIONS-AND-AMENDMENTS.md` (R1–R5 and the autonomy, deletion, and Windows-native decisions) and a complete pre-implementation planning system have been built on branch `claude/factory-arch-planning-n1a7gn` (PR #8, draft). **To continue the work, read [`HANDOFF-PH1.md`](HANDOFF-PH1.md), not this file's §7.** The rest of this document (governing constraints, authority order, frozen planning documents) remains accurate background.
+
 **Repository:** `velma-V1/builder`  
 **Branch:** `agent/minimum-builder-shell-design`  
 **Pull request:** Draft PR #7  
@@ -133,6 +135,8 @@ Requirement
 Always re-read PR metadata before relying on commit counts, changed-file totals, mergeability, or head SHA because those values change with later commits.
 
 ## 7. Next valid actions
+
+> **Historical:** this list reflects the state before R1–R5 and the planning system existed. It has been carried out and superseded — see [`HANDOFF-PH1.md`](HANDOFF-PH1.md) for the current next action (execute `docs/plans/section-1-requirements-contracts.md`).
 
 1. Perform one final cross-document consistency review against `docs/00-DOCUMENTATION-INDEX.md`.
 2. Confirm no frozen requirement is contradicted by lower-authority documents.
