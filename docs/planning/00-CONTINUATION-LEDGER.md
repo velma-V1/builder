@@ -54,8 +54,9 @@ technical authority — repository evidence and the governing corpus govern; thi
   (Windows-only), 96.85% branch coverage** — matches the recorded S1 evidence
   (`docs/verification/section-1-requirements-contracts.md`). Regenerable manifest at
   `artifacts/verification/section-1/manifest.json` (gitignored). PH-1 is verified at the current head.
-- **DEF-02** — PR #6 (competing stale Section-1 attempt via local Aider+Ollama) still open; likely needs
-  closure. Owner: operator. Non-blocking.
+- **DEF-02 — RESOLVED (2026-07-24):** PR #6 (competing stale Section-1 attempt via local Aider+Ollama,
+  based on pre-freeze `main` `d06c7537`, all task gates unchecked) **closed as superseded** by the completed +
+  verified PH-1 implementation. Supersession comment posted; `main` untouched.
 - **DEF-03** — `HANDOFF-PH1.md §7` forward-references an "expanded section-2 plan"; that expansion lands on
   the PH-2 planning branch. Reconcile the reference when PH-2 planning merges. Non-blocking.
 - **Planning gaps G-01…G-08** — see `docs/planning/00-PLANNING-AUTHORITY-LEDGER.md §6`. Each owned by a named
