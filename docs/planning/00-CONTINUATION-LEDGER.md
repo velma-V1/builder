@@ -25,7 +25,7 @@ technical authority — repository evidence and the governing corpus govern; thi
 | `main` | untouched; no merge performed or authorized |
 | Active phase | PH-2 (planning only; product implementation NOT started) |
 | Active framework | Principal-Architect PH-2 planning framework (10 passes) |
-| Active pass | Pass 4 (Component Implementation Specifications) |
+| Active pass | Pass 5 (Task-by-Task Implementation Specification) |
 
 ## 3. Phase approval state
 
@@ -65,13 +65,15 @@ technical authority — repository evidence and the governing corpus govern; thi
 | PH-2 Pass 1 | Implementation-readiness realignment | `READY_FOR_PH2_ARCHITECTURE_PLANNING` | (analysis only; no files) |
 | PH-2 Pass 2 | Implementation-planning hierarchy | `PASS_WITH_NONBLOCKING_GAPS` | `00-PLANNING-AUTHORITY-LEDGER.md`, `00-CONTINUATION-LEDGER.md` |
 | PH-2 Pass 3 | Master implementation roadmap (execution companion) | `PASS_WITH_NONBLOCKING_GAPS` | `docs/10A-ROADMAP-EXECUTION-MAP.md` |
-| PH-2 Pass 4 | Component implementation specifications (6 PH-2 components + integration) | (recorded at pass end) | `docs/specifications/components/{orchestrator,workstream-state-machine,task-engine,recovery-journal,lease-fencing,memory-core}-spec.md`, `PH2-INTEGRATION.md` |
+| PH-2 Pass 4 | Component implementation specifications (6 PH-2 components + integration) | `PASS_WITH_NONBLOCKING_GAPS` | `docs/specifications/components/{orchestrator,workstream-state-machine,task-engine,recovery-journal,lease-fencing,memory-core}-spec.md`, `PH2-INTEGRATION.md` |
+| PH-2 Pass 5 | Task-by-task implementation spec (PH-2 T2.1–T2.6 + execution graph + parallel review) | (recorded at pass end) | `docs/plans/section-2-task-queue-and-state-machine.md` (expanded) |
 
 ## 7. Next allowed action
 
-Pass 4 produced 6 PH-2 component specs + `PH2-INTEGRATION.md` and stops for `CONTINUE`. The Pass 5
-specification has not yet been received. Await the next `SECTION N OF 10` spec and its own `CONTINUE` before
-beginning the next pass. Do not begin PH-2 product implementation (operator-gated).
+Pass 5 expanded PLAN-S2 into the full PH-2 task-by-task specification (T2.1–T2.6, execution graph, parallel
+review) and stops for `CONTINUE`. The Pass 6 specification has not yet been received. Await the next
+`SECTION N OF 10` spec and its own `CONTINUE` before beginning the next pass. Do not begin PH-2 product
+implementation (operator-gated). Later-phase task-level specs remain deferred to their phase-planning passes.
 
 ## 8. Update rules
 

@@ -69,7 +69,7 @@ present and adequate), `PARTIAL` (present as a stub/outline needing expansion in
 | # | Required hierarchy element | Authoritative artifact | Status |
 |---|---|---|---|
 | 1 | Master Implementation Roadmap | `docs/10-IMPLEMENTATION-ROADMAP.md` (+ execution companion `docs/10A-ROADMAP-EXECUTION-MAP.md`) | EXISTS |
-| 2 | Implementation Phase Plans | `docs/plans/*.md` (9: shell + section-1…8) | PARTIAL (S1 full; S2 stub; S3–8+shell stubs) |
+| 2 | Implementation Phase Plans | `docs/plans/*.md` (9: shell + section-1…8) | PARTIAL (S1 full; S2 full task-by-task; S3–8+shell stubs, expanded in their phase-planning passes) |
 | 3 | Implementation Task Specifications | `docs/templates/task/TASK-SPECIFICATION.template.md` → per-task instances | EXISTS (template); instances per phase |
 | 4 | Component Specifications | `docs/templates/component/COMPONENT-SPECIFICATION.template.md`; `docs/specifications/components/00-COMPONENT-MAP.md` (index of 39); per-component `*-spec.md` authored per phase | EXISTS (template+map); PH-2 instances authored (6 specs + `PH2-INTEGRATION.md`); later-phase instances authored in their phases |
 | 5 | Interface Specifications | Per-phase plan "Public Interfaces" blocks (precedent: S1 plan) | PARTIAL (defined inside phase plans) |
@@ -78,7 +78,7 @@ present and adequate), `PARTIAL` (present as a stub/outline needing expansion in
 | 8 | Configuration Registry | `docs/planning/CONFIG-REGISTRY.md` | MISSING (gap G-01) |
 | 9 | Dependency Map | `docs/planning/DEPENDENCY-MAP.md` | EXISTS |
 | 10 | Component Dependency Graph | `docs/planning/DEPENDENCY-MAP.md` (component edges) + roadmap §6 | EXISTS |
-| 11 | Task Dependency Graph | per-phase plan task-dependency sections | PARTIAL |
+| 11 | Task Dependency Graph | per-phase plan task-dependency sections (PH-2: PLAN-S2 "Task execution graph") | PARTIAL (PH-2 complete) |
 | 12 | Workstream Map | `docs/planning/WORKSTREAM-MAP.md` | EXISTS |
 | 13 | Parallel Execution Map | `docs/planning/WORKSTREAM-MAP.md` + roadmap §9 | EXISTS |
 | 14 | Critical Path Map | `docs/10-IMPLEMENTATION-ROADMAP.md §8` | EXISTS |
