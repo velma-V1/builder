@@ -90,6 +90,8 @@ Required outputs:
 
 ## Section 5 — Git, worktree, and sandbox isolation
 
+> **Amended by `docs/01R` (Decision C), 2026-07-24:** v1 sandboxes are **WSL2 + Docker Linux containers only**; restricted Windows-native execution is excluded from v1.
+
 Create repeatable and recoverable execution environments.
 
 Required outputs:
@@ -102,7 +104,9 @@ Required outputs:
 - safe Monaco and Aider write integration;
 - sandbox destruction and rollback tests.
 
-## Section 6 — Three Worker–Reviewer lanes
+## Section 6 — Three parallel major-stage workstreams (with optional Worker/Reviewer lanes)
+
+> **Amended by `docs/01R` (R2), 2026-07-24:** the default execution unit is up to three parallel major-stage *workstreams* (`01D`). The permanent Worker/Reviewer lane split is optional secondary capacity / a temporary special case, not the default.
 
 Activate three permanent parallel lane structures using the contracts, watchdog, router, Git, and sandbox layers. Hosted capacity remains optional; the local Aider + Ollama path remains primary.
 
