@@ -38,7 +38,7 @@ Binding decisions (`docs/01R`):
 ## 4. Guardrails — do NOT
 - Do **not** start the Dashboard (PH-S/PH-8), Model Router or adapters (PH-4), Installer/updater/packaging (PH-8), Git/sandbox isolation (PH-5), Watchdog/Orchestrator engine (PH-2/PH-3), lanes/workstreams (PH-6), or any phase other than PH-1.
 - Do **not** merge to `main`, open or modify a pull request, or promote. PR #7 on `agent/minimum-builder-shell-design` must stay untouched.
-- Do **not** push to any branch other than `claude/factory-arch-planning-n1a7gn` (use an explicit refspec).
+- Do **not** push to any branch other than `claude/builder-handoff-pr8-inc9p8` (use an explicit refspec).
 - Do **not** weaken any acceptance criterion/test after implementation-start except through the `01G §3.2` process.
 - Do **not** proceed past PH-1's **schema-freeze operator approval** (`docs/10 §15` #2) or its **exit gate** without explicit approval. Do not roll into PH-2.
 
