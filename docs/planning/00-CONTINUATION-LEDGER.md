@@ -25,7 +25,7 @@ technical authority — repository evidence and the governing corpus govern; thi
 | `main` | untouched; no merge performed or authorized |
 | Active phase | PH-2 (planning only; product implementation NOT started) |
 | Active framework | Principal-Architect PH-2 planning framework (10 passes) |
-| Active pass | Pass 9 (Deployment, Installation, Update, Migration & Maintenance Planning) |
+| Active pass | Pass 10 (Final Integration, Validation, Handoff & Certification) — COMPLETE |
 
 ## 3. Phase approval state
 
@@ -74,15 +74,20 @@ technical authority — repository evidence and the governing corpus govern; thi
 | PH-2 Pass 6 | Verification/evidence/promotion architecture (9 reqs, 11 tests, PROM-PH2, traceability) | `PASS_WITH_NONBLOCKING_GAPS` | `docs/planning/PH2-VERIFICATION-EVIDENCE-PROMOTION.md` |
 | PH-2 Pass 7 | Failure/recovery/rollback/resilience plan (13 failure modes, checkpoints, rollback, recovery, injections, traceability) + Regression Register established | `PASS_WITH_NONBLOCKING_GAPS` | `docs/planning/PH2-FAILURE-RECOVERY-ROLLBACK.md`, `docs/planning/REGRESSION-REGISTER.md` |
 | PH-2 Pass 8 | Security/trust-boundary plan (5 assets, 7 threats, 7 security tests, traceability) + 1 repair (REGR-0002) | `PASS_WITH_NONBLOCKING_GAPS` | `docs/planning/PH2-SECURITY-TRUST-BOUNDARIES.md`; edits to PLAN-S2, VEP-PH2, REGRESSION-REGISTER |
-| PH-2 Pass 9 | Deployment/migration plan (platform footprint, 3 runtime migrations, PH-8 deferral) + 1 repair (REGR-0003) | (recorded at pass end) | `docs/planning/PH2-DEPLOYMENT-MIGRATION.md`; edits to PLAN-S2, VEP-PH2, REGRESSION-REGISTER |
+| PH-2 Pass 9 | Deployment/migration plan (platform footprint, 3 runtime migrations, PH-8 deferral) + 1 repair (REGR-0003) | `PASS_WITH_NONBLOCKING_GAPS` | `docs/planning/PH2-DEPLOYMENT-MIGRATION.md`; edits to PLAN-S2, VEP-PH2, REGRESSION-REGISTER |
+| PH-2 Pass 10 | Final integration/validation/handoff/certification (inventory, 10 audits, handoff, start package, certificate) | `PH2_CERTIFIED_WITH_NONBLOCKING_GAPS` | `docs/planning/PH2-IMPLEMENTATION-READINESS-CERTIFICATE.md` |
 
 ## 7. Next allowed action
 
-Pass 9 produced the PH-2 deployment/migration plan (DEP-PH2), applied one repair-first repair (REGR-0003,
-OPEN), and stops for `CONTINUE`. The Pass 10 specification (final pass of 10) has not yet been received. Await
-the next `SECTION N OF 10` spec and its own `CONTINUE` before beginning the next pass. Do not begin PH-2
-product implementation (operator-gated). Installer/packaging/release/update/backup/maintenance detail remains
-deferred to its owners (`01O`/`01N`/`01P`/`docs/release/*`) at PH-8.
+**PH-2 planning is COMPLETE (Passes 1–10).** Pass 10 produced the Implementation-Readiness Certificate
+(CERT-PH2, verdict `PH2_CERTIFIED_WITH_NONBLOCKING_GAPS`). The entire PH-2 implementation-planning package is
+repository-native and usable without chat history — a future implementer starts at
+`docs/planning/PH2-IMPLEMENTATION-READINESS-CERTIFICATE.md`.
+
+**Required operator action to proceed:** explicit authorization to begin **PH-2 product implementation**
+(first task T2.1, per CERT-PH2 §7). Until then: do not begin implementation, do not merge, do not modify
+`main`, do not open/close/modify PRs, do not promote branches. Open items: REGR-0002 / REGR-0003 (clear
+during implementation); DEF-01 (PH-1 re-verify); DEF-02 (PR #6).
 
 ## 8. Update rules
 
