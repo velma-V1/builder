@@ -187,6 +187,8 @@ Default automatic actions inside an approved disposable sandbox:
 - rebuild validated contract caches;
 - recover and restart from a verified checkpoint.
 
+> **Amended by `docs/01R` (Decision B / R5), 2026-07-24:** this automatic-deletion carve-out is **not adopted** — all file deletion is approval-required.
+
 Automatic deletion is permitted only when the artifact is:
 
 - explicitly classified as disposable by contract;

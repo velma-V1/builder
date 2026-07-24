@@ -1,5 +1,7 @@
 # Section 1 Requirements and Contracts Implementation Plan
 
+> **Amended by `docs/01R` (R5), 2026-07-24:** this plan is subject to the R5 conformance edits — verdicts use the `01G §3.3` five-value set (`PASS/FAIL/BLOCKED/INCONCLUSIVE/NOT_TESTABLE`); the Task Contract adds `risk_class` (`01M §3.11`) and `autonomy_level` (Decision A); Section 1 verification emits a `01G §3.1` Evidence Traceability Manifest; automatic deletion of disposable artifacts is removed — all file deletion is approval-required (Decision B). Relocated from `docs/superpowers/plans/`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build the complete Section 1 contract subsystem: seven linked YAML contract families, deterministic validation and canonicalization, semantic and impact checks, protected-boundary policy decisions, immutable revision flow, transactional activation metadata, and an immutable runtime cache.
@@ -450,7 +452,7 @@ Create schema-specific required fields exactly as follows:
 |---|---|
 | Project | `name`, `project_root`, `repository`, `project_type`, `deliverables`, `goals`, `exclusions`, `operating_environments`, `protected_branches`, `protected_path_classes`, `privacy`, `resource_ceilings` |
 | Requirement | `statement`, `rationale`, `acceptance_criteria`, `dependencies`, `priority`, `criticality`, `evidence_categories`, `permitted_limitations`, `supersession` |
-| Task | `parent_requirements`, `objective`, `deliverables`, `ownership_contract`, `permission_contract`, `evidence_contract`, `frozen_interfaces`, `dependencies`, `permitted_routes`, `resource_limits`, `environment_class`, `checkpoint_policy`, `recovery_policy`, `completion_conditions` |
+| Task | `parent_requirements`, `objective`, `deliverables`, `ownership_contract`, `permission_contract`, `evidence_contract`, `frozen_interfaces`, `dependencies`, `permitted_routes`, `resource_limits`, `environment_class`, `risk_class` (01M §3.11), `autonomy_level` (01R Dec A), `checkpoint_policy`, `recovery_policy`, `completion_conditions` |
 | Ownership | `task_id`, `allowed_paths`, `forbidden_paths`, `protected_classes`, `read_only_paths`, `interfaces_consumed`, `interfaces_provided`, `generated_artifacts`, `disposable_artifacts`, `overlap_policy`, `lease_required`, `path_policy` |
 | Permission | `task_id`, `tools`, `command_classes`, `network`, `cloud`, `secrets`, `devices`, `processes`, `mounts`, `environment`, `file_operations`, `dependency_installation`, `approval_required`, `denied`, `expires_at`, `revocation` |
 | Evidence | `task_id`, `requirement_ids`, `deliverables`, `test_commands`, `environment_identity`, `scope_checks`, `evidence_categories`, `worker_record`, `reviewer_record`, `artifacts`, `retention`, `completion_formula`, `permitted_limitations` |
@@ -976,7 +978,7 @@ Required outcomes:
 | ambiguous product behavior | `HUMAN_APPROVAL_REQUIRED` |
 | architecture/security/privacy/authority expansion | `HUMAN_APPROVAL_REQUIRED` |
 | path traversal, unapproved route, cross-project injection | `DENY_SECURITY_VIOLATION` |
-| deletion of task-created disposable artifact with recreation proof | `ALLOW_WITH_CHECKPOINT` |
+| deletion of any file (incl. task-created disposable artifact) | `HUMAN_APPROVAL_REQUIRED` (01R Decision B) |
 | deletion of pre-existing source/test/schema/contract/decision/shared/user file | `HUMAN_APPROVAL_REQUIRED` |
 | delete outside ownership | `DENY_SECURITY_VIOLATION` |
 
@@ -1300,7 +1302,8 @@ Expected:
 - coverage result;
 - requirement-to-test matrix for all 13 acceptance criteria;
 - security threat matrix;
-- every claim classified `VERIFIED`, `FAILED`, `UNVERIFIED`, or `NOT TESTABLE`;
+- a complete Evidence Traceability Manifest (`01G §3.1`) for every required acceptance criterion;
+- every criterion and the package classified `PASS`, `FAIL`, `BLOCKED`, `INCONCLUSIVE`, or `NOT_TESTABLE` (01R R5 / `01G §3.3`);
 - retained artifact paths and hashes;
 - known limitations;
 - rollback instructions;
