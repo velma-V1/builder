@@ -12,7 +12,11 @@ from pathlib import Path
 
 import pytest
 
-from factory.orchestrator.store.runtime_state import apply_migrations
+from factory.orchestrator.store.runtime_state import (
+    SQLiteOrchestratorStateReader,
+    _OrchestratorStateWriter,
+    apply_migrations,
+)
 from factory.workers.pool import WorkerPool
 from factory.workers.process import ProcessHandle
 
@@ -71,3 +75,13 @@ def runtime_db(tmp_path: Path) -> Path:
     path = tmp_path / "runtime.db"
     apply_migrations(path, MIGRATIONS_ROOT)
     return path
+
+
+@pytest.fixture
+def writer(runtime_db: Path) -> _OrchestratorStateWriter:
+    return _OrchestratorStateWriter(database_path=runtime_db)
+
+
+@pytest.fixture
+def reader(runtime_db: Path) -> SQLiteOrchestratorStateReader:
+    return SQLiteOrchestratorStateReader(database_path=runtime_db)

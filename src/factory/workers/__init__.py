@@ -26,6 +26,7 @@ from factory.workers.process import (
     SubprocessSpawner,
     WorkerProcess,
 )
+from factory.workers.state_integration import StateIntegration
 from factory.workers.streaming import ExecutionStream, OutputAccumulator
 
 __all__ = [
@@ -42,6 +43,7 @@ __all__ = [
     "ProcessHandle",
     "ProcessSpawner",
     "RawWorkerEvent",
+    "StateIntegration",
     "SubprocessHandle",
     "SubprocessSpawner",
     "TaskExecutor",

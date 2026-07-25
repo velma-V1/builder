@@ -125,9 +125,9 @@ class StateIntegration:
         """
         Apply execution result to state machine.
         
-        - Success (exit_code=0) → RUNNING → COMPLETE
+        - Success (exit_code=0) → RUNNING → VERIFYING  (worker cannot self-certify COMPLETE)
         - Failure (exit_code≠0) → RUNNING → FAILED
-        - Cancellation (SIGTERM) → STOPPING → CANCELLED
+        - Cancellation (SIGTERM) → RUNNING → STOPPING → CANCELLED
         - Crash (lease expired) → RUNNING → FAILED (cause: lease_expiry)
         
         Idempotency: link execution to state transition via idempotency_key.
@@ -174,10 +174,12 @@ IDLE
 ```
 
 **Task State Transitions (via _OrchestratorStateWriter only):**
-- QUEUED → RUNNING (worker ready to execute)
-- RUNNING → COMPLETE (exit_code=0)
-- RUNNING → FAILED (exit_code≠0 or timeout or lease expiry)
-- RUNNING → CANCELLED (SIGTERM + response)
+- QUEUED → PLANNING → RUNNING (dispatch → worker ready to execute)
+- RUNNING → VERIFYING (exit_code=0) — worker CANNOT self-certify COMPLETE; success hands
+  off to verification (01L §3.1: COMPLETE is reachable only from VERIFYING, enforcing "no
+  worker certifies its own work"). VERIFYING → COMPLETE is a later phase.
+- RUNNING → FAILED (exit_code≠0 or timeout or lease expiry or output overflow)
+- RUNNING → STOPPING → CANCELLED (cancellation; reuses PH-2 request/finalize_cancellation)
 - RUNNING → BLOCKED (crash recovery; reconcile_startup)
 
 ---
