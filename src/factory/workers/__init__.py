@@ -6,6 +6,7 @@ here (R1): all state mutation stays routed through StateIntegration → the sing
 """
 
 from factory.workers.errors import WorkerEngineError
+from factory.workers.lease_coordinator import LeaseCoordinator
 from factory.workers.lifecycle import is_legal
 from factory.workers.models import (
     TERMINAL_WORKER_STATES,
@@ -29,6 +30,7 @@ __all__ = [
     "ExecutionEvent",
     "ExecutionEventType",
     "ExecutionResult",
+    "LeaseCoordinator",
     "ProcessHandle",
     "ProcessSpawner",
     "SubprocessHandle",

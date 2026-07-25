@@ -8,11 +8,15 @@ worker, and record terminate/kill calls to assert shutdown semantics.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 
 import pytest
 
+from factory.orchestrator.store.runtime_state import apply_migrations
 from factory.workers.pool import WorkerPool
 from factory.workers.process import ProcessHandle
+
+MIGRATIONS_ROOT = Path(__file__).resolve().parents[2] / "migrations" / "runtime"
 
 
 @dataclass(slots=True)
@@ -60,3 +64,10 @@ def spawner() -> FakeSpawner:
 @pytest.fixture
 def pool(spawner: FakeSpawner) -> WorkerPool:
     return WorkerPool(spawner=spawner, size=4)
+
+
+@pytest.fixture
+def runtime_db(tmp_path: Path) -> Path:
+    path = tmp_path / "runtime.db"
+    apply_migrations(path, MIGRATIONS_ROOT)
+    return path
