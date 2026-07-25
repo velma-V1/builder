@@ -181,9 +181,11 @@ distinct from the Worker Execution Substrate (out-of-roadmap; `docs/WORKER-EXECU
 |---|---|---|---|
 | RPH3 Pass 1 | Implementation-readiness realignment (readiness verdict, governing inputs, task/contract inventory, pass plan) | `READY_FOR_RPH3_ARCHITECTURE_PLANNING` | analysis only; no files |
 | RPH3 Pass 2 | Planning-hierarchy realignment: `RPH3` identifier namespace + planning-document registry | `PASS_WITH_NONBLOCKING_GAPS` | `docs/planning/00-PLANNING-AUTHORITY-LEDGER.md §9`; `docs/planning/00-CONTINUATION-LEDGER.md §10` (this) |
+| RPH3 Pass 3 | Roadmap-execution environment alignment: PH-3 row disambiguated to `RPH3`; §3A per-task execution detail; §4 PH-2→RPH3→{PH-4,PH-5} order validation | `PASS_WITH_NONBLOCKING_GAPS` | `docs/10A-ROADMAP-EXECUTION-MAP.md` (header, §2, §3 row, §3A, §4, §5) |
 
 **Next allowed action**
 
-Await explicit `CONTINUE` to begin **RPH3 Pass 3** (roadmap-execution environment map — the `docs/10A`
-PH-3 row + order-validation). Until then: no implementation, no merge, `main` and PR #10 untouched, roadmap
-not amended.
+Await explicit `CONTINUE` to begin **RPH3 Pass 4** (component implementation specifications: CMP-WATCH/PERM/
+APPROVAL/AUDITW/AUDITV/TOOLREG/TOOLGW/DIAG + file-op, `docs/specifications/components/*-spec.md` +
+`RPH3-INTEGRATION.md`). Until then: no implementation, no merge, `main` and PR #10 untouched, roadmap not
+amended.
