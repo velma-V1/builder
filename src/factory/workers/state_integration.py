@@ -83,6 +83,35 @@ class StateIntegration:
             task_id, current, TaskState.FAILED, cause=cause, actor=actor, idempotency_key=idem
         )
 
+    # ---- recovery transitions (Task 3.4 uses these; writer stays confined here) -----------
+
+    def fail_crashed(
+        self, task_id: str, actor: str, cause: str = "heartbeat_loss"
+    ) -> StateTransitionEvent:
+        """Fail a task whose worker crashed mid-execution (current → FAILED)."""
+        record = self._require(task_id)
+        return self._apply(
+            task_id, record.current_state, TaskState.FAILED, cause=cause, actor=actor
+        )
+
+    def block_for_review(
+        self, task_id: str, actor: str, cause: str = "reconcile_no_blind_resume"
+    ) -> StateTransitionEvent:
+        """Move an in-flight task to BLOCKED after restart (R3: never blindly resume RUNNING)."""
+        record = self._require(task_id)
+        return self._apply(
+            task_id, record.current_state, TaskState.BLOCKED, cause=cause, actor=actor
+        )
+
+    def quarantine(
+        self, task_id: str, actor: str, cause: str = "state_replay_mismatch"
+    ) -> StateTransitionEvent:
+        """Quarantine a task with corrupt/inconsistent state (current → QUARANTINED)."""
+        record = self._require(task_id)
+        return self._apply(
+            task_id, record.current_state, TaskState.QUARANTINED, cause=cause, actor=actor
+        )
+
     # ---- cancellation (reuses PH-2 primitives) -------------------------------------------
 
     def _finalize_cancelled(

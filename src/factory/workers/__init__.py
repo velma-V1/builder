@@ -26,6 +26,8 @@ from factory.workers.process import (
     SubprocessSpawner,
     WorkerProcess,
 )
+from factory.workers.quarantine import QuarantineEntry, QuarantineRegistry
+from factory.workers.recovery import RetryPolicy, StartupRecovery, WorkerRecovery
 from factory.workers.state_integration import StateIntegration
 from factory.workers.streaming import ExecutionStream, OutputAccumulator
 
@@ -42,7 +44,11 @@ __all__ = [
     "OutputAccumulator",
     "ProcessHandle",
     "ProcessSpawner",
+    "QuarantineEntry",
+    "QuarantineRegistry",
     "RawWorkerEvent",
+    "RetryPolicy",
+    "StartupRecovery",
     "StateIntegration",
     "SubprocessHandle",
     "SubprocessSpawner",
@@ -50,6 +56,7 @@ __all__ = [
     "WorkerEngineError",
     "WorkerPool",
     "WorkerProcess",
+    "WorkerRecovery",
     "WorkerState",
     "WorkerStatus",
     "is_legal",
