@@ -193,3 +193,124 @@ consume this seam only after those PH-3 interfaces are frozen.** No roadmap depe
 ---
 
 **Substrate promotion gate: PASS. This is NOT a roadmap PH-3 exit gate; roadmap PH-3 remains unbuilt.**
+
+---
+
+## Transfer to New Session (2026-07-25)
+
+This section provides everything a new Claude Code session needs to resume work on this
+repository without relying on prior chat history.
+
+### Repository State Snapshot
+
+| Field | Value |
+|---|---|
+| Active branch | `claude/ph3-worker-engine` |
+| HEAD | `699279c` |
+| Remote | synced (`origin/claude/ph3-worker-engine` == local HEAD) |
+| `main` | `9bce1ca` — **untouched throughout all phases** (standing operator instruction) |
+| Working tree | clean (no staged, unstaged, or untracked changes) |
+| PR #10 | open / draft / not merged / mergeable (`https://github.com/velma-V1/builder/pull/10`) |
+| Superseded branch | `claude/ph3-worker-engine-xefzze` @ `7e023a2` — 0 unique commits, inert |
+
+### Completed Work (cumulative)
+
+| Phase | Branch | Status | Tests | Evidence |
+|---|---|---|---|---|
+| PH-1 (Requirements & Contracts) | `claude/builder-handoff-pr8-inc9p8` | PASS, 96.85% cov | 288 passed, 1 skipped | `docs/verification/section-1-requirements-contracts.md` |
+| PH-2 (Orchestrator: Queue & State Machine) | `claude/ph2-orchestrator-implementation` | PROM-PH2 PASS | 93 passed | `docs/verification/section-2-evidence-report.md` |
+| Worker Execution Substrate (CMP-WORKER) | `claude/ph3-worker-engine` | Substrate gate PASS | 85 substrate + 93 PH-2 = 178 | `docs/verification/worker-execution-substrate-evidence-report.md` |
+
+**None of the above branches have been merged into `main`.** Each builds on the prior:
+PH-1 → PH-2 → substrate. The substrate branch (`claude/ph3-worker-engine`) contains all
+cumulative work.
+
+### Roadmap Alignment
+
+| Roadmap phase | Status | Notes |
+|---|---|---|
+| PH-1: Requirements & Contracts | COMPLETE | Verified, promoted for phase order; final re-verify deferred but executed (DEF-01 resolved) |
+| PH-2: Orchestrator (Queue & State Machine) | COMPLETE | 93 tests; PROM-PH2 passed |
+| Worker Execution Substrate | COMPLETE (out-of-roadmap) | Prebuilt PH-4/PH-5 seam; **NOT roadmap PH-3** |
+| **PH-3: Watchdog, Permissions, Approval, Audit & Tools** | **UNBUILT** | Plan exists: `docs/plans/section-3-orchestrator-watchdog-and-permissions.md` |
+| PH-4: Model & Worker Routing | NOT STARTED | Depends on PH-3 security interfaces being frozen |
+| PH-5: Sandbox & Process Isolation | NOT STARTED | Owns real `ProcessSpawner`; substrate provides the seam |
+| PH-6 through PH-8 | NOT STARTED | — |
+
+**Ordering constraint:** PH-4 may consume the Worker Execution Substrate seam **only after
+roadmap PH-3 security interfaces (permission enforcement + tool gateway) are frozen**. No
+roadmap dependency is bypassed.
+
+**Authoritative classification:** `docs/WORKER-EXECUTION-SUBSTRATE-CLASSIFICATION.md`
+
+### Decision Gate
+
+Before any new work begins, the operator must explicitly authorize the next action. The
+following are plausible next actions — **none is pre-authorized**:
+
+1. **Merge PR #10** (Worker Execution Substrate) into `main` — currently draft/unmerged
+2. **Begin roadmap PH-3 planning** (Watchdog, Permissions, Approval, Audit & Tools)
+3. **Begin roadmap PH-3 implementation** (requires planning first)
+4. Other operator-directed work
+
+**Standing constraints (always in effect unless explicitly lifted):**
+- Do not merge any branch into `main` without explicit authorization
+- Do not modify `main` directly
+- Do not begin implementation without planning approval
+- Do not amend the Master Implementation Roadmap
+- The "PH-3"/"T3.x"/"SEC-PH3-xx" labels in `src/factory/workers/` and `tests/workers/`
+  refer to the substrate's development track, **not** roadmap PH-3 — see label mapping in
+  `docs/WORKER-EXECUTION-SUBSTRATE-CLASSIFICATION.md` §3
+
+### Key Documents (authority order)
+
+1. `PROJECT_DEFINITION.md` — governing purpose, boundaries, priorities
+2. `docs/00-DOCUMENTATION-INDEX.md` — full authority chain (read this first for navigation)
+3. `docs/planning/00-CONTINUATION-LEDGER.md` — cross-session state of record (§9 is current)
+4. `docs/planning/00-PLANNING-AUTHORITY-LEDGER.md` — planning document registry
+5. `docs/WORKER-EXECUTION-SUBSTRATE-CLASSIFICATION.md` — substrate reclassification record
+6. `docs/10-IMPLEMENTATION-ROADMAP.md` — master roadmap (unamended)
+7. `docs/plans/section-3-orchestrator-watchdog-and-permissions.md` — roadmap PH-3 plan (unbuilt)
+8. `HANDOFF-PH2.md` — PH-2 handoff (corrected forward-refs)
+9. This file — substrate handoff + transfer record
+
+### Restart Instructions (Repository Realignment Protocol)
+
+A new session MUST perform these checks before taking any action:
+
+```
+1. Verify branch:     git branch --show-current
+                      → must be claude/ph3-worker-engine
+
+2. Verify HEAD:       git rev-parse --short HEAD
+                      → must be 699279c (or a later commit on this branch)
+
+3. Verify remote:     git diff origin/claude/ph3-worker-engine --stat
+                      → must be empty (synced)
+
+4. Verify main:       git log --oneline origin/main -1
+                      → 9bce1ca (untouched)
+
+5. Verify tree:       git status --short
+                      → must be empty (clean)
+
+6. Verify PR #10:     Check via GitHub — open/draft/not merged
+
+7. Read authority:    docs/00-DOCUMENTATION-INDEX.md
+                      docs/planning/00-CONTINUATION-LEDGER.md §9
+                      docs/WORKER-EXECUTION-SUBSTRATE-CLASSIFICATION.md
+
+8. Report state:      Report all findings to operator BEFORE any action
+```
+
+### Bootstrap Prompt
+
+Copy this prompt verbatim into a new Claude Code session to resume:
+
+> Resume this repository from the authoritative handoff at
+> `HANDOFF-WORKER-EXECUTION-SUBSTRATE.md`. Perform Repository Realignment
+> before taking action. Verify the branch, commit, remote state, working
+> tree, roadmap authority, dependency map, and PR #10 against the handoff.
+> Do not rely on previous chat history. Do not merge, plan, or implement
+> until you report the verified current state and receive explicit operator
+> instruction.
