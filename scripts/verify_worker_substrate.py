@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
-"""Verification suite for Section 3 (PH-3, Worker Engine) — PROM-PH3 exit gate.
+"""Verification suite for the Worker Execution Substrate (prebuilt PH-4/PH-5 seam).
+
+This is the substrate's promotion gate. It is NOT a roadmap PH-3 exit gate — roadmap PH-3
+(Watchdog, Permissions, Approval, Audit & Tools) remains unbuilt. The "PROM-PH3"/"SEC-PH3-xx"
+labels below are substrate-track identifiers only. See
+docs/WORKER-EXECUTION-SUBSTRATE-CLASSIFICATION.md.
 
 Run under the project environment so pytest/ruff/mypy are importable, e.g.:
-    uv run python3.12 scripts/verify_section3.py
+    uv run python3.12 scripts/verify_worker_substrate.py
 """
 
 from __future__ import annotations
@@ -204,7 +209,7 @@ def main() -> int:
     total_count = len(results)
 
     print("\n" + "=" * 80)
-    print("PH-3 VERIFICATION SUITE — PROM-PH3 EXIT GATE")
+    print("WORKER EXECUTION SUBSTRATE — VERIFICATION SUITE (substrate gate; NOT roadmap PH-3)")
     print("=" * 80 + "\n")
     for result in results:
         status = "✓ PASS" if result.passed else "✗ FAIL"
@@ -214,9 +219,12 @@ def main() -> int:
     print("=" * 80 + "\n")
 
     if passed_count == total_count:
-        print("🎯 PROM-PH3 EXIT GATE: PASS — Section 3 (Worker Engine) is production-ready.\n")
+        print(
+            "🎯 SUBSTRATE GATE: PASS — Worker Execution Substrate is production-ready.\n"
+            "   (NOT a roadmap PH-3 exit gate; roadmap PH-3 / Watchdog remains unbuilt.)\n"
+        )
         return 0
-    print("⚠️  PROM-PH3 EXIT GATE: INCOMPLETE — Fix failures above.\n")
+    print("⚠️  SUBSTRATE GATE: INCOMPLETE — Fix failures above.\n")
     return 1
 
 

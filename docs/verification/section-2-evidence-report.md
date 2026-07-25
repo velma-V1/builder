@@ -208,12 +208,12 @@ PH-2 reuses from PH-1:
 
 **✓ PROM-PH2 EXIT GATE: PASS**
 
-Section 2 (PH-2) is **production-ready** and meets all acceptance criteria for the Orchestrator subsystem. Ready for integration with PH-3 (Worker Engine) and PH-5 (Execution Controller).
+Section 2 (PH-2) is **production-ready** and meets all acceptance criteria for the Orchestrator subsystem. Ready for downstream integration.
 
 ---
 
-## Next Steps (PH-3+)
+## Next Steps
 
-- PH-3: Worker Engine implementation (builds on PH-2 TaskScheduler and state machine)
-- PH-5: Execution Controller (uses PH-2 leases for distributed coordination)
-- PH-4/6/7: Remaining components per roadmap
+- **Roadmap PH-3** (Watchdog, Permissions, Approval, Audit & Tools) — the next roadmap phase; **unbuilt**.
+- **Worker Execution Substrate** (prebuilt PH-4/PH-5 execution infra on `claude/ph3-worker-engine`; **not** roadmap PH-3) — builds on PH-2 TaskScheduler/state machine/leases. See `docs/WORKER-EXECUTION-SUBSTRATE-CLASSIFICATION.md`.
+- PH-4/5/6/7: Remaining components per roadmap.

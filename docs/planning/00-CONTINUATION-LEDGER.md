@@ -111,3 +111,35 @@ during implementation); DEF-01 (PH-1 re-verify); DEF-02 (PR #6).
 
 Append/realign at the start and end of every pass. Never delete rows; supersede with a pointer. Correct any
 field that repository evidence contradicts, and record the correction in the pass log.
+
+## 9. Realignment — 2026-07-25 (PH-2 complete; Worker Execution Substrate reclassified)
+
+This section supersedes the stale fields in §2/§3/§5a above (kept per the never-delete rule).
+
+**Current authoritative state**
+
+| Field | Value |
+|---|---|
+| Date | 2026-07-25 |
+| `main` | untouched; no merge performed or authorized |
+| PH-2 (Orchestrator) | **COMPLETE** on `claude/ph2-orchestrator-implementation` @ `7e023a2`; 93 tests; PROM-PH2 passed; **not merged** (by standing "do not modify main") |
+| Active branch | `claude/ph3-worker-engine` (HEAD moves with the reclassification commit) |
+| Roadmap PH-3 (Watchdog, Permissions, Approval, Audit & Tools) | **NOT started / UNBUILT** — plan `docs/plans/section-3-orchestrator-watchdog-and-permissions.md` unchanged |
+| Worker Execution Substrate (`CMP-WORKER`) | **COMPLETE** on `claude/ph3-worker-engine`; 85 substrate + 93 PH-2 = 178 tests; substrate gate 18/18. **Reclassified as prebuilt PH-4/PH-5 execution infrastructure — NOT roadmap PH-3.** See `docs/WORKER-EXECUTION-SUBSTRATE-CLASSIFICATION.md` |
+| PH-4 … PH-8 | Not started |
+
+**Operator decision on record (2026-07-25):** the work on `claude/ph3-worker-engine` is **not** roadmap
+PH-3. It is the **Worker Execution Substrate** (Options A+C: reclassify, do not amend the roadmap, treat as
+prebuilt PH-4/PH-5 seam). Roadmap PH-3 remains the Watchdog security spine and is still to build. The real
+`ProcessSpawner`/sandbox isolation remain PH-5; **PH-4 may consume the substrate seam only after roadmap
+PH-3 security interfaces (permission enforcement + tool gateway) are frozen**. No roadmap dependency is
+bypassed.
+
+**Branch supersession:** `claude/ph3-worker-engine-xefzze` — tip `7e023a2` (the PH-2 base), **zero commits
+unique to it**, not on the remote. **No unique required work → SUPERSEDED by `claude/ph3-worker-engine`.**
+Left inert; not fast-forwarded.
+
+**Next allowed action:** prepare the Worker Execution Substrate reclassification PR (base `main`, head
+`claude/ph3-worker-engine`); **do not merge; do not modify `main`**; await explicit merge authorization.
+After merge, the next roadmap phase to plan/build is **roadmap PH-3 (Watchdog/Permissions/Approval/Audit/
+Tools)**.

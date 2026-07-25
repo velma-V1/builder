@@ -1,7 +1,7 @@
 # Factory Documentation Index
 
 **Status:** Active source map  
-**Last updated:** July 24, 2026
+**Last updated:** July 25, 2026
 
 ## Authority order
 
@@ -29,7 +29,9 @@ When documents appear to conflict, use this order:
 19. `docs/01Q-RESEARCH-SOURCES-AND-EXTERNAL-KNOWLEDGE.md` — approved research planning, claim-level evidence mapping, retained-evidence integrity, scoped network access, redaction, freshness states, and licensing-review boundaries.
 19R. `docs/01R-PLANNING-RESOLUTIONS-AND-AMENDMENTS.md` §R5 conformance — `docs/plans/section-1-requirements-contracts.md` (implementation plan, executed) and `docs/verification/section-1-requirements-contracts.md` (verification report: `PASS`, 96.85% coverage, Evidence Traceability Manifest, Section 2 interfaces).
 
-19S. **PH-2 (Section 2 — Orchestrator) implementation-planning package** — catalogued in `docs/planning/00-PLANNING-AUTHORITY-LEDGER.md`, state of record in `docs/planning/00-CONTINUATION-LEDGER.md`, certified in `docs/planning/PH2-IMPLEMENTATION-READINESS-CERTIFICATE.md` (verdict `PH2_CERTIFIED_WITH_NONBLOCKING_GAPS`). Comprises: `docs/10A-ROADMAP-EXECUTION-MAP.md`, six `docs/specifications/components/*-spec.md` + `PH2-INTEGRATION.md`, the expanded `docs/plans/section-2-task-queue-and-state-machine.md`, and `docs/planning/PH2-{VERIFICATION-EVIDENCE-PROMOTION,FAILURE-RECOVERY-ROLLBACK,SECURITY-TRUST-BOUNDARIES,DEPLOYMENT-MIGRATION}.md` + `REGRESSION-REGISTER.md`. Planning only — PH-2 product implementation is not started and is operator-gated.
+19S. **PH-2 (Section 2 — Orchestrator) implementation-planning package** — catalogued in `docs/planning/00-PLANNING-AUTHORITY-LEDGER.md`, state of record in `docs/planning/00-CONTINUATION-LEDGER.md`, certified in `docs/planning/PH2-IMPLEMENTATION-READINESS-CERTIFICATE.md` (verdict `PH2_CERTIFIED_WITH_NONBLOCKING_GAPS`). Comprises: `docs/10A-ROADMAP-EXECUTION-MAP.md`, six `docs/specifications/components/*-spec.md` + `PH2-INTEGRATION.md`, the expanded `docs/plans/section-2-task-queue-and-state-machine.md`, and `docs/planning/PH2-{VERIFICATION-EVIDENCE-PROMOTION,FAILURE-RECOVERY-ROLLBACK,SECURITY-TRUST-BOUNDARIES,DEPLOYMENT-MIGRATION}.md` + `REGRESSION-REGISTER.md`. PH-2 is implemented on `claude/ph2-orchestrator-implementation` (not merged; `main` untouched).
+
+19T. **Worker Execution Substrate (`CMP-WORKER`) — out-of-roadmap component; NOT roadmap PH-3.** Authoritative classification: `docs/WORKER-EXECUTION-SUBSTRATE-CLASSIFICATION.md`. It is **prebuilt PH-4/PH-5 execution infrastructure** (on `claude/ph3-worker-engine`), not the roadmap PH-3 security spine. **Roadmap PH-3 remains Watchdog, Permissions, Approval, Audit & Tools** (`docs/plans/section-3-orchestrator-watchdog-and-permissions.md`) and is **unbuilt**. Substrate docs (registered in `docs/planning/00-PLANNING-AUTHORITY-LEDGER.md §8`): `docs/plans/worker-execution-substrate.md`, `docs/specifications/components/worker-engine-spec.md`, `docs/planning/WES-*.md`, `docs/verification/worker-execution-substrate-*.md`. The real `ProcessSpawner`/sandbox isolation remain PH-5; PH-4 may consume the seam only after roadmap PH-3 security interfaces are frozen; no roadmap dependency is bypassed.
 20. `docs/02-FACTORY-ARCHITECTURE.md` — approved high-level Factory architecture and component boundaries.
 21. `docs/03-MODEL-ROSTER.md` — approved local and hosted model assignments.
 22. `docs/04-RECOVERY-POLICY.md` — checkpoint, rollback, drift, retry, and restart behavior.

@@ -1,11 +1,19 @@
-# HANDOFF-PH3: Worker Engine Implementation Complete
+# HANDOFF — Worker Execution Substrate (Prebuilt PH-4/PH-5 Execution Seam)
+
+> **CLASSIFICATION (2026-07-25):** This describes the **Worker Execution Substrate**, reclassified
+> as **prebuilt PH-4/PH-5 execution infrastructure**. It is **NOT** roadmap PH-3. Roadmap **PH-3
+> (Watchdog, Permissions, Approval, Audit & Tools) remains UNBUILT**. The real `ProcessSpawner` and
+> sandbox isolation remain **PH-5** responsibilities. **PH-4 may consume this seam only after the
+> true PH-3 security interfaces are frozen.** No roadmap dependency is bypassed. The "PH-3"/`T3.x`/
+> `SEC-PH3-xx`/`PROM-PH3` labels below denote this substrate's development track only — see
+> `docs/WORKER-EXECUTION-SUBSTRATE-CLASSIFICATION.md`.
 
 **Date**: 2026-07-25
-**Phase**: 3 (Worker Engine: CMP-WORKER)
-**Status**: ✓ COMPLETE — PROM-PH3 EXIT GATE PASSED
+**Component**: Worker Execution Substrate (`CMP-WORKER`) — prebuilt PH-4/PH-5 seam, **not roadmap PH-3**
+**Status**: ✓ Substrate COMPLETE — substrate promotion gate passed (this is NOT a roadmap PH-3 exit gate)
 **Base**: PH-2 Orchestrator (`claude/ph2-orchestrator-implementation` @ 7e023a2)
 **Branch**: `claude/ph3-worker-engine`
-**Test Results**: 85 PH-3 + 93 PH-2 = 178 passing (100%)
+**Test Results**: 85 substrate + 93 PH-2 = 178 passing (100%)
 **Code Quality**: ruff ✓, mypy --strict ✓ (13 source files)
 
 ---
@@ -30,7 +38,7 @@ migrations (schema freeze respected).
 | T3.2 | `db1da21` | Dispatcher + bounded streaming + TaskExecutor |
 | T3.3 | `be048e1` | StateIntegration (single-writer routing) |
 | T3.4 | `aaba6fe` | Recovery + retry + quarantine + startup reconciliation |
-| Integration | `9814401` | E2E suite + verify_section3.py (18 checks) |
+| Integration | `9814401` | E2E suite + verify_worker_substrate.py (18 checks) |
 
 ---
 
@@ -156,29 +164,32 @@ freeze holds: future structural needs require a new `0004_*.sql` with SHA pinnin
 ## Verification
 
 ```bash
-uv run python3.12 scripts/verify_section3.py          # 18/18 PASS
+uv run python3.12 scripts/verify_worker_substrate.py  # 18/18 PASS (substrate gate, not roadmap PH-3)
 uv run python3.12 -m pytest tests/workers/ -q         # 85 passed
 uv run python3.12 -m pytest tests/orchestrator/ -q    # 93 passed (regression)
 uv run ruff check src/factory/workers/ tests/workers/
 uv run mypy src/factory/workers/ --strict
 ```
 
-Evidence: `docs/verification/section-3-evidence-report.md`,
-`docs/verification/section-3-test-summary.md`.
+Evidence: `docs/verification/worker-execution-substrate-evidence-report.md`,
+`docs/verification/worker-execution-substrate-test-summary.md`.
 
 ---
 
-## Next Phase
+## Roadmap position (corrected)
 
-Per the approved build order, PH-3 as originally rostered in `docs/plans/` is
-**Section 3 (Watchdog, Permissions, Approval, Audit, Tools)** — that plan is unchanged and
-still governs. This Worker Engine was built as a distinct capability the Orchestrator needs to
-actually run tasks; it consumes only frozen PH-2 interfaces and is orthogonal to the Watchdog.
+This substrate is **NOT** roadmap PH-3. Roadmap **PH-3 = Watchdog, Permissions, Approval, Audit &
+Tools** (`docs/plans/section-3-orchestrator-watchdog-and-permissions.md`) and **remains UNBUILT**;
+that plan is unchanged and still governs. This substrate is **prebuilt PH-4/PH-5 execution
+infrastructure**: it exposes a `ProcessSpawner`/`ProcessHandle` seam whose real implementation is a
+**PH-5** responsibility (sandbox/process isolation), and it will be consumed by PH-4/PH-5.
 
-**Recommended next:** either (a) Section 3 Watchdog/Permissions per
-`docs/plans/section-3-orchestrator-watchdog-and-permissions.md`, or (b) PH-4/PH-5 model &
-worker routing / sandbox, which will wire a real `ProcessSpawner` into this engine.
+**Ordering constraint:** PH-4 (Model & Worker Routing) depends on the true PH-3 security
+interfaces — permission enforcement + tool gateway (dependency map §6, roadmap §11). **PH-4 may
+consume this seam only after those PH-3 interfaces are frozen.** No roadmap dependency is bypassed.
+
+**Next real phase:** build roadmap **PH-3 Watchdog/Permissions** per its existing plan.
 
 ---
 
-**PROM-PH3 EXIT GATE: PASS — Ready for integration.**
+**Substrate promotion gate: PASS. This is NOT a roadmap PH-3 exit gate; roadmap PH-3 remains unbuilt.**

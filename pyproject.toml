@@ -64,4 +64,4 @@ ignore = ["S101"]
 
 [tool.ruff.lint.per-file-ignores]
 # Verification report generators: long descriptive result strings are intentional.
-"scripts/verify_section*.py" = ["E501"]
+"scripts/verify_*.py" = ["E501"]

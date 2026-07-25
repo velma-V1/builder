@@ -1,6 +1,10 @@
-# Section 3 (PH-3) — Test Execution & Coverage Summary
+# Worker Execution Substrate — Test Execution & Coverage Summary
 
-**Total:** 85 PH-3 tests (100% pass) + 93 PH-2 regression = 178 passing
+> **CLASSIFICATION:** Test summary for the **Worker Execution Substrate** (prebuilt PH-4/PH-5
+> infrastructure), **NOT roadmap PH-3** (which remains unbuilt). `SEC-PH3-xx`/`T3.x` are
+> substrate-track labels. See `docs/WORKER-EXECUTION-SUBSTRATE-CLASSIFICATION.md`.
+
+**Total:** 85 substrate tests (100% pass) + 93 PH-2 regression = 178 passing
 **Command:** `uv run python3.12 -m pytest tests/workers/ -q`
 
 ---
@@ -108,5 +112,5 @@
 |------|--------|
 | ruff check (workers + tests) | ✓ clean |
 | mypy --strict (13 files) | ✓ no issues |
-| verify_section3.py | ✓ 18/18 |
+| verify_worker_substrate.py | ✓ 18/18 |
 | PH-2 regression | ✓ 93/93 |

@@ -1,4 +1,7 @@
-# Worker Engine Component Specification (PH-3)
+# Worker Execution Substrate — Component Specification (CMP-WORKER; prebuilt PH-4/PH-5 seam)
+
+> **CLASSIFICATION:** This document describes the **Worker Execution Substrate** (prebuilt PH-4/PH-5 execution infrastructure), **NOT roadmap PH-3**. Roadmap **PH-3 (Watchdog, Permissions, Approval, Audit & Tools) remains UNBUILT** and its plan (`docs/plans/section-3-orchestrator-watchdog-and-permissions.md`) is unchanged. The real `ProcessSpawner` and sandbox isolation remain **PH-5**; **PH-4 may consume this seam only after the true PH-3 security interfaces are frozen**. No roadmap dependency is bypassed. `PH-3`/`T3.x`/`SEC-PH3-xx`/`PROM-PH3` labels denote this substrate's development track only. See `docs/WORKER-EXECUTION-SUBSTRATE-CLASSIFICATION.md`.
+
 
 **Authority:** `01M` (State Machine), `01L` (Task Contract), `01R` (Binding Decisions)  
 **Scope:** Worker process lifecycle, task execution, state integration, failure recovery  
@@ -8,7 +11,7 @@
 
 ## Component Identity
 
-**CMP-WORKER (Worker Engine)** [PH-3]
+**CMP-WORKER (Worker Execution Substrate)** — prebuilt PH-4/PH-5 seam (substrate-track "PH-3", **NOT** roadmap PH-3)
 
 Spawns and manages worker processes; assigns tasks; collects execution events; integrates with PH-2 state machine. Does NOT write state directly — all mutations via _OrchestratorStateWriter (R1 single-writer invariant).
 

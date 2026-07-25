@@ -183,3 +183,26 @@ Rebuilt at the start of every planning pass (realignment protocol) and updated a
 document must be added here with a single-owner row before it is relied upon (mirrors the change-control rule
 in `docs/00-DOCUMENTATION-INDEX.md §"Change-control rule"`). Retirement marks `SUPERSEDED` with a pointer;
 rows are never deleted.
+
+## 8. Worker Execution Substrate documents (out-of-roadmap; registered 2026-07-25)
+
+The **Worker Execution Substrate** (`CMP-WORKER`) is an **out-of-roadmap** component — **prebuilt PH-4/PH-5
+execution infrastructure, NOT roadmap PH-3**. Registering its documents here does **not** amend the Master
+Implementation Roadmap and does **not** create a duplicate authority with roadmap **PH-3 = Watchdog**
+(`docs/plans/section-3-orchestrator-watchdog-and-permissions.md`), which remains the sole owner of the
+roadmap-PH-3 security-spine decisions. Authoritative classification: `docs/WORKER-EXECUTION-SUBSTRATE-CLASSIFICATION.md`.
+
+| Document ID | Path | Purpose (single) | Authority | Owner |
+|---|---|---|---|---|
+| WES-CLASS | `docs/WORKER-EXECUTION-SUBSTRATE-CLASSIFICATION.md` | Reclassification record + label mapping (substrate ≠ roadmap PH-3) | Derived classification | Operator decision 2026-07-25 |
+| WES-PLAN | `docs/plans/worker-execution-substrate.md` | Substrate implementation plan (T3.1–T3.5) | Plan (out-of-roadmap) | Substrate build |
+| WES-SPEC | `docs/specifications/components/worker-engine-spec.md` | Substrate component spec (`CMP-WORKER`) | Component spec | Substrate build |
+| WES-FRR | `docs/planning/WES-FAILURE-RECOVERY-ROLLBACK.md` | Substrate failure/recovery/rollback | Plan (out-of-roadmap) | Substrate build |
+| WES-SEC | `docs/planning/WES-SECURITY-TRUST-BOUNDARIES.md` | Substrate security/trust boundaries | Plan (out-of-roadmap) | Substrate build |
+| WES-VEP | `docs/planning/WES-VERIFICATION-EVIDENCE-PROMOTION.md` | Substrate verification/evidence/promotion | Plan (out-of-roadmap) | Substrate build |
+| WES-CERT | `docs/planning/WES-IMPLEMENTATION-READINESS-CERTIFICATE.md` | Substrate readiness certificate | Derived certification | Substrate build |
+| WES-EVID | `docs/verification/worker-execution-substrate-evidence-report.md` | Substrate evidence report (substrate gate 18/18) | Report | Substrate build |
+| WES-TESTS | `docs/verification/worker-execution-substrate-test-summary.md` | Substrate test summary (85 tests) | Report | Substrate build |
+
+**Superseded branch:** `claude/ph3-worker-engine-xefzze` — tip `7e023a2`, zero unique commits — **SUPERSEDED**
+by `claude/ph3-worker-engine` (no unique required work).

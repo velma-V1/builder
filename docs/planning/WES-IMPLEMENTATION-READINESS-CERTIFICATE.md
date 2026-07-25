@@ -1,6 +1,9 @@
-# PH-3 Implementation-Readiness Certificate
+# Worker Execution Substrate — Implementation-Readiness Certificate
 
-**Phase:** PH-3 (Worker Engine)  
+> **CLASSIFICATION:** This document describes the **Worker Execution Substrate** (prebuilt PH-4/PH-5 execution infrastructure), **NOT roadmap PH-3**. Roadmap **PH-3 (Watchdog, Permissions, Approval, Audit & Tools) remains UNBUILT** and its plan (`docs/plans/section-3-orchestrator-watchdog-and-permissions.md`) is unchanged. The real `ProcessSpawner` and sandbox isolation remain **PH-5**; **PH-4 may consume this seam only after the true PH-3 security interfaces are frozen**. No roadmap dependency is bypassed. `PH-3`/`T3.x`/`SEC-PH3-xx`/`PROM-PH3` labels denote this substrate's development track only. See `docs/WORKER-EXECUTION-SUBSTRATE-CLASSIFICATION.md`.
+
+
+**Track:** Worker Execution Substrate (substrate-track label; NOT roadmap PH-3)  
 **Base:** PH-2 Orchestrator (`claude/ph2-orchestrator-implementation` @ 7e023a2)  
 **Branch:** `claude/ph3-worker-engine`  
 **Date:** 2026-07-25
@@ -9,7 +12,7 @@
 
 ## Certification Statement
 
-This certificate attests that PH-3 (Worker Engine) has completed its full planning
+This certificate attests that the Worker Execution Substrate (substrate-track "PH-3", NOT roadmap PH-3) has completed its full planning
 cycle and is ready for implementation. All prerequisite analysis is locked.
 
 ---
@@ -19,11 +22,11 @@ cycle and is ready for implementation. All prerequisite analysis is locked.
 | Pass | Document | Status |
 |------|----------|--------|
 | **1. Component Spec** | `docs/specifications/components/worker-engine-spec.md` | ✓ LOCKED |
-| **2. Implementation Plan** | `docs/plans/section-3-worker-engine.md` | ✓ LOCKED |
-| **3. Failure/Recovery/Rollback** | `docs/planning/PH3-FAILURE-RECOVERY-ROLLBACK.md` | ✓ LOCKED |
-| **4. Security/Trust Boundaries** | `docs/planning/PH3-SECURITY-TRUST-BOUNDARIES.md` | ✓ LOCKED |
-| **5. Verification/Evidence/Promotion** | `docs/planning/PH3-VERIFICATION-EVIDENCE-PROMOTION.md` | ✓ LOCKED |
-| **6. Readiness Certificate** | `docs/planning/PH3-IMPLEMENTATION-READINESS-CERTIFICATE.md` | ✓ THIS DOC |
+| **2. Implementation Plan** | `docs/plans/worker-execution-substrate.md` | ✓ LOCKED |
+| **3. Failure/Recovery/Rollback** | `docs/planning/WES-FAILURE-RECOVERY-ROLLBACK.md` | ✓ LOCKED |
+| **4. Security/Trust Boundaries** | `docs/planning/WES-SECURITY-TRUST-BOUNDARIES.md` | ✓ LOCKED |
+| **5. Verification/Evidence/Promotion** | `docs/planning/WES-VERIFICATION-EVIDENCE-PROMOTION.md` | ✓ LOCKED |
+| **6. Readiness Certificate** | `docs/planning/WES-IMPLEMENTATION-READINESS-CERTIFICATE.md` | ✓ THIS DOC |
 
 ---
 
@@ -146,8 +149,8 @@ Each task: TDD (test first), code, ruff+mypy, commit at boundary.
 All tasks complete on `claude/ph3-worker-engine`: T3.1 `270300f`, T3.5 `9dd4ac6`,
 T3.2 `db1da21`, T3.3 `be048e1`, T3.4 `aaba6fe`, integration+verification `9814401`.
 85 PH-3 tests + 93 PH-2 regression = 178 passing; ruff + mypy --strict clean;
-`scripts/verify_section3.py` 18/18. Evidence in `docs/verification/section-3-*.md`,
-handoff in `HANDOFF-PH3.md`.
+`scripts/verify_worker_substrate.py` 18/18. Evidence in `docs/verification/worker-execution-substrate-*.md`,
+handoff in `HANDOFF-WORKER-EXECUTION-SUBSTRATE.md`.
 
 **Planned test estimate was 78; delivered 85** (extra coverage in lifecycle, streaming,
 recovery edge cases). **Design correction during T3.3:** success path is RUNNING → VERIFYING,

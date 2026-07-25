@@ -112,7 +112,7 @@
 ### 1. Single-Writer Invariant (R1)
 **Decision**: Only `_OrchestratorStateWriter` may mutate orchestrator state.  
 **Enforcement**: Structural — writer not exported from package __init__.  
-**Implication**: PH-3 (Worker Engine) and all future phases must route all state mutations through the writer interface.
+**Implication**: the Worker Execution Substrate and all future phases must route all state mutations through the writer interface.
 
 ### 2. Append-Only Event Journal
 **Decision**: Task state changes are persisted as immutable event records; state is reconstructed by replaying events.  
@@ -157,7 +157,7 @@ SHA-256: 65e0a4d16b84a49b205b1f2e48c91e11ae6dc48e9c179e318da3026283e10587
 
 ---
 
-## Interfaces for PH-3 (Worker Engine)
+## Interfaces for downstream phases (consumed by the Worker Execution Substrate)
 
 ### State Reader (Read-Only)
 ```python
@@ -239,18 +239,24 @@ verified = store.verify("MEM-001")
 
 ---
 
-## Known Limitations (for PH-3 Consideration)
+## Known Limitations (for downstream / Worker Execution Substrate consideration)
 
 1. **No Worker Process Management**: TaskScheduler and cancellation mechanics are state-only; actual process halting is deferred to PH-5 (Execution Controller).
 2. **Memory Class Scope**: Only PROJECT_AUTHORITY is implemented; other memory classes (active task context, user preferences, global knowledge, raw sessions, derived retrieval) deferred to PH-7.
-3. **Lease Expiry**: Fencing validity is primary; expiry is secondary. PH-3 must renew leases before expiry to maintain ownership.
-4. **No Automatic Recovery**: Reconciliation after crash assigns quarantine or resume outcomes; PH-3/PH-5 must explicitly handle each outcome.
+3. **Lease Expiry**: Fencing validity is primary; expiry is secondary. The Worker Execution Substrate must renew leases before expiry to maintain ownership.
+4. **No Automatic Recovery**: Reconciliation after crash assigns quarantine or resume outcomes; the Worker Execution Substrate / PH-5 must explicitly handle each outcome.
 
 ---
 
-## Next Phase: PH-3 (Worker Engine)
+## Downstream: Worker Execution Substrate (prebuilt PH-4/PH-5 seam — NOT roadmap PH-3)
 
-PH-3 will implement:
+> **Correction (2026-07-25):** an earlier draft of this section labeled the next phase
+> "PH-3 (Worker Engine)". That was a misclassification. Roadmap **PH-3 = Watchdog, Permissions,
+> Approval, Audit & Tools** and remains **unbuilt**. The worker-execution capability below was
+> built as the **Worker Execution Substrate** (prebuilt PH-4/PH-5 infrastructure) on branch
+> `claude/ph3-worker-engine`. See `docs/WORKER-EXECUTION-SUBSTRATE-CLASSIFICATION.md`.
+
+The Worker Execution Substrate implements:
 - Worker process spawning and lifecycle management
 - Task execution within worker processes
 - Integration with PH-2 state machine and reconciliation
@@ -310,7 +316,7 @@ TOTAL: 18/18 verifications passed
 **Regression Prevention**: ✓ All gates cleared/verified  
 **Schema Freeze**: ✓ 3 migrations pinned and locked  
 
-**Ready for PH-3 (Worker Engine) integration.**
+**Ready for downstream integration (Worker Execution Substrate; roadmap PH-3 Watchdog still to build).**
 
 ---
 

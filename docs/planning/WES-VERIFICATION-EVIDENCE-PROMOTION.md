@@ -1,6 +1,9 @@
-# PH-3 Verification, Evidence & Promotion Gates
+# Worker Execution Substrate — Verification, Evidence & Promotion Gates
 
-**Phase:** PH-3 (Worker Engine)  
+> **CLASSIFICATION:** This document describes the **Worker Execution Substrate** (prebuilt PH-4/PH-5 execution infrastructure), **NOT roadmap PH-3**. Roadmap **PH-3 (Watchdog, Permissions, Approval, Audit & Tools) remains UNBUILT** and its plan (`docs/plans/section-3-orchestrator-watchdog-and-permissions.md`) is unchanged. The real `ProcessSpawner` and sandbox isolation remain **PH-5**; **PH-4 may consume this seam only after the true PH-3 security interfaces are frozen**. No roadmap dependency is bypassed. `PH-3`/`T3.x`/`SEC-PH3-xx`/`PROM-PH3` labels denote this substrate's development track only. See `docs/WORKER-EXECUTION-SUBSTRATE-CLASSIFICATION.md`.
+
+
+**Track:** Worker Execution Substrate (substrate-track label; NOT roadmap PH-3)  
 **Base:** PH-2 Orchestrator (93 tests passing)  
 **Target:** 64 PH-3 tests + PROM-PH3 exit gate
 
@@ -77,18 +80,18 @@
 ## Evidence Artifacts
 
 ### Required Deliverables
-1. **`docs/verification/section-3-evidence-report.md`**
+1. **`docs/verification/worker-execution-substrate-evidence-report.md`**
    - Full PROM-PH3 exit gate report
    - Test execution logs (all 78 tests)
    - Recovery simulation traces
    - Code audit results (writer confinement)
 
-2. **`docs/verification/section-3-test-summary.md`**
+2. **`docs/verification/worker-execution-substrate-test-summary.md`**
    - Test breakdown by task (T3.1–T3.5)
    - Failure-path coverage matrix
    - Security test results (SEC-PH3-01 through 05)
 
-3. **`scripts/verify_section3.py`**
+3. **`scripts/verify_worker_substrate.py`**
    - Executable verification suite (18 checks)
    - Auto-runs: test pass, ruff, mypy, writer confinement grep, migration pinning
 
@@ -112,7 +115,7 @@
 
 ---
 
-## Verification Suite Checks (verify_section3.py)
+## Verification Suite Checks (verify_worker_substrate.py)
 
 ```
 ✓ Check 01: Worker module files exist (pool, dispatcher, execution, recovery, lease_coordinator)
@@ -145,9 +148,9 @@ TOTAL: 18/18 → PROM-PH3 EXIT GATE: PASS
 - ✓ All 5 promotion gates pass (PROM-PH3-PASS-01 through 05)
 - ✓ 78 PH-3 tests + 93 PH-2 tests = 171 total tests passing
 - ✓ ruff + mypy --strict clean
-- ✓ verify_section3.py: 18/18 checks pass
+- ✓ verify_worker_substrate.py: 18/18 checks pass
 - ✓ Evidence artifacts complete
-- ✓ HANDOFF-PH3.md written
+- ✓ HANDOFF-WORKER-EXECUTION-SUBSTRATE.md written
 - ✓ 5 new regression flags cleared + 3 PH-2 flags green
 
 **Handoff → PH-4 (Model Routing) / PH-5 (Sandbox):**

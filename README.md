@@ -12,9 +12,10 @@ Continue to the next phase:
 
 - [`docs/verification/section-2-evidence-report.md`](docs/verification/section-2-evidence-report.md) — Section 2 verification report: PROM-PH2 exit gate results, 93 tests (100% pass), regression prevention gates, and migration integrity.
 - [`docs/verification/section-2-test-summary.md`](docs/verification/section-2-test-summary.md) — detailed test execution summary, code coverage analysis, and quality metrics.
-- [`HANDOFF-PH2.md`](HANDOFF-PH2.md) — the PH-2 handoff record (if creating); what was done, binding decisions, schema-freeze for PH-3.
+- [`HANDOFF-PH2.md`](HANDOFF-PH2.md) — the PH-2 handoff record; what was done, binding decisions, schema-freeze.
 - [`docs/01R-PLANNING-RESOLUTIONS-AND-AMENDMENTS.md`](docs/01R-PLANNING-RESOLUTIONS-AND-AMENDMENTS.md) — the resolutions and decisions in force for remaining phases.
-- [`docs/10-IMPLEMENTATION-ROADMAP.md`](docs/10-IMPLEMENTATION-ROADMAP.md) — the nine-phase build order, gates, and critical path (PH-3 next: Worker Engine).
+- [`docs/10-IMPLEMENTATION-ROADMAP.md`](docs/10-IMPLEMENTATION-ROADMAP.md) — the nine-phase build order, gates, and critical path. **Roadmap PH-3 next: Watchdog, Permissions, Approval, Audit & Tools** (unbuilt).
+- [`docs/WORKER-EXECUTION-SUBSTRATE-CLASSIFICATION.md`](docs/WORKER-EXECUTION-SUBSTRATE-CLASSIFICATION.md) — the Worker Execution Substrate (prebuilt PH-4/PH-5 execution infra on `claude/ph3-worker-engine`); **not roadmap PH-3**.
 
 The system is intentionally planned in locked sections before code is written. This prevents architecture drift, conflicting parallel edits, unverifiable completion claims, and uncontrolled autonomy.
 

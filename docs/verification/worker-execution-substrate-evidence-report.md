@@ -1,12 +1,17 @@
-# Section 3 (PH-3, Worker Engine) — Evidence Report
+# Worker Execution Substrate — Evidence Report
 
-**Phase:** PH-3 (Worker Engine)
-**Status:** ✓ COMPLETE — PROM-PH3 EXIT GATE PASSED
+> **CLASSIFICATION:** This is the evidence report for the **Worker Execution Substrate**
+> (prebuilt PH-4/PH-5 infrastructure), **NOT roadmap PH-3**. Roadmap PH-3 (Watchdog) remains
+> UNBUILT. The substrate promotion gate below is **not** a roadmap PH-3 exit gate. See
+> `docs/WORKER-EXECUTION-SUBSTRATE-CLASSIFICATION.md`.
+
+**Component:** Worker Execution Substrate (`CMP-WORKER`) — prebuilt PH-4/PH-5 seam
+**Status:** ✓ Substrate COMPLETE — substrate promotion gate passed (NOT a roadmap PH-3 exit gate)
 **Base:** PH-2 Orchestrator (`claude/ph2-orchestrator-implementation` @ 7e023a2)
 **Branch:** `claude/ph3-worker-engine`
-**Test Results:** 85 PH-3 worker tests + 93 PH-2 tests = 178 passing (100%)
+**Test Results:** 85 substrate tests + 93 PH-2 tests = 178 passing (100%)
 **Code Quality:** ruff ✓, mypy --strict ✓ (13 source files)
-**Verification Suite:** `scripts/verify_section3.py` — 18/18 checks PASS
+**Verification Suite:** `scripts/verify_worker_substrate.py` — 18/18 checks PASS
 
 ---
 
@@ -73,7 +78,7 @@ complete; COMPLETE is reachable only from VERIFYING (a later phase gates it).
 
 ### Integration + Verification (commit `9814401`)
 - End-to-end pipeline, failed-task path, crash reclaim, 3-cycle recovery, epoch-fenced leases
-- `scripts/verify_section3.py` (18 checks)
+- `scripts/verify_worker_substrate.py` (18 checks)
 - **5 integration tests**
 
 ---
@@ -137,7 +142,7 @@ complete; COMPLETE is reachable only from VERIFYING (a later phase gates it).
 ## Reproduce Locally
 
 ```bash
-uv run python3.12 scripts/verify_section3.py            # 18/18 checks
+uv run python3.12 scripts/verify_worker_substrate.py            # 18/18 checks
 uv run python3.12 -m pytest tests/workers/ -q           # 85 passed
 uv run python3.12 -m pytest tests/orchestrator/ -q      # 93 passed (regression)
 uv run ruff check src/factory/workers/ tests/workers/   # clean
@@ -146,4 +151,4 @@ uv run mypy src/factory/workers/ --strict               # clean
 
 ---
 
-**PROM-PH3 EXIT GATE: PASS — Section 3 (Worker Engine) is production-ready.**
+**Substrate promotion gate: PASS — Worker Execution Substrate is production-ready. This is NOT a roadmap PH-3 exit gate; roadmap PH-3 (Watchdog) remains unbuilt.**

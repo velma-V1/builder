@@ -1,4 +1,7 @@
-# PH-3 (Worker Engine) — Implementation Plan
+# Worker Execution Substrate — Implementation Plan (prebuilt PH-4/PH-5 seam)
+
+> **CLASSIFICATION:** This document describes the **Worker Execution Substrate** (prebuilt PH-4/PH-5 execution infrastructure), **NOT roadmap PH-3**. Roadmap **PH-3 (Watchdog, Permissions, Approval, Audit & Tools) remains UNBUILT** and its plan (`docs/plans/section-3-orchestrator-watchdog-and-permissions.md`) is unchanged. The real `ProcessSpawner` and sandbox isolation remain **PH-5**; **PH-4 may consume this seam only after the true PH-3 security interfaces are frozen**. No roadmap dependency is bypassed. `PH-3`/`T3.x`/`SEC-PH3-xx`/`PROM-PH3` labels denote this substrate's development track only. See `docs/WORKER-EXECUTION-SUBSTRATE-CLASSIFICATION.md`.
+
 
 **Status:** Planning cycle initiated · **Base:** PH-2 (`claude/ph2-orchestrator-implementation` @ 7e023a2)  
 **Scope:** Worker process lifecycle, task execution, failure recovery, state integration, lease coordination  
@@ -159,9 +162,9 @@ Orchestrator (back to ready_tasks loop)
 5. **PROM-PH3-PASS-05:** State consistency after 3 crash/recovery cycles
 
 ### Evidence Artifacts
-- `docs/verification/section-3-evidence-report.md` — full execution traces, test metrics
-- `docs/verification/section-3-test-summary.md` — breakdown by task, failure-path coverage
-- `scripts/verify_section3.py` — executable verification (18 checks, all must pass)
+- `docs/verification/worker-execution-substrate-evidence-report.md` — full execution traces, test metrics
+- `docs/verification/worker-execution-substrate-test-summary.md` — breakdown by task, failure-path coverage
+- `scripts/verify_worker_substrate.py` — executable verification (18 checks, all must pass)
 
 ---
 
@@ -226,7 +229,7 @@ Orchestrator (back to ready_tasks loop)
 
 **Phase 4 — Handoff:**
 - Lock spec (this doc)
-- Create HANDOFF-PH3.md
+- Create HANDOFF-WORKER-EXECUTION-SUBSTRATE.md
 - Sign off on PROM-PH3 exit gate
 - Ready for PH-4/PH-5 (approval, audit, sandbox integration)
 

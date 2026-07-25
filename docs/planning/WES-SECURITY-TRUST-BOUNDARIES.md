@@ -1,6 +1,9 @@
-# PH-3 Security & Trust Boundary Analysis
+# Worker Execution Substrate — Security & Trust Boundary Analysis
 
-**Phase:** PH-3 (Worker Engine)  
+> **CLASSIFICATION:** This document describes the **Worker Execution Substrate** (prebuilt PH-4/PH-5 execution infrastructure), **NOT roadmap PH-3**. Roadmap **PH-3 (Watchdog, Permissions, Approval, Audit & Tools) remains UNBUILT** and its plan (`docs/plans/section-3-orchestrator-watchdog-and-permissions.md`) is unchanged. The real `ProcessSpawner` and sandbox isolation remain **PH-5**; **PH-4 may consume this seam only after the true PH-3 security interfaces are frozen**. No roadmap dependency is bypassed. `PH-3`/`T3.x`/`SEC-PH3-xx`/`PROM-PH3` labels denote this substrate's development track only. See `docs/WORKER-EXECUTION-SUBSTRATE-CLASSIFICATION.md`.
+
+
+**Track:** Worker Execution Substrate (substrate-track label; NOT roadmap PH-3)  
 **Authority:** `01R` R1 (single-writer), `01M` (state machine), `01E` (sandbox — deferred to PH-5)  
 **Base:** PH-2 Orchestrator
 
