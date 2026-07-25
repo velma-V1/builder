@@ -143,3 +143,47 @@ Left inert; not fast-forwarded.
 `claude/ph3-worker-engine`); **do not merge; do not modify `main`**; await explicit merge authorization.
 After merge, the next roadmap phase to plan/build is **roadmap PH-3 (Watchdog/Permissions/Approval/Audit/
 Tools)**.
+
+## 10. Realignment — 2026-07-25 (Roadmap PH-3 planning started; Pass 2 complete)
+
+Supersedes the prior "active branch / next allowed action" fields for the purpose of roadmap PH-3 planning
+(earlier sections retained per the never-delete rule). Roadmap PH-3 is the **Watchdog security spine** and is
+distinct from the Worker Execution Substrate (out-of-roadmap; `docs/WORKER-EXECUTION-SUBSTRATE-CLASSIFICATION.md`).
+
+**Current authoritative state**
+
+| Field | Value |
+|---|---|
+| Date | 2026-07-25 |
+| `main` | untouched (`9bce1ca`); no merge performed or authorized |
+| PR #10 (Worker Execution Substrate) | open / draft / **unmerged**; head `claude/ph3-worker-engine` @ `7b1922e`; **not modified** |
+| Active branch | `claude/roadmap-ph3-security-spine-planning` (forked from `claude/ph3-worker-engine` @ `7b1922e`) |
+| Active phase | **Roadmap PH-3 planning** (Watchdog/Permissions/Approval/Audit/Tools) — **planning only; no implementation** |
+| Active framework | Principal-Architect planning framework (per-pass: realign → report → `CONTINUE`) |
+| Roadmap PH-3 implementation | **UNBUILT** — target dirs `src/factory/{watchdog,permission,approval,audit,tools,fileops,diagnostics}` absent |
+| Worker Execution Substrate (`CMP-WORKER`) | COMPLETE on `claude/ph3-worker-engine`; out-of-roadmap; **NOT roadmap PH-3** |
+| PH-1 / PH-2 | COMPLETE (unmerged) |
+
+**Operator decisions on record (2026-07-25)**
+
+- Session switched to `claude/ph3-worker-engine` and re-verified; temp branch
+  `claude/repository-realignment-handoff-esxexm` (created from `main`, lacking all PR #10 work) **abandoned**.
+- Authorized **roadmap PH-3 planning only**: do not modify or merge PR #10; do not modify `main`; do not
+  implement PH-3 code.
+- Planning corpus authored on dedicated branch `claude/roadmap-ph3-security-spine-planning` from `7b1922e`.
+- **Keep roadmap PH-3 identifiers separate from the substrate** — satisfied by the `RPH3` namespace
+  (PLANNING-AUTHORITY-LEDGER §9.1).
+- Per-pass protocol: complete one pass, report, stop, await explicit `CONTINUE`.
+
+**Roadmap PH-3 planning pass log**
+
+| Pass | Scope | Verdict | Artifacts |
+|---|---|---|---|
+| RPH3 Pass 1 | Implementation-readiness realignment (readiness verdict, governing inputs, task/contract inventory, pass plan) | `READY_FOR_RPH3_ARCHITECTURE_PLANNING` | analysis only; no files |
+| RPH3 Pass 2 | Planning-hierarchy realignment: `RPH3` identifier namespace + planning-document registry | `PASS_WITH_NONBLOCKING_GAPS` | `docs/planning/00-PLANNING-AUTHORITY-LEDGER.md §9`; `docs/planning/00-CONTINUATION-LEDGER.md §10` (this) |
+
+**Next allowed action**
+
+Await explicit `CONTINUE` to begin **RPH3 Pass 3** (roadmap-execution environment map — the `docs/10A`
+PH-3 row + order-validation). Until then: no implementation, no merge, `main` and PR #10 untouched, roadmap
+not amended.

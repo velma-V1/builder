@@ -206,3 +206,84 @@ roadmap-PH-3 security-spine decisions. Authoritative classification: `docs/WORKE
 
 **Superseded branch:** `claude/ph3-worker-engine-xefzze` — tip `7e023a2`, zero unique commits — **SUPERSEDED**
 by `claude/ph3-worker-engine` (no unique required work).
+
+## 9. Roadmap PH-3 planning corpus — identifier namespace + document registry (registered 2026-07-25)
+
+Roadmap **PH-3 = Watchdog, Permissions, Approval, Audit & Tools**
+(`docs/plans/section-3-orchestrator-watchdog-and-permissions.md`; roadmap §PH-3) is **UNBUILT**. Its
+implementation-planning corpus is authored on branch `claude/roadmap-ph3-security-spine-planning` (forked
+from `claude/ph3-worker-engine` @ `7b1922e`). This section registers that corpus with single-owner rows. It
+does **not** amend the Master Implementation Roadmap and does **not** create duplicate authority with the
+Worker Execution Substrate (§8, `WES-*`, out-of-roadmap). Roadmap PH-3 is the sole owner of the roadmap
+security-spine decisions.
+
+### 9.1 Identifier namespace (disjoint from the substrate)
+
+The Worker Execution Substrate's development-track labels are authoritatively mapped in
+`docs/WORKER-EXECUTION-SUBSTRATE-CLASSIFICATION.md §3`, and its former `docs/planning/PH3-*.md` planning
+filenames were **vacated** (renamed to `WES-*`, WES-CLASS §4). To keep roadmap PH-3 identifiers separate,
+roadmap PH-3 planning uses the **`RPH3`** namespace and does **not** reuse any `PH3-*`/`T3.x`/`SEC-PH3-xx`/
+`PROM-PH3`/`WES-*` identifier.
+
+| Concept | Roadmap PH-3 (this corpus) | Substrate — do NOT reuse |
+|---|---|---|
+| Task IDs | `RPH3-T1`…`RPH3-T5` | `T3.1`…`T3.5` |
+| Security-test labels | `SEC-RPH3-01`… | `SEC-PH3-01`…`05` |
+| Promotion / phase-exit gate | `PROM-RPH3` (roadmap PH-3 exit; VM-2) | `PROM-PH3` |
+| Planning doc IDs | `*-RPH3` (§9.2) | `WES-*` |
+| Planning doc paths | `docs/planning/RPH3-*.md` | `docs/planning/WES-*.md` |
+| Verify script (Pass 10) | `scripts/verify_roadmap_ph3.py` | `scripts/verify_worker_substrate.py` |
+| Verification reports | `docs/verification/roadmap-ph3-*.md` | `docs/verification/worker-execution-substrate-*.md` |
+
+Roadmap-PH-3 task-ID mapping (against the section-3 plan's task numbers and the authoritative COMPONENT-MAP):
+
+| RPH3 task | Section-3 task | Component(s) | Owned path (all currently absent) |
+|---|---|---|---|
+| RPH3-T1 | Task 3.1 | CMP-WATCH | `src/factory/watchdog/**` |
+| RPH3-T2 | Task 3.2 | CMP-PERM | `src/factory/permission/**` |
+| RPH3-T3 | Task 3.3 | CMP-APPROVAL | `src/factory/approval/**` |
+| RPH3-T4 | Task 3.4 | CMP-AUDITW, CMP-AUDITV | `src/factory/audit/**` |
+| RPH3-T5 | Task 3.5 | CMP-TOOLREG, CMP-TOOLGW, CMP-DIAG (Safe Mode), file-op | `src/factory/{tools,fileops,diagnostics/safe_mode}/**` |
+
+### 9.2 Planned planning documents (single-owner rows)
+
+Status legend: `PLANNED` (registered here; authored by the named pass). Each inherits the §2 standing values.
+`PLAN-S3` is the real roadmap PH-3 plan preserved by WES-CLASS §4; the substrate plan is `WES-PLAN`
+(`docs/plans/worker-execution-substrate.md`), a distinct file.
+
+| Document ID | Path | Purpose (single) | Authority | Owning pass | Status |
+|---|---|---|---|---|---|
+| PLAN-S3 | `docs/plans/section-3-orchestrator-watchdog-and-permissions.md` | Roadmap PH-3 executable task plan (RPH3-T1…T5 + execution/dependency graph) | Plan | RPH3 Pass 5 | PARTIAL (stub) |
+| SPEC-RPH3-set | `docs/specifications/components/{watchdog,permission,approval,audit-writer,audit-validator,tool-registry,tool-gateway,safe-mode,file-op-service}-spec.md` + `RPH3-INTEGRATION.md` | Per-component 18-field specs for CMP-WATCH/PERM/APPROVAL/AUDITW/AUDITV/TOOLREG/TOOLGW/DIAG + file-op | Component spec | RPH3 Pass 4 | PLANNED |
+| VEP-RPH3 | `docs/planning/RPH3-VERIFICATION-EVIDENCE-PROMOTION.md` | Verification/evidence/promotion architecture; `01M`(32)+`01K`(25) traceability; VM-2; `PROM-RPH3` | Plan (subordinate to `01G`/MATRIX-VERIF) | RPH3 Pass 6 | PLANNED |
+| FRR-RPH3 | `docs/planning/RPH3-FAILURE-RECOVERY-ROLLBACK.md` | Failure/recovery/rollback (Watchdog-loss, fail-closed, quarantine) | Plan (subordinate to `01M`/`04`) | RPH3 Pass 7 | PLANNED |
+| SEC-RPH3 | `docs/planning/RPH3-SECURITY-TRUST-BOUNDARIES.md` | Security assets/threats/trust boundaries; `SEC-RPH3-xx` tests | Plan (subordinate to `01K`/`01E`/`01M`) | RPH3 Pass 8 | PLANNED |
+| DEP-RPH3 | `docs/planning/RPH3-DEPLOYMENT-MIGRATION.md` | Platform footprint + PH-3 schemas/migrations (permission-grant, approval-record, tool-declaration, audit-chain; `0004_*` under freeze) | Plan (subordinate to `01O`/`01N`) | RPH3 Pass 9 | PLANNED |
+| CERT-RPH3 | `docs/planning/RPH3-IMPLEMENTATION-READINESS-CERTIFICATE.md` | Final inventory, audits, handoff, readiness certificate | Derived certification | RPH3 Pass 10 | PLANNED |
+
+### 9.3 Contracts & schemas owned by roadmap PH-3
+
+Per CONTRACT-REGISTRY (owner PH-3): `CTR-PERMISSION-GRANT` (CMP-PERM), `CTR-APPROVAL-RECORD` (CMP-APPROVAL),
+`CTR-TOOL-DECLARATION` (CMP-TOOLREG), `CTR-AUDIT-RECORD` (CMP-AUDITW). Schemas to author (Pass 9):
+`permission-grant`, `approval-record`, `tool-declaration`, `audit-chain`. Any structural runtime-DB need is a
+new SHA-pinned `0004_*` migration under the schema-freeze rule (SCHEMA-REGISTRY); the substrate added none.
+
+### 9.4 Gap ownership updates
+
+- **G-02 RESOURCE-ALLOCATION-PLAN** — scheduled into RPH3 planning (Watchdog resource thresholds,
+  `01M §3.3/§3.6`); authored RPH3 Pass 6/7. Non-blocking.
+- **G-05 PHASE-EXIT-CHECKLIST**, **G-06 VERIFICATION-REPORT template** — generalized during RPH3 Pass 6/10.
+  Non-blocking.
+
+### 9.5 Authority-relationship verification (this pass)
+
+- **No duplicate ownership:** every RPH3 row owns a distinct artifact; none collides with a `WES-*` (§8),
+  PH-2 (`PH2-*`, §4), or PH-1 row. The `CMP-*` IDs are the COMPONENT-MAP's existing single owners; RPH3
+  specs instantiate them for roadmap PH-3, not the substrate.
+- **No circular authority:** governing corpus (`01K`,`01M`,`01R`) → roadmap §PH-3 → this registry → RPH3
+  planning docs → component/task/interface instances → verification reports. DAG; verified by inspection.
+- **Namespace disjointness:** the §9.1 table is verified disjoint from WES-CLASS §3 and from the vacated
+  `docs/planning/PH3-*.md` filenames (WES-CLASS §4).
+- **File-op component note:** roadmap §PH-3 lists a "safe file-op service" with no dedicated `CMP-*` row in
+  COMPONENT-MAP (file-op lives with the tool/security surface). Flagged for RPH3 Pass 4 to either add a
+  `CMP-FILEOP` row (COMPONENT-MAP change-control) or fold file-op into CMP-TOOLGW's spec. Non-blocking here.
