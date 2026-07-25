@@ -78,7 +78,7 @@
 - [x] All migrations SHA-256 pinned and verified
 - [x] 93 tests passing (100%)
 - [x] ruff linting passes (0 violations)
-- [x] mypy --strict passes (0 errors, 12 source files)
+- [x] mypy --strict passes (0 errors, 16 source files)
 - [x] Append-only enforcement tested (SEC-PH2-02)
 - [x] Read-only mode tested (SEC-PH2-01)
 - [x] Atomic rollback tested (REGR-0001)
@@ -96,7 +96,7 @@
 
 ### Code Quality
 - **ruff check**: All passed (no style violations, SQL injection false positives eliminated)
-- **mypy --strict**: All passed (strict type checking on 12 source files)
+- **mypy --strict**: All passed (strict type checking on 16 source files)
 
 ### Regression Prevention
 | Flag | Test | Status |
@@ -165,7 +165,7 @@ from factory.orchestrator.store.runtime_state import SQLiteOrchestratorStateRead
 
 reader = SQLiteOrchestratorStateReader(database_path=Path("runtime.db"))
 record = reader.get_task("TASK-001")  # TaskRuntimeRecord or None
-events = reader.get_events("TASK-001")  # list[StateTransitionEvent]
+events = reader.get_events("TASK-001")  # tuple[StateTransitionEvent, ...]
 ```
 
 ### State Writer (Single-Writer)
@@ -197,12 +197,23 @@ ready = scheduler.ready_tasks(
 ### Lease Management (Distributed Coordination)
 ```python
 from factory.orchestrator.leases.fencing import LeaseManager
+from factory.orchestrator.models import LeaseResourceType, ProcessEpoch
 
-lease_mgr = LeaseManager(database_path=Path("runtime.db"))
-token = lease_mgr.acquire("worker_process", "PROC-123", expires_in=300)
-renewed = lease_mgr.renew("worker_process", "PROC-123", token)  # extends expiry
-lease_mgr.release("worker_process", "PROC-123", token)
-valid = lease_mgr.validate_token("worker_process", "PROC-123", token)
+# process_epoch is REQUIRED — generate one per Orchestrator startup for cross-restart safety.
+lease_mgr = LeaseManager(database_path=Path("runtime.db"), process_epoch=ProcessEpoch.generate())
+
+# acquire returns a Lease; renew/release consume that Lease object.
+lease = lease_mgr.acquire(
+    resource_type=LeaseResourceType.TASK,  # LeaseResourceType enum (TASK | RESOURCE), not a string
+    resource_id="TASK-001",
+    owner_id="worker-process-123",         # owner is required
+    ttl_seconds=300,                        # param is ttl_seconds, not expires_in
+)  # -> Lease
+lease = lease_mgr.renew(lease, ttl_seconds=300)  # takes the Lease, returns a fresh Lease
+lease_mgr.release(lease)                          # takes the Lease, returns None
+valid = lease_mgr.validate_token(
+    LeaseResourceType.TASK, "TASK-001", lease.fencing_token
+)  # -> bool
 ```
 
 ### Memory Records (Project Authority)

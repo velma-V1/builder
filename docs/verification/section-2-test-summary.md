@@ -161,7 +161,7 @@ All checks passed!
 ### Type Checking (mypy --strict)
 ```
 $ python3.12 -m mypy src/factory/orchestrator/ src/factory/memory/ --strict
-Success: no issues found in 12 source files
+Success: no issues found in 16 source files
 ```
 
 - 100% type annotations
