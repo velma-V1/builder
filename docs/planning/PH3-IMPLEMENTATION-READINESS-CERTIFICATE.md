@@ -139,6 +139,22 @@ Each task: TDD (test first), code, ruff+mypy, commit at boundary.
 
 ---
 
+## Post-Implementation Update (2026-07-25)
+
+**Status: ✓ IMPLEMENTED AND VERIFIED — PROM-PH3 EXIT GATE PASSED.**
+
+All tasks complete on `claude/ph3-worker-engine`: T3.1 `270300f`, T3.5 `9dd4ac6`,
+T3.2 `db1da21`, T3.3 `be048e1`, T3.4 `aaba6fe`, integration+verification `9814401`.
+85 PH-3 tests + 93 PH-2 regression = 178 passing; ruff + mypy --strict clean;
+`scripts/verify_section3.py` 18/18. Evidence in `docs/verification/section-3-*.md`,
+handoff in `HANDOFF-PH3.md`.
+
+**Planned test estimate was 78; delivered 85** (extra coverage in lifecycle, streaming,
+recovery edge cases). **Design correction during T3.3:** success path is RUNNING → VERIFYING,
+not RUNNING → COMPLETE (01L §3.1 — no worker self-certification); planning docs updated.
+
+---
+
 ## Next Action
 
 Begin T3.1 (WorkerPool & Process Lifecycle) with TDD:

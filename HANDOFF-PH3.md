@@ -1,0 +1,184 @@
+# HANDOFF-PH3: Worker Engine Implementation Complete
+
+**Date**: 2026-07-25
+**Phase**: 3 (Worker Engine: CMP-WORKER)
+**Status**: ✓ COMPLETE — PROM-PH3 EXIT GATE PASSED
+**Base**: PH-2 Orchestrator (`claude/ph2-orchestrator-implementation` @ 7e023a2)
+**Branch**: `claude/ph3-worker-engine`
+**Test Results**: 85 PH-3 + 93 PH-2 = 178 passing (100%)
+**Code Quality**: ruff ✓, mypy --strict ✓ (13 source files)
+
+---
+
+## Executive Summary
+
+The Worker Engine spawns and supervises worker processes, dispatches ready tasks under
+fenced leases, executes them with bounded untrusted-output capture, routes every
+authoritative state change through the PH-2 single writer (R1), and recovers from crashes
+without blind resume (R3). It builds strictly on the frozen PH-2 interfaces and adds no new
+migrations (schema freeze respected).
+
+---
+
+## What Was Built (commits)
+
+| Task | Commit | Deliverable |
+|------|--------|-------------|
+| Planning cycle | `6d5ae2d` | 6 planning docs (spec, plan, failure, security, verification, certificate) |
+| T3.1 | `270300f` | WorkerPool + process lifecycle (spawner protocols, reclaim, crash detection, shutdown) |
+| T3.5 | `9dd4ac6` | LeaseCoordinator over PH-2 fenced leases |
+| T3.2 | `db1da21` | Dispatcher + bounded streaming + TaskExecutor |
+| T3.3 | `be048e1` | StateIntegration (single-writer routing) |
+| T3.4 | `aaba6fe` | Recovery + retry + quarantine + startup reconciliation |
+| Integration | `9814401` | E2E suite + verify_section3.py (18 checks) |
+
+---
+
+## Module Map (`src/factory/workers/`)
+
+| Module | Responsibility |
+|--------|----------------|
+| `models.py` | WorkerState, WorkerStatus, ExecutionEvent/Result, event-type enum |
+| `errors.py` | `WorkerEngineError(code, message)` |
+| `process.py` | `ProcessSpawner`/`ProcessHandle` protocols; `SubprocessSpawner`; `WorkerProcess` slot |
+| `lifecycle.py` | pure worker-slot transition policy |
+| `pool.py` | `WorkerPool` — spawn/allocate/transition/reclaim/poll_health/shutdown |
+| `lease_coordinator.py` | `LeaseCoordinator` — acquire/renew/validate/release under pool epoch |
+| `dispatcher.py` | `Dispatcher` — ready→lease→assign |
+| `streaming.py` | `OutputAccumulator`, `ExecutionStream` — bounded, append-only |
+| `execution.py` | `TaskExecutor`, `RawWorkerEvent`, `CancelToken` |
+| `state_integration.py` | `StateIntegration` — **sole holder of `_OrchestratorStateWriter`** |
+| `recovery.py` | `RetryPolicy`, `WorkerRecovery`, `StartupRecovery` |
+| `quarantine.py` | append-only `QuarantineRegistry` |
+
+---
+
+## Critical Design Decisions (Binding for PH-4+)
+
+### 1. Worker Success → VERIFYING (NOT COMPLETE)
+Per the authoritative 01L §3.1 table, `RUNNING → COMPLETE` is **not legal**; COMPLETE is
+reachable only from VERIFYING. A worker therefore cannot certify its own task complete —
+`StateIntegration.finalize` on success transitions RUNNING → VERIFYING and hands off to a
+verification phase (PH-7). **PH-7 owns VERIFYING → COMPLETE.**
+
+### 2. Single-Writer Confinement (R1)
+`StateIntegration` is the only Worker-Engine type that holds `_OrchestratorStateWriter`. The
+writer is **not** exported from `factory.workers` and no worker process receives a DB handle.
+All recovery transitions (fail_crashed / block_for_review / quarantine) are methods on
+StateIntegration so the writer never escapes. **PH-4/PH-5 must route state mutations the same way.**
+
+### 3. No Blind Resume (R3)
+On restart, `StartupRecovery.recover` applies PH-2 `reconcile_startup` outcomes: in-flight
+tasks (PLANNING/RUNNING/VERIFYING/…) → BLOCKED, never silently back to RUNNING. Resuming a
+BLOCKED task is an explicit operator/approval action (PH-4). STOPPING → CANCELLED is the one
+safe auto-completion (an interrupted cancel).
+
+### 4. Process-Epoch Fencing (R4)
+Each `WorkerPool` generates one immutable `ProcessEpoch`. `LeaseCoordinator` is bound to it;
+a lease minted under a prior epoch is rejected by a later pool regardless of wall-clock TTL.
+Fencing is primary, expiry secondary.
+
+### 5. Bounded Untrusted Output
+Worker output is Zone-3 untrusted: 64 KiB/chunk + 512 MiB/task caps, sticky truncation,
+SHA-256 hashed, never executed. Overflow → `output_overflow` failure. Prevents OOM (threat T-03).
+
+---
+
+## Interfaces for PH-4 / PH-5
+
+### Dispatch a ready task
+```python
+from factory.workers import WorkerPool, LeaseCoordinator, Dispatcher
+from factory.orchestrator.models import ProcessEpoch
+
+epoch = ProcessEpoch.generate()
+pool = WorkerPool(spawner=my_spawner, size=4, process_epoch=epoch)
+coord = LeaseCoordinator.for_pool(runtime_db_path, epoch)
+dispatcher = Dispatcher(pool=pool, coordinator=coord)
+
+records = dispatcher.dispatch_ready(dependency_graph, states)  # tuple[DispatchRecord, ...]
+# each record: .task_id, .worker_id, .lease
+```
+
+### Execute + integrate state
+```python
+from factory.workers import TaskExecutor, StateIntegration
+
+integration = StateIntegration(writer=writer, reader=reader)  # only place the writer lives
+integration.start_execution(rec.task_id, actor=rec.worker_id)      # → RUNNING
+pool.mark_running(rec.worker_id)
+
+result = TaskExecutor().execute(rec.task_id, output_source)         # bounded ExecutionResult
+integration.finalize(rec.task_id, result, actor=rec.worker_id)     # → VERIFYING / FAILED / CANCELLED
+pool.mark_done(rec.worker_id)
+coord.release_task_lease(rec.lease)
+```
+
+### Recover after crash / restart
+```python
+from factory.workers import WorkerRecovery, StartupRecovery, QuarantineRegistry
+
+# crash mid-run:
+WorkerRecovery(pool=pool, integration=integration).recover_crashed()   # fail + reclaim
+
+# process restart:
+StartupRecovery(integration=integration, quarantine=QuarantineRegistry()).recover(task_ids)
+```
+
+### Provide a real worker (PH-5 sandbox seam)
+Implement `ProcessSpawner.spawn(worker_id) -> ProcessHandle` and feed the process's
+stdout/stderr into an iterable of `RawWorkerEvent` for `TaskExecutor.execute`. PH-5 substitutes
+a sandbox-backed spawner without touching pool/dispatch logic.
+
+---
+
+## Known Limitations (for PH-4+ Consideration)
+
+1. **Real process I/O is a seam, not wired.** `TaskExecutor` consumes an injected
+   `RawOutputSource`; binding it to actual subprocess pipes / a PH-5 sandbox is deferred.
+2. **VERIFYING → COMPLETE is not implemented** (PH-7 verification owns it).
+3. **Approval-gated resume of BLOCKED tasks** needs the PH-4 approval engine.
+4. **No sandbox isolation** — workers assume a valid sandbox (PH-5, Dec C).
+5. **No output redaction** — raw logs stored; credential redaction is PH-7 staging.
+6. **Resource quotas** (VRAM/RAM/timeouts) are PH-4; PH-3 respects submitted deadlines only.
+7. **Heartbeat polling cadence** is caller-driven (`pool.poll_health()`); a supervising
+   loop/thread is a PH-4 Watchdog concern.
+
+---
+
+## Schema
+
+**No new migrations.** PH-3 uses the frozen PH-2 tables (0001–0003) unchanged. The schema
+freeze holds: future structural needs require a new `0004_*.sql` with SHA pinning.
+
+---
+
+## Verification
+
+```bash
+uv run python3.12 scripts/verify_section3.py          # 18/18 PASS
+uv run python3.12 -m pytest tests/workers/ -q         # 85 passed
+uv run python3.12 -m pytest tests/orchestrator/ -q    # 93 passed (regression)
+uv run ruff check src/factory/workers/ tests/workers/
+uv run mypy src/factory/workers/ --strict
+```
+
+Evidence: `docs/verification/section-3-evidence-report.md`,
+`docs/verification/section-3-test-summary.md`.
+
+---
+
+## Next Phase
+
+Per the approved build order, PH-3 as originally rostered in `docs/plans/` is
+**Section 3 (Watchdog, Permissions, Approval, Audit, Tools)** — that plan is unchanged and
+still governs. This Worker Engine was built as a distinct capability the Orchestrator needs to
+actually run tasks; it consumes only frozen PH-2 interfaces and is orthogonal to the Watchdog.
+
+**Recommended next:** either (a) Section 3 Watchdog/Permissions per
+`docs/plans/section-3-orchestrator-watchdog-and-permissions.md`, or (b) PH-4/PH-5 model &
+worker routing / sandbox, which will wire a real `ProcessSpawner` into this engine.
+
+---
+
+**PROM-PH3 EXIT GATE: PASS — Ready for integration.**
