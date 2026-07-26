@@ -44,7 +44,7 @@ Disposition: **RPH3** (verified at PROM-RPH3) · **PH-2** (frozen, re-verified v
 | 01M-AC-16 | orphan cleanup cannot destroy evidence/checkpoint/recovery/retention holds | **PH-5/PH-7** | deferred |
 | 01M-AC-17 | startup reconciliation incl. model workers/containers/worktrees/volumes/promotions | PH-2 (tasks) + **PH-5/PH-6** (containers/worktrees/volumes) | partial; T1 tasks subset |
 | 01M-AC-18 | degraded operation capability-scoped; weakens no mandatory control | RPH3 (Safe Mode / REDUCED_MONITORING) | T1/T5 · VR-RPH3-06 |
-| 01M-AC-19 | core security/permission/authority/evidence/audit/isolation/promotion failure fails closed | RPH3 | T1/T2/T4 · VR-RPH3-03 |
+| 01M-AC-19 | core-control failure fails closed | **split by control:** permission/approval/audit/state-authority → **RPH3** (T1/T2/T4); **isolation** control → **PH-5** (EG-PH5-11); **evidence/promotion** control → **PH-7** (EG-PH7-01) | RPH3 part · VR-RPH3-03 |
 | 01M-AC-20 | Safe Mode no autonomous execution/unrestricted writes | RPH3 | T5 (CMP-DIAG) · VR-RPH3-06 |
 | 01M-AC-21 | every Watchdog intervention → traceable integrity-protected audit record | RPH3 | T1+T4 · VR-RPH3-04 |
 | 01M-AC-22 | Watchdog cannot modify its own governing rules/config | RPH3 | T1 · VR-RPH3-04 |
@@ -55,7 +55,7 @@ Disposition: **RPH3** (verified at PROM-RPH3) · **PH-2** (frozen, re-verified v
 | 01M-AC-27 | snapshot restoration cannot overwrite GitHub project repos | **PH-7** | deferred |
 | 01M-AC-28 | emergency reserve pauses new work before consumption | **PH-7/storage**; Watchdog monitors the threshold | RES-ALLOC · T1 (monitor only) |
 | 01M-AC-29 | protected records not auto-deleted for storage recovery | **PH-7 retention** | deferred |
-| 01M-AC-30 | Watchdog-loss pauses existing + blocks new high-risk work | RPH3 | T1 · VR-RPH3-07 |
+| 01M-AC-30 | Watchdog-loss pauses existing + blocks new high-risk work | **split:** **RPH3** issues the pause **transition request** for existing high-risk tasks + **blocks new admission** + fails closed (T1/WIR); **PH-5** actually suspends/terminates the already-running sandbox process (EG-PH5-12) | RPH3 part · VR-RPH3-07 |
 | 01M-AC-31 | low-risk read-only inspection continues only while controls healthy | RPH3 | T1 · VR-RPH3-07 |
 | 01M-AC-32 | Windows auto-launch disabled unless explicitly enabled | RPH3 | T1 · VR-RPH3-02 |
 
@@ -93,7 +93,7 @@ counted toward `PROM-RPH3`; the corresponding *tested* criteria are the `01M-AC`
 | 01K-AC-18 | unsafe repeated tool failures trigger tool quarantine | RPH3 | T5 (TOOLREG) · VR-RPH3-13 |
 | 01K-AC-19 | privileged actions produce append-only hash-chained tamper-evident audit | RPH3 | T4 (AUDITW) · VR-RPH3-14 |
 | 01K-AC-20 | audit truncation/rewriting/chain-break/invalid-anchor detectable | RPH3 | T4 (AUDITV) · VR-RPH3-14 |
-| 01K-AC-21 | emergency stop terminates unsafe activity without waiting | RPH3 | T1 (Watchdog CONTAIN + operator stop) · VR-RPH3-15 |
+| 01K-AC-21 | emergency stop terminates unsafe activity without waiting | **split:** **RPH3** issues containment, revokes authority, blocks admission, requests task-state transition, fails closed (T1 CONTAIN + operator stop); **PH-5** performs the actual process-tree termination + proves no surviving orphan (EG-PH5-05/06) | RPH3 part · VR-RPH3-15 |
 | 01K-AC-22 | Safe Mode cannot perform autonomous writes / bypass approvals | RPH3 | T5 (CMP-DIAG) · VR-RPH3-06 |
 | 01K-AC-23 | sandbox recordings/logs/evidence remain separate from authoritative records | **PH-5/PH-7 ENFORCEMENT** | PH-5/PH-7 gate |
 | 01K-AC-24 | sandbox expiration/disposal cannot delete promoted evidence/audit | **PH-5/PH-7 ENFORCEMENT** | PH-5/PH-7 gate |
@@ -108,15 +108,44 @@ PH-5/PH-7) enforcement gates — NOT certifiable by PROM-RPH3:** 06,07,08,13(OS-
 criteria. In particular, **tool-output validation traces to `01K-DEC-25` (decision)**, not to `01K-AC-25`
 (which is "no telemetry") — the prior corpus conflated these.
 
-## 3. PH-5 enforcement gates (moved out of PROM-RPH3)
+## 3. PH-5 / PH-7 enforcement gates (moved out of PROM-RPH3)
 
-The following are **enforcement** properties requiring a real sandbox/executor and are certified by **PH-5**
-(or PH-5/PH-7), not `PROM-RPH3`: `01K-AC-06`, `01K-AC-13`(OS enforcement), `01K-AC-14`, `01K-AC-15`,
-`01K-AC-16`, `01K-AC-17`, `01K-AC-23`, `01K-AC-24`, and the sandbox/worktree parts of `01M-AC-15`/`01M-AC-17`.
-**RPH3 obligation for each:** define the request/decision contract (limits, termination request, permission
-class) and prove **fail-closed behavior when no valid sandbox executor exists** (consistent with XIB-02).
+The following are **enforcement** properties requiring a real sandbox/executor (PH-5) or the promotion/
+evidence/snapshot machinery (PH-7), and are certified there — **never by `PROM-RPH3`**. **RPH3 obligation for
+each:** define the request/decision contract (limits, termination request, containment request, permission
+class) and prove **fail-closed behavior when the enforcing executor does not exist** (consistent with XIB-02).
 RPH3 must not claim actual proof of process-tree termination, orphan prevention, sandbox quarantine, sandbox
-recording separation, or evidence-before-disposal.
+recording separation, evidence-before-disposal, isolation-control failure, or promotion/evidence/snapshot
+enforcement.
+
+**PH-5 enforcement gates (`EG-PH5-*`):**
+
+| Gate | Acceptance / property | RPH3 interface obligation (verified here) |
+|---|---|---|
+| EG-PH5-01 | `01K-AC-06` no host shell/elevated | seam contract; fail-closed when no executor |
+| EG-PH5-02 | `01K-AC-07` credential lifecycle | credential permission class |
+| EG-PH5-03 | `01K-AC-08` network denial | network permission class |
+| EG-PH5-04 | `01K-AC-13` OS enforcement of resource limits | limit request contract + fail-closed |
+| EG-PH5-05 | `01K-AC-14` complete process-tree termination | termination **request**; RPH3 issues containment + proves no direct host execution |
+| EG-PH5-06 | `01K-AC-15` / `01K-AC-21` no surviving orphan (proof) | RPH3 issues the emergency-stop/containment request only |
+| EG-PH5-07 | `01K-AC-16` sandbox quarantine on abnormal exit | — |
+| EG-PH5-08 | `01K-AC-17` evidence before sandbox disposal | — |
+| EG-PH5-09 | `01K-AC-23,24` sandbox-record separation / disposal-safety | — |
+| EG-PH5-10 | sandbox parts of `01M-AC-15,17` | task/tool quarantine is RPH3; sandbox/worktree is PH-5/6 |
+| EG-PH5-11 | `01M-AC-19` **isolation-control** fail-closed | RPH3 fails closed on permission/approval/audit/state-authority; isolation control does not exist until PH-5 |
+| EG-PH5-12 | `01M-AC-30` suspend/terminate an **already-running** high-risk sandbox process after Watchdog loss | RPH3 issues the pause transition + blocks new admission; PH-5 suspends the live process |
+
+**PH-7 enforcement gates (`EG-PH7-*`):**
+
+| Gate | Acceptance / property | RPH3 obligation |
+|---|---|---|
+| EG-PH7-01 | `01M-AC-19` **evidence/promotion-control** fail-closed | RPH3 defines audit/permission fail-closed only |
+| EG-PH7-02 | `01M-AC-24..29` snapshot restore-test / activation / emergency-reserve / no-emergency-deletion | RPH3 defines the `ACTIVATE_VERIFIED_SNAPSHOT` request typing (INERT until PH-7) |
+| EG-PH7-03 | promotion blocking, evidence enforcement, promotion-package verification | none (PH-7 owns; RPH3 audit records feed it) |
+
+**No obligation is removed — each is split into exact phase-owned criteria with end-to-end traceability:** the
+RPH3 half (request/containment/fail-closed) is verified at `PROM-RPH3`; the enforcement half is verified at
+its `EG-PH5-*`/`EG-PH7-*` gate.
 
 ## 4. Decisions A / B (01R)
 

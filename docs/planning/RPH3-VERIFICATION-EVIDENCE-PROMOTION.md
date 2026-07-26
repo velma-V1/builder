@@ -26,11 +26,11 @@ A=adversarial, F=failure-path, R=regression.
 |---|---|---|---|---|---|
 | VR-RPH3-01 | Independent, normally read-only Watchdog; separate process; narrow interface only | `01M-AC-01,02,03,04` | T1/CMP-WATCH | U,I,S | watchdog-independence ETM |
 | VR-RPH3-02 | Monotonic timing; staged thresholds + hysteresis; REDUCED_MONITORING; Windows auto-launch off by default | `01M-AC-05,06,07,32` | T1/CMP-WATCH | U,A | timing/threshold ETM |
-| VR-RPH3-03 | Only enumerated critical triggers; bounded restart+backoff+circuit-breaker; failure normalization; fail-closed core controls | `01M-AC-08,09,10,11,19` | T1 (+T2,T4 cross) | U,F | containment/recovery ETM |
+| VR-RPH3-03 | Only enumerated critical triggers; bounded restart+backoff+circuit-breaker; failure normalization; fail-closed of **RPH3-owned** core controls (permission/approval/audit/state-authority) | `01M-AC-08,09,10,11`; `01M-AC-19`(RPH3 part; isolation→EG-PH5-11, evidence/promotion→EG-PH7-01) | T1 (+T2,T4 cross) | U,F | containment/recovery ETM |
 | VR-RPH3-04 | Narrow-interface validation; every intervention audited; Watchdog cannot modify own authority | `01M-AC-04,21,22` | T1/CMP-WATCH | S,I | watchdog-audit ETM |
 | VR-RPH3-05 | No blind resume; recovery simulations (Watchdog-loss) | `01M-AC-14,23` | T1/CMP-WATCH | F | watchdog-loss ETM (RM-1) |
 | VR-RPH3-06 | Restricted Safe Mode: no autonomous execution/writes; capability-scoped degradation | `01M-AC-18,20`; `01K-AC-22` | T5/CMP-DIAG | S,U | safe-mode ETM |
-| VR-RPH3-07 | Watchdog loss pauses/blocks high-risk work; low-risk read-only continues only while controls healthy | `01M-AC-30,31` | T1/CMP-WATCH | F | watchdog-loss ETM |
+| VR-RPH3-07 | Watchdog loss: RPH3 **issues pause transition** for existing high-risk tasks + **blocks new admission** + fails closed; low-risk read-only continues only while controls healthy | `01M-AC-30`(RPH3 part; live-process suspend→EG-PH5-12), `01M-AC-31` | T1/CMP-WATCH | F | watchdog-loss ETM |
 | VR-RPH3-08 | Default-deny tool registry + single gateway; models cannot bypass | `01K-AC-01` | T5/CMP-TOOLREG,TOOLGW | S,A | no-bypass ETM |
 | VR-RPH3-09 | Least-privilege grants ≤ task approval; TOCTOU revalidation; no permanent unrestricted authority | `01K-AC-02,04` | T2/CMP-PERM | U,S,A | permission ETM |
 | VR-RPH3-10 | Approvals bound/expiring/revocable, non-reusable; destructive/external separate confirmation | `01K-AC-03,05` | T3/CMP-APPROVAL | U,S,A | approval ETM |
@@ -38,7 +38,7 @@ A=adversarial, F=failure-path, R=regression.
 | VR-RPH3-12 | No telemetry leaves without explicit approval | `01K-AC-25` | cross (RPH3 emits none) + PH-1 config | S | no-telemetry ETM |
 | VR-RPH3-13 | Downloaded-component provenance/integrity; repeated-failure **tool** quarantine | `01K-AC-09,18` | T5/CMP-TOOLREG | U,F | provenance/quarantine ETM |
 | VR-RPH3-14 | Append-only hash-chained audit (sole writer); deletion/truncation/reorder/rewrite/anchor breaks detected; non-authoritative while broken | `01K-AC-19,20` | T4/CMP-AUDITW,AUDITV | U,S,A | audit-integrity ETM |
-| VR-RPH3-15 | Immediate operator emergency stop; containment over graceful completion | `01K-AC-21` (rationale `01M-DEC-16`) | T1/CMP-WATCH | F | emergency-stop ETM |
+| VR-RPH3-15 | Emergency stop: RPH3 **issues containment, revokes authority, blocks admission, requests task-state transition, fails closed** (actual process-tree termination + no-orphan proof → EG-PH5-05/06) | `01K-AC-21`(RPH3 part; rationale `01M-DEC-16`) | T1/CMP-WATCH | F | emergency-stop ETM |
 | VR-RPH3-16 | Repository/downloaded instructions cannot override governing policy | `01K-AC-12` | T2/CMP-PERM (cross) | S,A | instruction-distrust ETM |
 | VR-RPH3-17 | **Decision A** autonomy envelope: level gates auto vs approval-card actions | `01R` Dec A | T2 classify + T3 card | U,S,A | autonomy-envelope ETM |
 | VR-RPH3-18 | **Decision B** all file deletion approval-required; no auto-delete path | `01R` Dec B | T2 decision + T3 card + T5 delete-gate | U,S,A | deletion-gating ETM |
@@ -68,6 +68,13 @@ valid sandbox executor exists** (XIB-02). Enforcement gate IDs `EG-PH5-*`:
 | EG-PH5-08 | `01K-AC-17` evidence before sandbox disposal | (PH-5/PH-7) |
 | EG-PH5-09 | `01K-AC-23,24` sandbox-record separation / disposal-safety | (PH-5/PH-7) |
 | EG-PH5-10 | sandbox parts of `01M-AC-15,17` | task/tool quarantine is RPH3; sandbox/worktree is PH-5/6 |
+| EG-PH5-11 | `01M-AC-19` **isolation-control** fail-closed | RPH3 fails closed on permission/approval/audit/state-authority only |
+| EG-PH5-12 | `01M-AC-30` suspend/terminate an **already-running** high-risk sandbox after Watchdog loss | RPH3 issues pause + blocks admission; PH-5 suspends the live process |
+| EG-PH7-01 | `01M-AC-19` **evidence/promotion-control** fail-closed | RPH3 defines audit/permission fail-closed only |
+| EG-PH7-02 | `01M-AC-24..29` snapshot / emergency-reserve enforcement | RPH3 types `ACTIVATE_VERIFIED_SNAPSHOT` (INERT until PH-7) |
+| EG-PH7-03 | promotion blocking / evidence / promotion-package verification | none (PH-7 owns; RPH3 audit feeds it) |
+
+The authoritative full split (RPH3 half vs enforcement half, with end-to-end traceability) is TRACE-RPH3 §3.
 
 **RPH3 must not claim proof** of process-tree termination, orphan prevention, sandbox quarantine, sandbox
 recording separation, or evidence-before-disposal. `01M` snapshot/reserve criteria `01M-AC-24..29` are PH-7.
@@ -114,7 +121,7 @@ criteria only** (`-AC-`), never decision-list numbers. It is satisfied when **al
 
 1. Every **RPH3-scoped acceptance criterion** at verdict `PASS` — the `01M-AC-*` and `01K-AC-*` rows marked
    RPH3 in TRACE-RPH3 §1–§2 (the RPH3-scoped `01M-AC` set and the RPH3-verifiable `01K-AC` set). **The PH-5
-   enforcement gates `EG-PH5-01..10` (VEP §2a) are explicitly EXCLUDED** — RPH3 proves only their request
+   enforcement gates `EG-PH5-01..12` and `EG-PH7-01..03` (VEP §2a; TRACE-RPH3 §3) are explicitly EXCLUDED** — RPH3 proves only their request
    contract + fail-closed-when-no-executor, never their enforcement.
 2. VM-2 security-spine integration path PASS (§5), including the cross-store audit-before-success invariant
    (VR-RPH3-19).
@@ -135,6 +142,6 @@ prerequisites for any PR #10 *merge*, owned by a dedicated PR #10 correction / P
 ## 7. Traceability summary
 
 **20 VR rows** → 9 components → 5 tasks; every RPH3-scoped `01M-AC-*`/`01K-AC-*` acceptance criterion + Dec A/B
-covered with authoritative identifiers (TRACE-RPH3); PH-5 enforcement gates `EG-PH5-01..10` excluded from
+covered with authoritative identifiers (TRACE-RPH3); PH-5 enforcement gates `EG-PH5-01..12` + `EG-PH7-01..03` excluded from
 `PROM-RPH3`; cross-store audit-before-success is VR-RPH3-19; VM-2 path complete. Non-blocking: the ETM engine
 proper (`CTR-ETM`) is PH-7 (here the manifest is a static table).
