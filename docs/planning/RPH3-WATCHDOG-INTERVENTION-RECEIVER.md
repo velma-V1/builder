@@ -52,15 +52,21 @@ The WIR accepts **exactly** these seven commands and **nothing else** (default-d
 interface or is explicitly **INERT** until its owning phase exists — **no command is claimed to run on an
 interface that does not support it.**
 
-| Command | Executor & real interface | Authoritative write? | Status at PH-3 |
-|---|---|---|---|
-| `PAUSE_TASK` | WIR → `CMP-ORCH.apply_transition(task, →PAUSED)` | via CMP-ORCH (R1) | **ACTIVE** |
-| `CONTAIN_TASK` | WIR → `CMP-ORCH.apply_transition(task, →STOPPING/QUARANTINED)` | via CMP-ORCH | **ACTIVE** |
-| `RECONCILE_STATE` | WIR → `CMP-JOURNAL.reconcile_startup` (read) then `apply_transition` for each outcome | via CMP-ORCH | **ACTIVE** (task scope only) |
-| `QUARANTINE_RESOURCE` | **task** resource: WIR → `apply_transition(→QUARANTINED)`. **sandbox/worktree/model** resource: no PH-3 interface | task: via CMP-ORCH; resource: none | **PARTIAL** — task=ACTIVE; **non-task resource INERT until PH-5** |
-| `RESTART_SERVICE` | **PH-3 Service Supervisor** (OS process/service restart; bounded retries+backoff+circuit-breaker). **NOT a DB write** | **no** authoritative-state write | **ACTIVE** (service supervision) |
-| `RESTORE_APPROVED_STATE` | no approved interface exists at PH-3 (needs approved-state/snapshot machinery) | none | **INERT until PH-7** |
-| `ACTIVATE_VERIFIED_SNAPSHOT` | `CMP-SNAP` (snapshot manager) | none at PH-3 | **INERT until PH-7** |
+| Command | Executor & real interface | XSC class | Authoritative write? | Status at PH-3 |
+|---|---|---|---|---|
+| `PAUSE_TASK` | WIR → `CMP-ORCH.apply_transition(task, →PAUSED)` | **2** | via CMP-ORCH (R1) | **ACTIVE** |
+| `CONTAIN_TASK` | WIR → `CMP-ORCH.apply_transition(task, →STOPPING/QUARANTINED)` | **2** | via CMP-ORCH | **ACTIVE** |
+| `RECONCILE_STATE` | WIR → `CMP-JOURNAL.reconcile_startup` (read) then `apply_transition` for each outcome | **2** | via CMP-ORCH | **ACTIVE** (task scope only) |
+| `QUARANTINE_RESOURCE` | **task** resource: WIR → `apply_transition(→QUARANTINED)`. **sandbox/worktree/model** resource: no PH-3 interface | **2** (task) | task: via CMP-ORCH; resource: none | **PARTIAL** — task=ACTIVE; **non-task resource INERT until PH-5** |
+| `RESTART_SERVICE` | **PH-3 Service Supervisor** (OS process/service restart; bounded retries+backoff+circuit-breaker). **NOT a DB write, not rollback-able once the OS acts** | **3** | **no** authoritative-state write | **ACTIVE** (service supervision) |
+| `RESTORE_APPROVED_STATE` | no approved interface exists at PH-3 (needs approved-state/snapshot machinery) | — | none | **INERT until PH-7** |
+| `ACTIVATE_VERIFIED_SNAPSHOT` | `CMP-SNAP` (snapshot manager) | — | none at PH-3 | **INERT until PH-7** |
+
+**Class note:** the four task-scoped commands are **XSC Class 2** (frozen PH-2 transition — durable-then-audit
+is safe because the target states are conservative containment states). `RESTART_SERVICE` is **XSC Class 3**
+(external/irreversible — the OS action cannot be undone by an audit-store rollback), so it uses the
+audit-**intent**-before-execution ordering (XSC-RPH3 §3, Class 3) and reconciles to `QUARANTINED` on an
+unproven outcome, never a silent retry of an already-issued restart.
 
 **Explicitly rejected claim (defect D3):** `apply_transition` executes **only task-state transitions**. It
 does **not** perform service restart, non-task resource quarantine, approved-state restoration, or snapshot

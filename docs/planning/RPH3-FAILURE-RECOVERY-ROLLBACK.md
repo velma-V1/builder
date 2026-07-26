@@ -53,7 +53,9 @@ reconciliation.
 - **Idempotent recovery:** interventions and audit appends are replayable without duplication (`01M-AC-18`).
 - **Cross-store audit-before-success:** every privileged/security/approval/intervention/tool-file operation
   follows the crash-consistent protocol in `docs/planning/RPH3-CROSS-STORE-CONSISTENCY.md` (XSC-RPH3) — audit
-  is the commit point; audit-absent operations reconcile fail-closed (`authoritative ⟺ audited`).
+  classifies each operation (Class 1 reversible security-store / Class 2 frozen PH-2 transition / Class 3
+  external-irreversible) and enforces INV-1..INV-4 (no premature success; no authority from pending; reconcile
+  before serving; uncertain external outcomes → `UNCERTAIN`/`QUARANTINED`).
 
 ## 4. Rollback boundary (per task)
 

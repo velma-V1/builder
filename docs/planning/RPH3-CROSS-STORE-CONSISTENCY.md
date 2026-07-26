@@ -2,119 +2,158 @@
 
 **Document ID:** XSC-RPH3 · **Repository path:** `docs/planning/RPH3-CROSS-STORE-CONSISTENCY.md`
 **Status:** Active architecture plan (subordinate to `01M §3.6/§3.17`, `01K §3.2`, `01R` R1) · **Owner:** RPH3
-planning (repair R3) · **Established:** 2026-07-26. **Namespace:** RPH3. Fixes defect **D2** and satisfies
-correction #3. Verifies VR-RPH3-19.
+planning (repair R3 → R8) · **Established:** 2026-07-26. **Namespace:** RPH3. Fixes defect **D2** and review
+correction #1. Verifies VR-RPH3-19.
 
-## 0. Invariant (the reason this protocol exists)
+## 0. Enforceable invariants (replaces the earlier `authoritative ⟺ audited` biconditional)
 
-> **A security decision, approval, privileged action, Watchdog intervention, or tool/file operation MUST NEVER
-> report success while its required audit record is absent.** Equivalently: **authoritative ⟺ audited.**
+The earlier biconditional was wrong for operations whose effect commits before its audit (a frozen PH-2
+transition) or cannot be rolled back at all (a restart, a completed deletion, an external action). It is
+replaced by four precise, enforceable invariants:
 
-Because the three stores are independent SQLite databases with **no cross-database transaction**, this is
-enforced by a write-ahead-intent + **audit-as-commit-point** protocol with idempotent replay.
+- **INV-1 (no premature success):** no operation reports success before its **completion audit** record is
+  durable in the audit store.
+- **INV-2 (no authority from pending):** no `PENDING` security-spine record grants any authority — readers
+  honor **only** `COMMITTED` records.
+- **INV-3 (reconcile before serving):** no work affected by an incomplete operation is served (resumed,
+  authorized, or dispatched) until that operation is reconciled.
+- **INV-4 (quarantine on uncertainty):** an external/irreversible operation whose outcome cannot be proven
+  enters `UNCERTAIN` → `QUARANTINED`, never a silent success.
+
+There is **no** window in which an operation is *reported successful* without a durable completion audit
+(INV-1); and there is no window in which a `PENDING`/unproven effect *grants authority or is served* (INV-2/3).
 
 ## 1. The three stores
 
 | Store | Owner / writer | Transaction scope |
 |---|---|---|
 | Runtime-state DB (frozen PH-2) | CMP-ORCH only (R1); PH-3 read-only + `apply_transition` calls | PH-2 `BEGIN IMMEDIATE`; durable journal (`01M-AC-12`) |
-| Security-spine store (PH-3) | per-domain sole writer (CMP-PERM / CMP-APPROVAL / CMP-TOOLREG) | WAL; single-writer per table (see ownership doc) |
-| Audit store (PH-3) | CMP-AUDITW only | WAL; append-only hash chain |
+| Security-spine store (PH-3) | per-domain sole writer (CMP-PERM / CMP-APPROVAL / CMP-TOOLREG / WIR) | WAL; single-writer per table set (DEP-RPH3 §4A) |
+| Audit store (PH-3) | CMP-AUDITW only | WAL; append-only hash chain; `UNIQUE(op_key)` |
 
 ## 2. Operation identity & idempotency key
 
-Every protocol operation `OP` carries an **operation identity**:
-`op_id = (domain, verb, subject_ref, actor, causal_ref)` and a derived **idempotency key**
-`K = sha256(canonical(op_id) ‖ epoch)`. `K` is unique per logical operation and stable across retries.
-`K` is the primary key of the intent record and is embedded in the audit record — it is the join that makes
-every step idempotent and lets reconciliation correlate the three stores.
+Every operation `OP` carries `op_id = (domain, verb, subject_ref, actor, causal_ref)` and idempotency key
+`op_key = K = sha256(canonical(op_id) ‖ epoch)`. `K` is the primary key of the intent record and is unique in
+the audit store (`UNIQUE(op_key)`), making every step idempotent and correlating the three stores.
 
-## 3. Protocol states & steps
+## 3. Protocol classes
 
-A domain record has a lifecycle: `PENDING → COMMITTED` (or `PENDING → ABORTED`). **Only `COMMITTED` records are
-authoritative; readers MUST ignore `PENDING`/`ABORTED`.**
+Every PH-3 cross-store operation is classified. Its class fixes its ordering and its reconciliation direction.
 
-| Step | Store | Action |
-|---|---|---|
-| **S1 · durable intent** | security-spine | insert intent `{K, op_id, target, expected_state_hash, status=PENDING}`; durable commit |
-| **S2 · domain mutation** | security-spine (or runtime DB via `apply_transition`) | apply the change tied to `K`, still non-authoritative (`PENDING`) |
-| **S3 · audit finalization** | audit store | `CMP-AUDITW.append({K, op_id, domain_ref, outcome})`; **durable** — this is the **commit point** |
-| **S4 · domain commit** | security-spine | set `status=COMMITTED`, store `audit_seq`; durable |
-| **S5 · report success** | caller | only now may the operation report success |
+### Class 1 — Reversible security-store operation
+*(grant issue, approval record/consume, tool registration/quarantine — a `PENDING` DB row that can be undone)*
 
-**Commit/failure ordering rule:** success is reported **iff** S3 is durable. S3 (audit) precedes S4 (commit)
-and S5 (report). The audit record is the linearization point of the whole cross-store operation.
+`S1 durable intent (PENDING)` → `S2 domain mutation (still PENDING, non-authoritative)` →
+`S3 completion audit (durable — the point after which success may be reported)` → `S4 mark COMMITTED (+audit_seq)`
+→ report success. **Reconciliation:** audit **absent** ⇒ roll back the mutation, `ABORTED` (safe: it was never
+authoritative, INV-2). Audit **present** ⇒ roll forward to `COMMITTED`.
 
-### 3a. Runtime-DB variant
+### Class 2 — Frozen PH-2 task-state transition
+*(WIR `PAUSE_TASK`, `CONTAIN_TASK`, task-`RECONCILE_STATE`, task-`QUARANTINE_RESOURCE` — a durable transition
+via `apply_transition` that cannot be half-applied)*
 
-When S2 is a task-state change it goes through the frozen `CMP-ORCH.apply_transition` (its own
-`idempotency_key = K`, durable via the PH-2 journal, `01M-AC-12`). Because a committed PH-2 transition cannot
-be half-applied, its reconciliation direction is **roll-forward** (see §5, window W3′).
+`S1 durable intent (WIR journal)` → `S2 apply_transition` *(PH-2 durable via its journal, `01M-AC-12`; targets
+are **conservative containment states** — PAUSED/STOPPING/QUARANTINED — so a durable-but-not-yet-audited
+transition is **safe**)* → `S3 completion audit (durable)` → `S4 mark COMMITTED`. **The intervention is not
+reported `APPLIED` until S3 (INV-1); the affected task is not served/resumed until reconciliation completes
+(INV-3).** **Reconciliation is always roll-forward:** the PH-2 transition is legal + journaled, so the
+reconciler finalizes the completion audit (it never undoes a committed PH-2 transition). This does **not**
+violate any invariant: no success was reported (INV-1) and no affected work is served before reconcile (INV-3).
 
-## 4. Crash windows (every window enumerated)
+### Class 3 — External / irreversible effect
+*(WIR `RESTART_SERVICE`; a **termination** the executor actually performs; `CMP-FILEOP` delete/atomic-write; any
+**communication** or **external side effect**; any future external action — effects that **cannot be rolled
+back** and whose completion **cannot be un-done by writing to a store**. Note: process-tree **termination
+enforcement** itself is PH-5, not RPH3; when RPH3 *issues* a termination request that reaches an executor, the
+request is treated as Class 3.)*
 
-| Window | Crash between | State on restart | Reconciliation (fail-closed) |
+`S1 durable AUDIT INTENT (before execution)` *(CMP-AUDITW appends a `intent` audit record for `K` — so a
+record of the attempt exists even across a crash)* → `S2 execute the external/irreversible effect` →
+`S3 completion audit (durable, records proven outcome)` → `S4 mark COMMITTED`. **Reconciliation:** if an
+`intent` audit exists for `K` but no completion audit, the outcome is **unproven** → the affected
+subject/resource enters `UNCERTAIN` → `QUARANTINED` (INV-4); it is never reported successful (INV-1) and never
+silently retried against an unknown side effect. A proven-idempotent Class-3 op (e.g. delete of an
+already-absent path) may be safely re-driven; otherwise operator/approval-gated recovery.
+
+## 4. Crash windows (per class)
+
+| Class | Crash point | On restart | Action |
 |---|---|---|---|
-| W0 | before S1 durable | nothing | nothing happened; caller may retry with same `K` |
-| W1 | S1 and S2 | intent `PENDING`, no mutation, no audit | **abort**: set `ABORTED`; fail closed |
-| W2 | S2 and S3 | domain mutated but `PENDING`, **no audit for `K`** | **roll back** the mutation; set `ABORTED`; fail closed (never authoritative, never reported success) |
-| W3 | S3 and S4 | **audit present for `K`**, domain `PENDING` | **roll forward**: finalize S4 (idempotent); operation is authoritative because it is audited |
-| W3′ | apply_transition committed, before S3 | PH-2 transition durable, no audit | **roll forward**: finalize S3+S4 (the transition is legal + journaled; record the audit); success not reported until audit durable |
-| W4 | after S4 | `COMMITTED` + audit present | no-op |
-
-**Decision boundary:** audit **absent** ⇒ roll back / abort (fail closed). Audit **present** ⇒ roll forward /
-complete. This is what guarantees `authoritative ⟺ audited`.
+| 1 | before S3 (no completion audit) | mutation `PENDING`, no audit | **roll back → ABORTED** (never authoritative; INV-2) |
+| 1 | after S3, before S4 | completion audit present, `PENDING` | **roll forward → COMMITTED** |
+| 2 | after `apply_transition`, before S3 | task in a containment state, no completion audit | **roll forward**: finalize completion audit; task **stays contained**, not served until reconcile (INV-3); success not reported (INV-1) |
+| 2 | after S3, before S4 | audit present, `PENDING` marker | roll forward → COMMITTED |
+| 3 | after S1 intent, before/mid S2 | audit `intent` present, effect unproven | **UNCERTAIN → QUARANTINED** (INV-4); operator/approval recovery |
+| 3 | after S2, before S3 | effect done, no completion audit | **UNCERTAIN → QUARANTINED** unless the op is proven-idempotent (then re-drive) |
+| any | after S4 | `COMMITTED` + completion audit | no-op |
 
 ## 5. Startup reconciliation
 
-On startup, before serving any request, each PH-3 domain writer scans its `PENDING` records and, joined by `K`:
+Before serving any request: (1) `CMP-AUDITV` verifies the audit chain (invalid ⇒ audit non-authoritative ⇒
+Safe Mode / fail closed — no roll-forward against an invalid chain). (2) For each `PENDING` intent joined by
+`K`: **Class 1** → audit-present roll-forward else roll-back; **Class 2** → roll-forward (finalize audit),
+keep the task contained until done, no blind resume (`01M-AC-14`); **Class 3** → completion-audit-present
+roll-forward, else `QUARANTINED` (INV-4). (3) No affected work is served until its incomplete operation
+reconciles (INV-3). (4) Reconciliation uses the PH-2 `reconcile_startup` outcome for task-coupled operations.
 
-1. `CMP-AUDITV` verifies the audit chain (must be valid, else audit is non-authoritative and the system enters
-   Safe Mode / fails closed — no roll-forward against an invalid chain).
-2. For each `PENDING` domain record: if an audit record for `K` exists → **roll forward** (S4); else → **roll
-   back / ABORT** (fail closed).
-3. `PENDING` records older than a bounded reconciliation horizon with no audit are `ABORTED` and reported.
-4. Runtime-DB-coupled operations use the PH-2 `reconcile_startup` outcome for the task in addition to the audit
-   join (W3′ roll-forward only if the PH-2 transition is durably present).
+## 6. Duplicate replay
 
-No task or operation resumes before reconciliation completes (`01M-AC-14`, no blind resume).
-
-## 6. Duplicate replay behavior
-
-All steps are idempotent on `K`: S1 insert is unique-on-`K` (duplicate → no-op returning the existing intent);
-S3 append is unique-on-`K` (CMP-AUDITW rejects a second append for the same `K`); S4 is a monotonic status set.
-A retried `OP` with the same `K` therefore converges to a single committed effect and a single audit record —
-**exactly-once effect, at-least-once attempts.** A different logical operation gets a different `K`.
+All steps idempotent on `K`: intent insert is unique-on-`K`; audit append is `UNIQUE(op_key)` (a second append
+for `K` is rejected); status set is monotonic. Result: **exactly-once effect for Class 1/2**; Class 3 gets
+**at-most-once execution** guarded by the pre-execution audit intent (a duplicate that finds an `intent` for
+`K` without a completion audit does not re-execute — it reconciles to QUARANTINED unless proven idempotent).
 
 ## 7. Authoritative status while incomplete
 
-A `PENDING` grant/approval/registry record is **not** honored by any reader (CMP-TOOLGW, CMP-FILEOP,
-CMP-PERM): a permission grant is usable only when `COMMITTED`; an approval is consumable only when `COMMITTED`;
-a tool is callable only when its registration is `COMMITTED`. Thus a partially-applied (unaudited) operation
-can never authorize anything.
+A `PENDING` grant/approval/registration is **not** honored by any reader (CMP-TOOLGW/CMP-FILEOP/CMP-PERM) — a
+grant is usable only `COMMITTED`, an approval consumable only `COMMITTED`, a tool callable only `COMMITTED`
+(INV-2). A Class-2 contained task is not resumed until reconcile (INV-3). A Class-3 `QUARANTINED` subject is
+not used until operator/approval recovery.
 
 ## 8. Fail-closed behavior
 
-- Audit store unavailable / append fails at S3 → the operation **fails closed** (S4/S5 never run; domain stays
-  `PENDING` → reconciled to `ABORTED`).
-- Audit chain invalid (CMP-AUDITV) → audit non-authoritative → no roll-forward; system fails closed / Safe Mode.
-- Any core-store write failure → `BLOCKED`/`QUARANTINED`, never a silent success.
+- Audit store unavailable / append fails → the operation **fails closed**: Class 1 stays `PENDING`→ABORTED;
+  Class 2 does not report APPLIED (task remains contained); Class 3 does not execute (S1 intent never durable
+  ⇒ no execution) or, if it already executed, → QUARANTINED.
+- Audit chain invalid (CMP-AUDITV) → no roll-forward; Safe Mode / fail closed.
+- Any core-store write failure → `BLOCKED`/`QUARANTINED`, never silent success.
 
 ## 9. Tests & evidence (VR-RPH3-19)
 
-- *integration* — happy path S1→S5 produces exactly one committed record + one audit record joined by `K`.
-- *failure-path (fault injection at each window)* — W1/W2 → ABORTED + no authoritative effect + **no success
-  reported**; W3/W3′ → roll-forward → committed + audited; W4 → no-op.
-- *adversarial* — attempt to read/honor a `PENDING` record (must be refused); attempt to report success with
-  the audit store forced unavailable (must fail closed); duplicate `K` replay (single effect).
-- *property* — for random crash injection at any instruction, the post-reconciliation state satisfies
-  `authoritative ⟺ audited`.
-- **Evidence:** `cross-store-consistency ETM` rows → `roadmap-ph3-evidence-report.md`; the invariant is a VM-2
-  gate (VEP-RPH3 §5) and a `PROM-RPH3` requirement (VR-RPH3-19).
+- *integration* — Class 1 happy path: one COMMITTED record + one completion audit joined by `K`; Class 2:
+  transition + completion audit, task not served until reconcile; Class 3: intent-audit precedes execution.
+- *failure-path (fault injection per window, per class)* — Class 1 pre-audit → ABORTED, no authority granted,
+  **no success reported**; Class 2 post-transition/pre-audit → contained + roll-forward, not served, no
+  success reported; Class 3 post-execute/pre-audit → **QUARANTINED** (INV-4).
+- *adversarial* — honor a `PENDING` record (refused); report success with audit store forced unavailable
+  (fails closed); duplicate `K` (Class 1/2 single effect; Class 3 no re-execute).
+- *property* — for random crash injection at any instruction: **INV-1..INV-4 all hold** post-reconciliation.
+- **Evidence:** `cross-store-consistency` ETM rows; VM-2 gate (VEP §5) + `PROM-RPH3` requirement (VR-RPH3-19).
 
-## 10. Boundary notes
+## 10. Operation → class assignment (authoritative)
 
-This protocol governs **PH-3** cross-store operations only. The Worker Execution Substrate's own lease/audit
-ordering (XIB-01/XIB-04) is a separate substrate concern owned by the PR #10 correction — this protocol does
-not fix or depend on it. Frozen PH-2 is unmodified: PH-3 uses only the existing `apply_transition` idempotency
+| Operation | Class | Store(s) |
+|---|---|---|
+| permission grant issue / revoke | 1 | security-spine (`permission_grants`, `permission_intents`) + audit |
+| approval enqueue / decide / consume / revoke | 1 | security-spine (`approval_records`,`approval_queue`,`approval_intents`) + audit |
+| tool register / quarantine / release | 1 | security-spine (`tool_registry`,`tool_quarantine`,`tool_registry_intents`) + audit |
+| `PAUSE_TASK` / `CONTAIN_TASK` / task-`RECONCILE` / task-`QUARANTINE` | 2 | runtime DB (`apply_transition`) + `intervention_journal` + audit |
+| `RESTART_SERVICE` | 3 | Service Supervisor (external) + `intervention_journal` + audit |
+| `CMP-FILEOP` delete / atomic write | 3 | filesystem (irreversible) + audit |
+| `RESTORE_APPROVED_STATE` / `ACTIVATE_VERIFIED_SNAPSHOT` / non-task `QUARANTINE_RESOURCE` | — | INERT until PH-7 / PH-5 (WIR-RPH3 §3) |
+
+## 10a. No fabricated rollback
+
+Neither Class 2 nor Class 3 claims a provable rollback. A committed **Class 2** PH-2 transition is **never**
+described as rolled back — it is reconciled **roll-forward only** (finalize audit; the task stays in its
+conservative containment state until reconcile). A **Class 3** external/irreversible effect has **no rollback
+path at all** — an unproven outcome goes to `UNCERTAIN → QUARANTINED` for operator/approval-gated recovery.
+Only **Class 1** (a `PENDING` security-store row that was never authoritative) is rolled back, and that is a
+plain DB abort of a non-authoritative row, not a compensating action against a real-world effect.
+
+## 11. Boundary
+
+Governs **PH-3** cross-store operations only. The substrate's own lease/audit ordering (XIB-01/XIB-04) is a
+separate PR #10 concern. Frozen PH-2 is unmodified — PH-3 uses only the existing `apply_transition` idempotency
 + durable journal; it adds no PH-2 method.
