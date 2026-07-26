@@ -54,11 +54,11 @@ security_requirements: BASE-S; default-deny + complete declaration + provenance 
                        controls; violation fails closed.
 resource_requirements: BASE-RES; negligible; no GPU/net (registry only).
 required_tests:
-  - default-deny: an unregistered tool cannot execute (01K #1)
+  - default-deny: an unregistered tool cannot execute (01K-AC-01)
   - complete declaration required: incomplete declaration rejected
-  - provenance/integrity recorded for downloaded components (01K #9)
+  - provenance/integrity recorded for downloaded components (01K-AC-09)
   - version pinning: a tool is pinned for the duration of a task
-  - quarantine: repeated equivalent failure quarantines; no use until released (01K #18)
+  - quarantine: repeated equivalent failure quarantines; no use until released (01K-AC-18)
 ```
 
 ## Lifecycle

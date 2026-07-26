@@ -58,8 +58,9 @@ Zone-3  Models, repo content, tool OUTPUT, downloads,  UNTRUSTED: validated befo
   models cannot bypass the gateway (no-bypass invariant).
 - **Z1 internal:** the audit writer is the sole audit-chain writer; the Watchdog is read-only + narrow
   interface and cannot mutate its own authority; no PH-3 component writes the runtime-state DB (R1).
-- **Z1↔PH-5 (forward):** the credential/network/sandbox boundaries (`01E`, `01K` #7/#8/#23/#24) are enforced
-  by PH-5 brokers/sandbox; RPH3 defines the permission classes but does not enforce isolation (**not absorbed**).
+- **Z1↔PH-5 (forward):** the credential/network/sandbox boundaries (`01E`; `01K-AC-07/08/23/24` → PH-5 gates
+  EG-PH5-02/03/09) are enforced by PH-5 brokers/sandbox; RPH3 defines the permission classes but does not
+  enforce isolation (**not absorbed**).
 
 ## 5. Core-control invariants (fail closed)
 

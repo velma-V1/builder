@@ -60,7 +60,7 @@ required_tests:
   - scope binding: an approval bound to (task, action, path, scope) rejects any other action
   - expiry: write/execution approvals auto-expire and are then unusable
   - repetition: a bounded batch approval is consumed at most its repetition count, then invalid
-  - no reuse: consumed/expired/revoked record cannot be reused (01K #3)
+  - no reuse: consumed/expired/revoked record cannot be reused (01K-AC-03)
   - security violations denied + audited, never offered as approvals (01K acceptance)
   - card completeness: every card carries the full 01L §3.2 scope + autonomy level + consequences
 ```

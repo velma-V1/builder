@@ -56,10 +56,14 @@ security_requirements: BASE-S; single-path + default-deny + output validation + 
                        are core controls; no-bypass is a security invariant.
 resource_requirements: BASE-RES; enforces the per-execution resource envelope; the gateway itself is light.
 required_tests:
-  - no bypass: a model/tool cannot execute an unregistered tool or reach one except via the gateway (01K #1)
-  - output validation: malformed/oversized/out-of-scope output is rejected (01K #25)
-  - resource limits enforced: wall-clock/idle/CPU/RAM/storage/process/file/output/download caps (01K #13)
-  - termination kills the complete owned process tree; no surviving orphan (01K #14/#15)
+  - no bypass: a model/tool cannot execute an unregistered tool or reach one except via the gateway (01K-AC-01)
+  - output validation: malformed/oversized/out-of-scope output fails closed (01K-DEC-25 "untrusted output";
+    NOT 01K-AC-25 which is telemetry)
+  - resource-limit REQUEST CONTRACT defined + fail-closed when unenforceable (01K-AC-13 request part; actual
+    OS enforcement = PH-5 gate EG-PH5-04)
+  - termination REQUEST CONTRACT defined; **fail-closed when no valid sandbox executor exists**. Actual
+    complete process-tree termination + no-orphan are **PH-5 enforcement** (01K-AC-14/15 → EG-PH5-05/06);
+    RPH3 proves only that no direct host execution occurs here (see XIB-02)
   - a limit increase is treated as a permission change (routes to CMP-PERM/CMP-APPROVAL, 01K §3.1)
 ```
 

@@ -53,7 +53,7 @@ recovery_behavior:     BASE-R; supports recovery/integrity operations but never 
 security_requirements: BASE-S; "no autonomous writes / no approval bypass" is a core control verified by test.
 resource_requirements: BASE-RES; negligible; no GPU/net.
 required_tests:
-  - Safe Mode performs no autonomous writes (01K #22 / 01M #20)
+  - Safe Mode performs no autonomous writes (01K-AC-22 / 01M-AC-20)
   - a repair without a valid approval is denied
   - inspection/export are read-only and cannot mutate authoritative state
   - capability scope is declared and enforced (out-of-scope request refused)

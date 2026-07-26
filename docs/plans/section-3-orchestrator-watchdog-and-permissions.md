@@ -102,7 +102,8 @@ consumer-impact (`01D §3.2`).
   outcomes; *security* interface rejects arbitrary shell/DB/file/policy input, self-authority modification
   rejected (fail closed); *adversarial* forged heartbeat / wall-clock rollback / intervention-flood; *failure
   -path* Watchdog-loss simulation (RM-1), Orchestrator event-loop stall; *regression* none seeded (new).
-  Maps **`01M` #1-8, #21, #22, #30, #31, #32**.
+  RPH3-verified: **`01M-AC-01..11,14(read),18,19,21,22,23,30,31,32`** + **`01K-AC-21`** (emergency stop); see
+  TRACE-RPH3 §1. (`ACTIVATE_VERIFIED_SNAPSHOT` + `01M-AC-24..29` are PH-7-deferred, inert here.)
 - **Evidence:** Watchdog ETM rows (VM-2/RM-1) → `roadmap-ph3-evidence-report.md`.
 - **Rollback boundary:** Watchdog holds **no** writable state; `git revert` the task commit; no state to unwind.
 - **Stop conditions:** any arbitrary-mutation path accepted; self-authority modification possible; stall
@@ -131,13 +132,14 @@ consumer-impact (`01D §3.2`).
 - **Tests:** *unit* chain link + sequence; *integration* writer→validator round-trip + export; *security* no
   UPDATE/DELETE path exists, caller cannot forge identity fields; *adversarial* mid-chain deletion, tail
   truncation, reorder, rewrite, invalid anchor; *failure-path* mid-append rollback leaves chain unchanged,
-  audit unavailable → privileged action fails closed; *regression* none seeded. Maps **`01K` #19, #20**.
+  audit unavailable → privileged action fails closed; *regression* none seeded. Maps **`01K-AC-19,20`** +
+  cross-store `01M-AC-12` audit-before-success (VR-RPH3-19).
 - **Evidence:** audit-integrity ETM rows → evidence report.
 - **Rollback boundary:** append-only chain (rollback = "the append transaction did not commit"); `git revert`;
   the separate audit store is disposable in dev (gitignored) but authoritative in product.
 - **Stop conditions:** any update/delete path exists; a break class is undetected; a privileged action can
   proceed unaudited → **stop, fix, re-run**.
-- **Completion gate:** `01K` #19/#20 PASS; single-audit-writer invariant proven; committed.
+- **Completion gate:** `01K-AC-19`/`01K-AC-20` PASS; single-audit-writer invariant proven; committed.
 - **Prior-RPH3 dependency:** none (Lane B root). **Lane:** **B**.
 
 ## Task RPH3-T3 — Approval engine + central queue + complete cards (CMP-APPROVAL) · **Lane B**
@@ -160,7 +162,7 @@ consumer-impact (`01D §3.2`).
   frozen ORCH persistence; *security* no reusable/permanent/unbounded approval; a security violation is never
   an approvable card (`01K` acceptance); *adversarial* replay outside scope, expired reuse, repetition
   overflow, forged fingerprint; *failure-path* restart leaves pending un-granted, unexpired revalidated;
-  *regression* none. Maps **`01K` #3, #4, #5**; **Dec A** (card autonomy-level display); **Dec B** (deletion
+  *regression* none. Maps **`01K-AC-03,05`** (+ `01K-AC-04`); **Dec A** (card autonomy-level display); **Dec B** (deletion
   cards carry consequence + separate confirmation).
 - **Evidence:** approval ETM rows.
 - **Rollback boundary:** approvals reversible/expiring; `git revert`; records via single-writer discipline.
@@ -186,10 +188,10 @@ consumer-impact (`01D §3.2`).
   deletion → requires-approval (no auto-delete path) → (4) Dec A: autonomy level gates auto vs card →
   (5) TOCTOU revalidation rejects a stale grant → (6) path canonicalization → escape classes rejected.
 - **Tests:** *unit* decision + grant scope; *integration* deletion → CMP-APPROVAL card → CMP-FILEOP delete;
-  *security* grant cannot exceed task approval (`01K` #2), no permanent unrestricted (`01K` #4), instructions
-  cannot widen a grant (`01K` #12); *adversarial* TOCTOU race, autonomy-boundary bypass attempt, symlink/
-  junction/reserved/traversal/case/archive escape (`01K` #10); *failure-path* unexpired grant revalidated on
-  restart, unknown grant → deny; *regression* none. Maps **`01K` #2, #4, #10, #12**; **Dec A**; **Dec B**.
+  *security* grant cannot exceed task approval (`01K-AC-02`), no permanent unrestricted (`01K-AC-04`),
+  instructions cannot widen a grant (`01K-AC-12`); *adversarial* TOCTOU race, autonomy-boundary bypass attempt,
+  symlink/junction/reserved/traversal/case/archive escape (`01K-AC-10`); *failure-path* unexpired grant
+  revalidated on restart, unknown grant → deny; *regression* none. Maps **`01K-AC-02,04,10,12`**; **Dec A**; **Dec B**.
 - **Evidence:** permission ETM rows.
 - **Rollback boundary:** grants reversible/expiring; `git revert`.
 - **Stop conditions:** a deletion auto-allowed (Dec B breach); an out-of-envelope action auto-run (Dec A
@@ -214,16 +216,17 @@ consumer-impact (`01D §3.2`).
 - **Files:** `tools/{registry,gateway,resource_limits,models}.py`, `fileops/{service,paths}.py`, `diagnostics/safe_mode/mode.py`, `tests/{tools,fileops,diagnostics}/**`.
 - **TDD order:** (a) registry default-deny + complete-declaration + provenance + version-pin + quarantine →
   (b) file-op canonicalize/escape-block, Dec B delete-requires-approval, archive limits, atomic write →
-  (c) gateway no-bypass + output schema-validation + resource limits + complete process-tree termination +
-  limit-increase = permission change → (d) Safe Mode: inspection/export read-only, approved_repair requires a
-  valid approval, no autonomous write, capability scope enforced.
+  (c) gateway no-bypass + output schema-validation + resource-limit **request contract** + **fail-closed when
+  no valid sandbox executor exists** + limit-increase = permission change → (d) Safe Mode: inspection/export
+  read-only, approved_repair requires a valid approval, no autonomous write, capability scope enforced.
 - **Tests:** *unit* per component; *integration* register→gateway-invoke→(permission revalidate)→file-op→audit,
-  full VM-2 spine path; *security* unregistered denied + no bypass (`01K` #1), Safe Mode no autonomous write
-  (`01K` #22 / `01M` #20); *adversarial* gateway-bypass attempt, malformed/oversized/out-of-scope tool output,
-  archive bomb (`01K` #11), path escape (`01K` #10), unapproved repair; *failure-path* resource-limit/idle/
-  timeout breach → complete process-tree kill, no orphan (`01K` #14/#15), evidence preserved before disposal
-  (`01K` #17), repeated failure → quarantine (`01K` #18); *regression* none. Maps **`01K` #1, #9, #10, #11,
-  #13, #14, #15, #16, #17, #18, #22, #25**; **Dec B** (file-op delete-gating).
+  full VM-2 spine path; *security* unregistered denied + no bypass (`01K-AC-01`), Safe Mode no autonomous write
+  (`01K-AC-22` / `01M-AC-20`); *adversarial* gateway-bypass attempt, malformed/oversized output fails closed
+  (`01K-DEC-25`), archive bomb (`01K-AC-11`), path escape (`01K-AC-10`), unapproved repair; *failure-path*
+  **fail-closed when no sandbox executor exists** (no direct host execution; XIB-02), repeated failure →
+  tool quarantine (`01K-AC-18`); *regression* none. RPH3-verified: **`01K-AC-01,09,10,11,18,22,25`** +
+  `01K-DEC-25` + `01K-AC-13`(request); **Dec B** (file-op delete-gating). **PH-5 enforcement (NOT here):**
+  process-tree termination/no-orphan/evidence-before-disposal `01K-AC-14/15/17` → EG-PH5-05/06/08.
 - **Evidence:** tool/security + Safe-Mode ETM rows → evidence report.
 - **Rollback boundary:** registry/quarantine reversible; file-op atomic (no partial artifact); `git revert`.
 - **Stop conditions:** any tool executes unregistered or bypasses the gateway; oversized/invalid output passed
@@ -256,39 +259,35 @@ Lane B:  RPH3-T4 ──► RPH3-T3 ──► RPH3-T2 ──► RPH3-T5 ───
 - **Parallelism:** Lane A ∥ Lane B (max 2 workstreams, `docs/10A §3A`). Within Lane B, all tasks serialize
   (shared security-spine schema/state, `01D §3.4`).
 
-## 5. Acceptance-criteria coverage map (`01M` 32 / `01K` 25 → task)
+## 5. Acceptance-criteria coverage (authoritative in TRACE-RPH3)
 
-| Set | Task(s) | Notes |
-|---|---|---|
-| `01M` #1-8,#21,#22,#30,#31,#32 (Watchdog core) | **T1** | detection, interface, thresholds, sensors, triggers, audit, self-authority, Watchdog-loss, Windows auto-launch |
-| `01M` #9-11 (bounded restart/backoff/circuit-breaker) | **T1** | RESTART_SERVICE intervention |
-| `01M` #18,#19,#25 (idempotent recovery, fail-closed core controls) | **T1 + T2 + T4** | cross-cutting fail-closed |
-| `01M` #20,#26 (restricted Safe Mode) | **T5 (CMP-DIAG)** | no autonomous execution |
-| `01M` #13,#14,#17 (fencing, no-resume-before-reconcile, journal) | **PH-2 (satisfied)** | re-verified at VM-2 via frozen interfaces; **not** re-implemented |
-| `01M` #15,#16,#23 (quarantine-first, startup integrity) | **T1** (Watchdog) + PH-2 reconcile | |
-| `01M` #24,#27-29,#31 (snapshots, drills) | **PH-7 (deferred)** | `ACTIVATE_VERIFIED_SNAPSHOT` interface defined in T1, inert until CMP-SNAP |
-| `01K` #1,#9 (default-deny, provenance) | **T5 (CMP-TOOLREG)** | |
-| `01K` #2,#4,#10,#12 (least-priv, no-unrestricted, path, instruction-distrust) | **T2 (CMP-PERM)** | + CMP-FILEOP for path ops |
-| `01K` #3,#4,#5 (approval binding/expiry/reuse, destructive confirmation) | **T3 (CMP-APPROVAL)** | |
-| `01K` #11 (archive limits), #10 (escape) | **T5 (CMP-FILEOP)** | |
-| `01K` #13,#14,#15,#16,#17,#25 (resource limits, process-tree, output validation) | **T5 (CMP-TOOLGW)** | seam contract; real spawner PH-5 |
-| `01K` #18 (quarantine) | **T5 (CMP-TOOLREG)** | |
-| `01K` #19,#20 (privileged audit, break detection) | **T4** | |
-| `01K` #21 (emergency stop) | **T1** | |
-| `01K` #22 (Safe Mode no autonomous write) | **T5 (CMP-DIAG)** | |
-| `01K` #6 (no host shell/elevated) | **T5 seam** + **XIB-02 (external)** | RPH3 defines the seam contract; the host spawner fix is external |
-| `01K` #7,#8,#23,#24 (credentials, network, sandbox-record separation) | **PH-5 (interface-defined only)** | RPH3 defines permission classes; brokers/sandbox are PH-5 — **not absorbed** (Constraint 7) |
-| `01K` #25 (no telemetry) | **PH-1 config + cross** | governing default |
+The full, semantically-verified mapping of every `01M-AC-01…32` and `01K-AC-01…25` acceptance criterion (and
+its RPH3 / PH-2 / PH-5 / PH-7 disposition) is **owned by `docs/planning/RPH3-TRACEABILITY.md` (TRACE-RPH3)**;
+the VR register is VEP-RPH3 §2. This plan does not restate criteria and **uses no ambiguous `#NN`** references.
+Summary of task ownership (acceptance IDs per TRACE-RPH3):
 
-**Decisions:** **Dec A** (autonomy envelope) → T2 `AutonomyEnvelope.classify` + T3 card display. **Dec B** (all
-deletion approval-required) → T2 decision + T3 card + T5 `FileOpService.delete(approval_ref)`. Both are
-explicitly test-mapped in T2/T3/T5.
+| Task | RPH3-verified acceptance criteria |
+|---|---|
+| **T1** (Watchdog) | `01M-AC-01..11,14(read),18,19,21,22,23,30,31,32`; `01K-AC-21` (emergency stop) |
+| **T4** (Audit) | `01K-AC-19,20`; cross-store `01M-AC-12` (VR-RPH3-19) |
+| **T3** (Approval) | `01K-AC-03,04,05` |
+| **T2** (Permission) | `01K-AC-02,04,10,12`; Dec A/B |
+| **T5** (Tools/FileOp/Gateway/SafeMode) | `01K-AC-01,09,10,11,18,22,25`; `01K-DEC-25` (output validation); `01K-AC-13`(request) |
+
+**PH-5 enforcement gates (NOT certified by `PROM-RPH3`):** `01K-AC-06,07,08,13(OS),14,15,16,17,23,24` and the
+sandbox parts of `01M-AC-15,17` → `EG-PH5-01..10` (VEP-RPH3 §2a). RPH3 proves only their request contract +
+fail-closed-when-no-executor. **PH-7 deferred:** `01M-AC-24..29` (snapshots/reserve).
+
+**Decisions (01R):** **Dec A** (autonomy envelope) → T2 `AutonomyEnvelope.classify` + T3 card display (VR-RPH3-17).
+**Dec B** (all deletion approval-required) → T2 decision + T3 card + T5 `FileOpService.delete(approval_ref)`
+(VR-RPH3-18). Both test-mapped in T2/T3/T5.
 
 **VM-2 (security-spine) complete integration path:** register tool (TOOLREG) → gateway denies unregistered +
 no bypass (TOOLGW) → permitted action needs a scoped grant (PERM) → deletion/out-of-envelope needs a complete
 card (APPROVAL; Dec A/B) → file op canonicalized + delete-gated (FILEOP) → every privileged action appends to
-the audit chain (AUDITW) → chain validated (AUDITV) → Watchdog observes + pauses/contains on control loss
-(WATCH) → Safe Mode performs no autonomous write (DIAG). Gate = `PROM-RPH3` = `01M`(32)+`01K`(25) PASS + VM-2 +
+the audit chain **before success is reported** (AUDITW; cross-store protocol) → chain validated (AUDITV) →
+Watchdog observes + pauses/contains on control loss via its receiver (WATCH) → Safe Mode performs no
+autonomous write (DIAG). Gate = `PROM-RPH3` = RPH3-scoped `01M-AC`/`01K-AC` PASS (PH-5 gates excluded) + VM-2 +
 operator approval to begin `01B` Stage-2 cutover.
 
 ## 6. Parallel execution review
@@ -312,8 +311,8 @@ implements or owns the substrate/PH-4/PH-5 fix. RPH3 does not assume PR #10 is m
 | ID | Blocker (substrate) | Owning correction | RPH3 interface that *specifies* (does not fix) |
 |---|---|---|---|
 | **XIB-01** | Lease/fencing-token validation must be enforced **before** substrate state writes | PR #10 correction (substrate) over frozen **CMP-LEASE** (PH-2) | none — leases are PH-2/execution; RPH3 owns no lease logic. RPH3 audit (CMP-AUDITW) can *record* privileged writes but does not gate them. |
-| **XIB-02** | The publicly exported host `SubprocessSpawner` must be removed/disabled/**fail-closed** until **PH-5** provides sandbox-backed execution | **PH-5** (real spawner) + interim PR #10 correction | CMP-TOOLGW defines the no-host-shell / sandbox-only / resource + process-tree **contract** (`01K` #6/#13/#14) any spawner must satisfy — RPH3 provides **no** spawner |
-| **XIB-03** | An oversized output chunk must **fail closed**, not be silently clipped while reporting success | PR #10 correction (substrate streaming) | CMP-TOOLGW `validate_output` defines fail-closed on oversized/invalid output (`01K` #25) as the *expected* downstream behavior — the substrate must implement it |
+| **XIB-02** | The publicly exported host `SubprocessSpawner` must be removed/disabled/**fail-closed** until **PH-5** provides sandbox-backed execution | **PH-5** (real spawner) + interim PR #10 correction | CMP-TOOLGW defines the no-host-shell / sandbox-only / resource + process-tree **request contract** (`01K-AC-06/13/14` → PH-5 gates EG-PH5-01/04/05) any spawner must satisfy — RPH3 provides **no** spawner |
+| **XIB-03** | An oversized output chunk must **fail closed**, not be silently clipped while reporting success | PR #10 correction (substrate streaming) | CMP-TOOLGW `validate_output` defines fail-closed on oversized/invalid output (`01K-DEC-25` untrusted output) as the *expected* downstream behavior — the substrate must implement it |
 | **XIB-04** | Leases must be released/invalidated on dispatch rollback, worker crash, cancellation, failure, and abnormal termination | PR #10 correction (substrate) over frozen CMP-LEASE | none — lease lifecycle is PH-2/execution; RPH3 owns no dispatch/lease path |
 
 **Consequence for RPH3:** none of these gate any RPH3 task. PLAN-S3 builds only on frozen PH-2 (§1) and does
@@ -329,7 +328,7 @@ against the appropriate XIB and referred to the PR #10 correction — never sile
 - **Dec A & Dec B explicitly mapped:** §5 (T2 classify + T3 card; T2 decision + T3 card + T5 delete-gate).
 - **VM-2 complete integration path:** §5 (nine-component spine path to `PROM-RPH3`).
 - **No PH-4/PH-5 responsibility absorbed:** T5 excludes spawner/sandbox/secret/network/router (§Task RPH3-T5,
-  §5 `01K` #6/#7/#8/#23/#24); the four substrate blockers are external (§7).
+  §5 `01K-AC-06/07/08/23/24` → PH-5 gates); the four substrate blockers are external (§7).
 - **Four PR #10 blockers external-only:** §7 (XIB-01..04, owned by a dedicated PR #10 correction / PH-5).
 - **RPH3 namespace preserved:** no `T3.x`/`SEC-PH3-*`/`PROM-PH3`/`WES-*`/`PH3-*` reuse.
 

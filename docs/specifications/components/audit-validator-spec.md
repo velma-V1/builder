@@ -51,7 +51,7 @@ required_tests:
   - detects reordering (predecessor mismatch)
   - detects rewriting (record hash mismatch)
   - detects invalid anchor/signature when configured
-  - audit treated as non-authoritative while a break is unresolved (01K #20)
+  - audit treated as non-authoritative while a break is unresolved (01K-AC-20)
 ```
 
 ## Lifecycle

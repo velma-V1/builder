@@ -52,7 +52,7 @@ security_requirements: BASE-S; append-only + hash-chaining + optional signing ar
                        a protected component (governing controls not weakenable via an Improvement Packet).
 resource_requirements: BASE-RES; negligible (append-only SQLite/log store); no GPU/net.
 required_tests:
-  - append-only: no UPDATE/DELETE path exists; attempts rejected (01K #19)
+  - append-only: no UPDATE/DELETE path exists; attempts rejected (01K-AC-19)
   - hash-chain: each record links predecessor identity + monotonic sequence
   - durability: record is flushed before the audited action reports success
   - concurrency: two appends against the same head — one wins, the other retries; no gap/fork

@@ -10,9 +10,9 @@ RPH3. Builds only on frozen PH-2 (PLAN-S3 §1); consumes no substrate code.
 
 Defines the failure modes, recovery behavior, and rollback boundary for the roadmap PH-3 security spine. The
 governing posture is **fail closed**: failure of any core control (permission, approval, audit, state
-authority, Watchdog supervision) stops the affected work rather than degrading to allow/unaudited (`01M`
-#19/#25). Unknown/inconsistent/security-sensitive state → `BLOCKED`/`QUARANTINED`, never silent resume
-(`01M` #21). Recovery is bounded, journaled (via frozen CMP-JOURNAL), and conditional on deterministic
+authority, Watchdog supervision) stops the affected work rather than degrading to allow/unaudited
+(`01M-AC-19`; rationale `01M-DEC-25`). Unknown/inconsistent/security-sensitive state → `BLOCKED`/`QUARANTINED`,
+never silent resume (`01M-AC-14`; rationale `01M-DEC-21`). Recovery is bounded, journaled (via frozen CMP-JOURNAL), and conditional on deterministic
 reconciliation.
 
 ## 2. Failure-mode register (per component)
@@ -33,7 +33,7 @@ reconciliation.
 | FM-RPH3-12 | CMP-FILEOP | delete without approval (Dec B) | approval_ref check | denied (no auto-delete path exists) |
 | FM-RPH3-13 | CMP-FILEOP | archive bomb (entry/depth/size over cap) | archive limits | abort extraction |
 | FM-RPH3-14 | CMP-TOOLGW | unregistered/unpermitted tool call | registry + permission check | denied (default-deny; no bypass) |
-| FM-RPH3-15 | CMP-TOOLGW | resource/idle/timeout breach | resource monitor | terminate complete process tree; revoke creds; quarantine sandbox; no orphan |
+| FM-RPH3-15 | CMP-TOOLGW | resource/idle/timeout breach | resource monitor | RPH3: issue termination **request** + fail-closed when no executor. **Enforcement (process-tree kill, cred revoke, sandbox quarantine, no-orphan) = PH-5** (EG-PH5-05/06/07) |
 | FM-RPH3-16 | CMP-TOOLGW | oversized/invalid tool output | schema/limit validation | fail closed; output not delivered (contrast substrate XIB-03 — external) |
 | FM-RPH3-17 | CMP-TOOLREG | repeated equivalent tool failure | deterministic failure identity | quarantine tool; unusable until reviewed+released |
 | FM-RPH3-18 | CMP-DIAG | unapproved repair / out-of-scope capability in Safe Mode | permission+approval+scope | denied; no autonomous write |
@@ -45,10 +45,11 @@ reconciliation.
   COMPLETED/CANCELLED). No task resumes before reconciliation succeeds (`01M` #14, PH-2-provided).
 - **No blind resume:** in-flight security-spine operations reconcile to `BLOCKED` on restart; resuming a
   BLOCKED item is an explicit operator/approval action.
-- **Quarantine-first:** unknown tools/resources are quarantined before any cleanup decision (`01M` #15/#22;
-  `01K` #16/#18). Quarantine state is durable across restart; no auto-release.
+- **Quarantine-first:** unknown tools/resources are quarantined before any cleanup decision (`01M-AC-15`,
+  rationale `01M-DEC-22`; **tool** quarantine `01K-AC-18`; sandbox quarantine `01K-AC-16` = PH-5 EG-PH5-07).
+  Quarantine state is durable across restart; no auto-release.
 - **Bounded restart:** CMP-WATCH `RESTART_SERVICE` uses bounded retries + exponential backoff + circuit
-  breaker; exhaustion → BLOCKED/QUARANTINED (`01M` #10/#28-analogue).
+  breaker; exhaustion → BLOCKED/QUARANTINED (`01M-AC-10`; rationale `01M-DEC-10`).
 - **Idempotent recovery:** interventions and audit appends are replayable without duplication (`01M` #18).
 
 ## 4. Rollback boundary (per task)
@@ -69,7 +70,8 @@ ODI-RPH3-01) and audit is append-only. Migrations are transactional + SHA-pinned
 
 Watchdog-loss (RM-1); Orchestrator event-loop stall; audit-store-unavailable → privileged action fails
 closed; mid-append rollback leaves chain unchanged; restart with in-flight op → BLOCKED (no blind resume);
-resource-limit breach → complete process-tree kill + no orphan (`01K` #14/#15); archive bomb aborted;
+resource-limit breach → **fail-closed when no valid sandbox executor exists** (process-tree kill + no-orphan
+are PH-5 enforcement `01K-AC-14/15` → EG-PH5-05/06); archive bomb aborted (`01K-AC-11`);
 TOCTOU race → deny; forced expired-approval reuse → deny. Each maps to a VR-RPH3 (VEP-RPH3 §2) and an ETM row.
 
 ## 6. Resilience scenarios

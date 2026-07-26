@@ -61,7 +61,7 @@ security_requirements: BASE-S; least-privilege + TOCTOU revalidation + path cont
                        any violation fails closed and is audited.
 resource_requirements: BASE-RES; negligible (pure decisions + SQLite grant records); no GPU/net.
 required_tests:
-  - 01K #2 tool permissions cannot exceed current task approval; #3 approvals not reusable outside
+  - 01K-AC-02 tool permissions cannot exceed current task approval; 01K-AC-03 approvals not reusable outside
     task/action/path/scope/repetition/expiration; #4 no permanent unrestricted authority creatable
   - Dec B: every file deletion is approval-gated (no auto-deletion path exists)
   - Dec A: autonomy-boundary tests — level gates which actions auto-run vs require a card
