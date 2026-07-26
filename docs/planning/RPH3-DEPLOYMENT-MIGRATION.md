@@ -64,6 +64,47 @@ runtime `0004_*` — that runtime slot stays free unless a future PH-3 change ge
   covered by the PH-7 snapshot manager (Factory-state only; GitHub excluded).
 - **Fail-closed:** any migration integrity failure (SHA mismatch, partial apply) blocks startup.
 
+## 4A. Security-spine store ownership enforcement (technical)
+
+The security-spine store is one SQLite file shared by three domains, but write authority is **partitioned by
+table with exactly one writer per domain** and enforced structurally (correction #7). This is the R1-analogue
+for the PH-3 store.
+
+**Per-domain private writer services (no exported raw connections).** Each domain's writable SQLite connection
+is encapsulated inside a private writer/repository module and is **never returned or exported** (mirrors PH-2's
+un-exported `_OrchestratorStateWriter`). Consumers receive typed **read-only** query methods only.
+
+| Domain writer | Permitted write tables | Exposed to consumers |
+|---|---|---|
+| CMP-PERM (`permission._grant_writer`) | `permission_grants` (+ its `_pending` intents) | read-only `get_grant`, `is_valid` |
+| CMP-APPROVAL (`approval._record_writer`) | `approval_records`, `approval_queue` (+ `_pending`) | read-only `get_record`, `is_valid` |
+| CMP-TOOLREG (`tools._registry_writer`) | `tool_registry`, `tool_declarations`, `tool_quarantine` (+ `_pending`) | read-only `lookup` |
+| WIR (`watchdog._receiver_journal`) | `intervention_journal` | read-only reconciliation reads |
+
+**SQLite authorizer enforcement (where practical).** Every connection installs `sqlite3` `set_authorizer`:
+- a domain **writer** connection **denies** `INSERT/UPDATE/DELETE` on any table outside its permitted set
+  (e.g. CMP-PERM's writer cannot mutate `approval_*` or `tool_*`);
+- a **consumer/read** connection is opened `mode=ro` and additionally denies all write ops
+  (reuses the PH-1/PH-2 `_reader_authorizer` pattern proven in `tests/orchestrator/security/`);
+- `append-only` audit tables carry `BEFORE UPDATE/DELETE` triggers `RAISE(ABORT)` (audit store).
+
+**Transaction & lock ordering.** One operation writes **exactly one domain's tables in one short
+`BEGIN IMMEDIATE` transaction**; a flow needing two domains is decomposed into per-domain committed steps
+coordinated by XSC-RPH3 idempotency (never a single cross-domain write transaction), so no component ever
+holds two domain write locks at once. When ordering across stores is required, the fixed order is
+**security-spine domain write → audit append (commit point) → domain commit** (XSC-RPH3 §3); this global order
+prevents deadlock and satisfies audit-before-success.
+
+**Cross-domain read rules.** A component MAY read another domain's tables through that domain's read-only
+query API or a `mode=ro` connection (e.g. CMP-TOOLGW reads grants + approvals + registry to authorize a call);
+it MUST NOT obtain a writable handle to another domain. Reads never bypass the authorizer.
+
+**Structural tests (prove isolation).** (a) each domain writer connection is denied writes to every other
+domain's tables (authorizer); (b) a consumer connection cannot write any table; (c) no domain module exports a
+writable connection object (introspection/structural test); (d) audit tables reject `UPDATE`/`DELETE`;
+(e) a cross-domain write attempted through a read API raises. These are `security` category tests feeding
+`SEC-RPH3-*` and VR-RPH3-08/09/14.
+
 ## 5. Deployment / runtime notes
 
 - **Watchdog** deploys as a separately supervised OS process/service (`01M §3.1`); optional Windows

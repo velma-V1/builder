@@ -79,8 +79,10 @@ neither writes runtime state (that stays CMP-ORCH, R1). CMP-DIAG here is the PH-
 
 ## 5. State / store-ownership matrix
 
-Per ODI-RPH3-01 (resolved DEP-RPH3 §): PH-3 records live in **PH-3-owned stores separate from the
-runtime-state DB** (which stays Orchestrator-only, R1). Each store has a single writer per domain.
+Per ODI-RPH3-01 (resolved DEP-RPH3 §2): PH-3 records live in **PH-3-owned stores separate from the
+runtime-state DB** (which stays Orchestrator-only, R1). Each store has a single writer per domain, **enforced
+structurally** — private per-domain writer services, no exported writable connections, SQLite authorizer per
+table set, and isolation tests (DEP-RPH3 §4A).
 
 | Store | Written by (sole) | Read by |
 |---|---|---|
