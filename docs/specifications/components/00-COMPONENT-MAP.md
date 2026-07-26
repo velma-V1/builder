@@ -61,6 +61,6 @@ Fields: responsibility · authoritative state · inputs/outputs · interfaces ·
 38. **CMP-PKG — Packaging** [PH-8]: build from clean commit; immutable identities, SBOM, hashes; co-owns CTR-RELEASE-MANIFEST.
 39. **CMP-RELVER — Release verification** [PH-8]: lifecycle/failure-path release verification on Windows 11 Home ±activation; co-owns CTR-RELEASE-MANIFEST; stable requires zero critical/high; verdict `PASS/FAIL/BLOCKED/INCONCLUSIVE`.
 
-40. **CMP-FILEOP — Safe file-op service** [PH-3]: single safe file-operation path; canonicalizes+validates every path and blocks symlink/junction/reserved-name/traversal/case/archive escapes; **all deletion approval-gated (Dec B)**; archive entry/depth/decompression limits; atomic in-scope writes; owns no contract (consumes CTR-PERMISSION-GRANT/CTR-APPROVAL-RECORD); tests `01K` #10/#11.
+40. **CMP-FILEOP — Safe file-op service** [PH-3]: single safe file-operation path; canonicalizes+validates every path and blocks symlink/junction/reserved-name/traversal/case/archive escapes; **all deletion approval-gated (Dec B)**; archive entry/depth/decompression limits; atomic in-scope writes; owns no contract (consumes CTR-PERMISSION-GRANT/CTR-APPROVAL-RECORD); tests `01K-AC-10/11`.
 
 Full 18-field specifications per component are in `docs/specifications/components/<component>-spec.md` (authored per phase); this map is the authoritative index and cross-reference.

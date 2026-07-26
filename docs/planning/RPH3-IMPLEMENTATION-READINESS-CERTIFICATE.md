@@ -90,7 +90,7 @@ exit approval + authorization to begin `01B` Stage-2 cutover**. (VEP-RPH3 §6.)
 - **External (not RPH3):** PR #10 substrate blockers XIB-01..04 (owned by a dedicated PR #10 correction /
   PH-5) — prerequisites for any PR #10 *merge*, independent of `PROM-RPH3`.
 - **Forward-bound:** CMP-WATCH `ACTIVATE_VERIFIED_SNAPSHOT` inert until CMP-SNAP (PH-7); `01K`
-  #7/#8/#23/#24 credential/network/sandbox enforcement is PH-5 (RPH3 defines the interfaces only).
+  `01K-AC-07/08/23/24` credential/network/sandbox enforcement is PH-5 (RPH3 defines the interfaces only).
 - **Regression register:** none seeded at plan time; implementation seeds REGR-* per repair.
 
 ## 7. Certificate

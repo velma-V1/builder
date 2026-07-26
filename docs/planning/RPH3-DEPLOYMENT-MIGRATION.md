@@ -67,7 +67,7 @@ runtime `0004_*` — that runtime slot stays free unless a future PH-3 change ge
 ## 5. Deployment / runtime notes
 
 - **Watchdog** deploys as a separately supervised OS process/service (`01M §3.1`); optional Windows
-  auto-launch is disabled by default (`01M` #36).
+  auto-launch is disabled by default (`01M-AC-32`; rationale `01M-DEC-36`).
 - **No secrets/network/telemetry** at PH-3 (offline). The secret/network brokers are PH-5.
 - **Installer/updater** (PH-8) package the PH-3 modules + the two new stores' migrations; signed/staged/
   snapshot-protected update applies them transactionally.

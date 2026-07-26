@@ -21,7 +21,7 @@ reconciliation.
 |---|---|---|---|---|
 | FM-RPH3-01 | CMP-WATCH | Orchestrator stall/deadlock | separate-process heartbeat (monotonic) | staged threshold → PAUSE/CONTAIN via narrow interface; audited |
 | FM-RPH3-02 | CMP-WATCH | missing/unreliable sensor | sensor read returns absent | REDUCED_MONITORING (declared); never fabricates a reading |
-| FM-RPH3-03 | CMP-WATCH | Watchdog process loss | supervisor / absent heartbeat | existing high-risk work pauses, new high-risk work blocked (`01M` #35) |
+| FM-RPH3-03 | CMP-WATCH | Watchdog process loss | supervisor / absent heartbeat | existing high-risk work pauses, new high-risk work blocked (`01M-AC-30`/`01M-AC-31`; rationale `01M-DEC-35`) |
 | FM-RPH3-04 | CMP-WATCH | attempted self-authority modification | interface validation | rejected, fail closed, audited |
 | FM-RPH3-05 | CMP-AUDITW | audit store unavailable / append fails | append transaction error | privileged action fails closed (not performed unaudited) |
 | FM-RPH3-06 | CMP-AUDITW | concurrent append on one head | sequence/predecessor check | one wins; loser retries against head; no fork/gap |
@@ -42,7 +42,7 @@ reconciliation.
 
 - **Startup:** integrity checks first — CMP-AUDITV verifies the audit chain before audit is trusted; CMP-WATCH
   and CMP-DIAG consume frozen CMP-JOURNAL `reconcile_startup` outcomes (RESUMABLE/BLOCKED/FAILED/QUARANTINED/
-  COMPLETED/CANCELLED). No task resumes before reconciliation succeeds (`01M` #14, PH-2-provided).
+  COMPLETED/CANCELLED). No task resumes before reconciliation succeeds (`01M-AC-14`, PH-2-provided).
 - **No blind resume:** in-flight security-spine operations reconcile to `BLOCKED` on restart; resuming a
   BLOCKED item is an explicit operator/approval action.
 - **Quarantine-first:** unknown tools/resources are quarantined before any cleanup decision (`01M-AC-15`,
