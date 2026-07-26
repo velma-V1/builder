@@ -50,7 +50,10 @@ reconciliation.
   Quarantine state is durable across restart; no auto-release.
 - **Bounded restart:** CMP-WATCH `RESTART_SERVICE` uses bounded retries + exponential backoff + circuit
   breaker; exhaustion → BLOCKED/QUARANTINED (`01M-AC-10`; rationale `01M-DEC-10`).
-- **Idempotent recovery:** interventions and audit appends are replayable without duplication (`01M` #18).
+- **Idempotent recovery:** interventions and audit appends are replayable without duplication (`01M-AC-18`).
+- **Cross-store audit-before-success:** every privileged/security/approval/intervention/tool-file operation
+  follows the crash-consistent protocol in `docs/planning/RPH3-CROSS-STORE-CONSISTENCY.md` (XSC-RPH3) — audit
+  is the commit point; audit-absent operations reconcile fail-closed (`authoritative ⟺ audited`).
 
 ## 4. Rollback boundary (per task)
 
