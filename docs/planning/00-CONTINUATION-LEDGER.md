@@ -183,10 +183,15 @@ distinct from the Worker Execution Substrate (out-of-roadmap; `docs/WORKER-EXECU
 | RPH3 Pass 2 | Planning-hierarchy realignment: `RPH3` identifier namespace + planning-document registry | `PASS_WITH_NONBLOCKING_GAPS` | `docs/planning/00-PLANNING-AUTHORITY-LEDGER.md §9`; `docs/planning/00-CONTINUATION-LEDGER.md §10` (this) |
 | RPH3 Pass 3 | Roadmap-execution environment alignment: PH-3 row disambiguated to `RPH3`; §3A per-task execution detail; §4 PH-2→RPH3→{PH-4,PH-5} order validation | `PASS_WITH_NONBLOCKING_GAPS` | `docs/10A-ROADMAP-EXECUTION-MAP.md` (header, §2, §3 row, §3A, §4, §5) |
 | RPH3 Pass 4 | Component implementation specifications (9 RPH3 component specs + integration review); resolved file-op gap by adding CMP-FILEOP (#40) | `PASS_WITH_NONBLOCKING_GAPS` | `docs/specifications/components/{watchdog,permission,approval,audit-writer,audit-validator,tool-registry,tool-gateway,safe-mode,file-op-service}-spec.md`, `RPH3-INTEGRATION.md`; edits to `00-COMPONENT-MAP.md`, PAL §9 |
+| RPH3 Pass 5 | Task-by-task executable plan: expanded PLAN-S3 (RPH3-T1…T5, frozen-input decl, exec graph, VM-2 path, `01M`/`01K`/Dec A-B coverage map, 4 external PR#10 blockers XIB-01..04, self-verification) | `PASS_WITH_NONBLOCKING_GAPS` | `docs/plans/section-3-orchestrator-watchdog-and-permissions.md` (full expansion); PAL §9.2 |
 
 **Next allowed action**
 
-Await explicit `CONTINUE` to begin **RPH3 Pass 5** (task-by-task expansion of PLAN-S3: expand the section-3
-stub into the executable RPH3-T1…T5 plan with the task-execution/dependency graph and per-task interfaces,
-per the CMP specs authored in Pass 4). Until then: no implementation, no merge, `main` and PR #10 untouched,
-roadmap not amended.
+**Autonomous-run authorization (2026-07-26):** operator authorized continuing through all remaining RPH3
+planning passes (6–10) without stopping between passes; pause only for a genuine operator decision, an
+unresolved contradiction, an unrepairable verification failure, implementation authorization, PR-merge
+authorization, or a change to approved architecture. Standing constraints unchanged (no implementation, no
+merge, `main`/PR #10 untouched, roadmap not amended).
+
+Proceeding to **RPH3 Pass 6** (verification/evidence/promotion architecture — VEP-RPH3) and onward through
+Pass 10 (readiness certificate).

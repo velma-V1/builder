@@ -253,7 +253,7 @@ Status legend: `PLANNED` (registered here; authored by the named pass). Each inh
 
 | Document ID | Path | Purpose (single) | Authority | Owning pass | Status |
 |---|---|---|---|---|---|
-| PLAN-S3 | `docs/plans/section-3-orchestrator-watchdog-and-permissions.md` | Roadmap PH-3 executable task plan (RPH3-T1…T5 + execution/dependency graph) | Plan | RPH3 Pass 5 | PARTIAL (stub) |
+| PLAN-S3 | `docs/plans/section-3-orchestrator-watchdog-and-permissions.md` | Roadmap PH-3 executable task plan (RPH3-T1…T5 + execution/dependency graph + external-blocker register §7) | Plan | RPH3 Pass 5 | **EXISTS** (expanded Pass 5) |
 | SPEC-RPH3-set | `docs/specifications/components/{watchdog,permission,approval,audit-writer,audit-validator,tool-registry,tool-gateway,safe-mode,file-op-service}-spec.md` + `RPH3-INTEGRATION.md` | Per-component 18-field specs for CMP-WATCH/PERM/APPROVAL/AUDITW/AUDITV/TOOLREG/TOOLGW/DIAG + CMP-FILEOP | Component spec | RPH3 Pass 4 | **EXISTS** (authored Pass 4; 9 specs + integration) |
 | VEP-RPH3 | `docs/planning/RPH3-VERIFICATION-EVIDENCE-PROMOTION.md` | Verification/evidence/promotion architecture; `01M`(32)+`01K`(25) traceability; VM-2; `PROM-RPH3` | Plan (subordinate to `01G`/MATRIX-VERIF) | RPH3 Pass 6 | PLANNED |
 | FRR-RPH3 | `docs/planning/RPH3-FAILURE-RECOVERY-ROLLBACK.md` | Failure/recovery/rollback (Watchdog-loss, fail-closed, quarantine) | Plan (subordinate to `01M`/`04`) | RPH3 Pass 7 | PLANNED |
