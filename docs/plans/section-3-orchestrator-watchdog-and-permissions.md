@@ -34,13 +34,13 @@ extends, or depends on the substrate. **CMP-LEASE** (PH-2 fenced leases) is an e
 (PH-4/5/6), not an RPH3 dependency. RPH3 does not assume PR #10 is merged, merge-ready, or production-ready
 (Constraint 3), and does not repair substrate defects (Constraint 4; see §7).
 
-**Open design item ODI-RPH3-01 (persistence boundary):** PH-3 authoritative records (permission grants,
-approval records, tool registry) are persisted under the **single-writer discipline** R1 embodies. Whether
-that is (a) an *additive* extension of the Orchestrator writer via a Change Contract (`01D §3.2`; no existing
-PH-2 method modified) or (b) a PH-3-owned security-spine store with a dedicated single writer — is resolved in
-RPH3 Pass 6/9. **Both preserve R1 and neither modifies frozen PH-2 code.** The **audit chain** is
-unambiguously a *separate* append-only store with CMP-AUDITW as sole writer (tamper-evidence requires
-independence). No RPH3 component writes the runtime-state DB directly (BASE-X).
+**Design item ODI-RPH3-01 (persistence boundary) — RESOLVED (DEP-RPH3, Pass 9):** PH-3 authoritative records
+(permission grants, approval records, tool registry) are persisted under the **single-writer discipline** R1
+embodies, in a **PH-3-owned security-spine store separate from the runtime-state DB** (option b). The rejected
+alternative (option a — additively extending the Orchestrator writer via a Change Contract) was viable but
+touches a frozen PH-2 module. Chosen resolution: **frozen PH-2 untouched, R1 preserved, and no RPH3 component
+writes the runtime-state DB** (BASE-X). The **audit chain** is a further *separate* append-only store with
+CMP-AUDITW as sole writer (tamper-evidence requires independence). See DEP-RPH3 §2–3.
 
 ## 2. Uniform execution context (applies to every RPH3 task; deltas per task)
 
@@ -59,7 +59,7 @@ recorded known limitation, re-verified at release (PH-8), as in PH-1/PH-2.
 ## 3. Locked file map (expected create/modify)
 
 ```text
-migrations/runtime/0004_security_spine.sql        # permission_grants, approval_records, tool_registry, tool_quarantine (layout finalized Pass 9)
+migrations/security/0001_security_spine.sql       # permission_grants, approval_records, approval_queue, tool_registry, tool_declarations, tool_quarantine (PH-3-owned store; DEP-RPH3 §3)
 migrations/audit/0001_audit_chain.sql             # separate append-only audit store (CMP-AUDITW sole writer)
 src/factory/audit/{__init__,models,errors,writer,validator}.py
 src/factory/approval/{__init__,models,engine,cards}.py

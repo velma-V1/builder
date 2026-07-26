@@ -18,8 +18,9 @@ non_responsibilities:
   - Does not compute permission decisions (CMP-PERM) or execute the approved action (CMP-TOOLGW/CMP-FILEOP).
   - Never offers a security violation as an approvable action — such requests are denied + audited (not queued).
   - Creates no permanent/unrestricted or non-expiring authority (01K §2.9).
-authoritative_state:   OWNS the approval queue + CTR-APPROVAL-RECORD instances (persisted via CMP-ORCH
-                       transaction, R1); every issue/consume/expire/revoke is audited via CMP-AUDITW.
+authoritative_state:   OWNS the approval queue + CTR-APPROVAL-RECORD instances (sole writer of its tables in
+                       the PH-3 security-spine store, ODI-RPH3-01; not the runtime-state DB — R1 preserved);
+                       every issue/consume/expire/revoke is audited via CMP-AUDITW.
 inputs:
   - approval requests from CMP-PERM (destructive/deletion/external/limit-increase/out-of-envelope)
   - operator decisions (grant / deny / revoke)
@@ -36,7 +37,8 @@ interfaces:
   - "ApprovalEngine.is_valid(record, at) -> bool                  # scope + expiry + repetition check"
 dependencies:
   - CMP-PERM (source of approval requests; consumer of granted approvals)
-  - CMP-ORCH (queue + records persisted inside the single write transaction, R1)
+  - CMP-ORCH (read-only reader for task context; records persisted in the PH-3 security-spine store,
+    ODI-RPH3-01 — not the runtime-state DB, R1 preserved)
   - CMP-AUDITW (every card/decision/consume/expire/revoke audited)
 owned_contracts:       [ CTR-APPROVAL-RECORD ]
 permitted_authority:   BASE-P; issues only bound/expiring/revocable approvals; bounded batch approval stays

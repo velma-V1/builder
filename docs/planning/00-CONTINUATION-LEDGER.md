@@ -187,6 +187,7 @@ distinct from the Worker Execution Substrate (out-of-roadmap; `docs/WORKER-EXECU
 | RPH3 Pass 6 | Verification/evidence/promotion architecture: VEP-RPH3 (18 VR rows, test categories, ETM, VM-2 gate, `PROM-RPH3`); resolved gap G-06 (VERIFICATION-REPORT template) | `PASS_WITH_NONBLOCKING_GAPS` | `docs/planning/RPH3-VERIFICATION-EVIDENCE-PROMOTION.md`, `docs/templates/VERIFICATION-REPORT.template.md`; PAL §9.2/§9.4 |
 | RPH3 Pass 7 | Failure/recovery/rollback: FRR-RPH3 (18 FM rows, recovery, per-task rollback, injections, resilience); resolved gap G-02 (RESOURCE-ALLOCATION-PLAN) | `PASS_WITH_NONBLOCKING_GAPS` | `docs/planning/RPH3-FAILURE-RECOVERY-ROLLBACK.md`, `docs/planning/RESOURCE-ALLOCATION-PLAN.md`; PAL §3/§9.2/§9.4 |
 | RPH3 Pass 8 | Security/trust-boundaries: SEC-RPH3 (8 assets, 13 threats→controls, 4 trust zones, 7 core-control invariants, SEC-RPH3-01..12); PH-5 isolation + substrate blockers kept out of scope | `PASS_WITH_NONBLOCKING_GAPS` | `docs/planning/RPH3-SECURITY-TRUST-BOUNDARIES.md`; PAL §9.2 |
+| RPH3 Pass 9 | Deployment/migration: DEP-RPH3 (platform footprint, PH-3 schemas/migrations, migration ordering/rollback); **resolved ODI-RPH3-01** to a separate PH-3-owned store (frozen PH-2 untouched); reconciled Pass-4 spec phrasing + SCHEMA-REGISTRY + PLAN-S3 file map | `PASS_WITH_NONBLOCKING_GAPS` | `docs/planning/RPH3-DEPLOYMENT-MIGRATION.md`; edits to SCHEMA-REGISTRY, PLAN-S3, permission/approval/tool-registry specs, RPH3-INTEGRATION; PAL §9.2 |
 
 **Next allowed action**
 

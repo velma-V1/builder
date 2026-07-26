@@ -17,8 +17,9 @@ responsibility: >
 non_responsibilities:
   - Does not execute tools or validate their output (CMP-TOOLGW does); does not grant permissions (CMP-PERM).
   - Supports no permanent unrestricted trusted-tool rule (01K §2.9) and no launch plugin ecosystem (01K §2.23).
-authoritative_state:   OWNS the tool registry + declarations + quarantine state (persisted via CMP-ORCH tx);
-                       registry changes are audited (privileged) via CMP-AUDITW.
+authoritative_state:   OWNS the tool registry + declarations + quarantine state (sole writer of its tables in
+                       the PH-3 security-spine store, ODI-RPH3-01; not the runtime-state DB); registry
+                       changes are audited (privileged) via CMP-AUDITW.
 inputs:
   - tool declarations (CTR-TOOL-DECLARATION) + provenance records
   - failure/quarantine signals from CMP-TOOLGW

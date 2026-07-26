@@ -26,9 +26,18 @@ Regenerated when a schema is added or versioned. All contract schemas use JSON S
 |---|---|---|---|
 | activation store | `migrations/contracts/0001_activation_store.sql` | PH-1 | WAL, FK, append-only events (Section 1 plan T4) |
 | runtime-state DB | `migrations/runtime/*.sql` | PH-2 | tasks/lanes/queues/leases/journal/counters |
-| autonomy/permission-grant | `migrations/runtime/*` | PH-3 | grant + envelope tables |
+| security-spine (permission/approval/tool) | `migrations/security/0001_security_spine.sql` | PH-3 | PH-3-owned store, separate from runtime DB (DEP-RPH3 §2/§3, ODI-RPH3-01); per-domain sole writer; R1 preserved |
 | model fingerprint/exec/quota | `migrations/runtime/*` | PH-4 | |
-| audit chain | `migrations/runtime/*` | PH-3 | hash-chained append-only |
+| audit chain | `migrations/audit/0001_audit_chain.sql` | PH-3 | separate append-only hash-chained store; CMP-AUDITW sole writer; `RAISE(ABORT)` on UPDATE/DELETE |
+
+## Roadmap PH-3 (RPH3) contract schemas (Draft 2020-12; authored RPH3 implementation, arch DEP-RPH3)
+
+| Schema | `$id` | schema_version | Owner | Contract |
+|---|---|---|---|---|
+| permission-grant | `…/contracts/permission-grant/v1.schema.json` | 1.0 | CMP-PERM (PH-3) | CTR-PERMISSION-GRANT |
+| approval-record | `…/contracts/approval-record/v1.schema.json` | 1.0 | CMP-APPROVAL (PH-3) | CTR-APPROVAL-RECORD |
+| tool-declaration | `…/contracts/tool-declaration/v1.schema.json` | 1.0 | CMP-TOOLREG (PH-3) | CTR-TOOL-DECLARATION |
+| audit-record | `…/contracts/audit-record/v1.schema.json` | 1.0 | CMP-AUDITW (PH-3) | CTR-AUDIT-RECORD |
 
 ## Manifest schemas (`schemas/manifests/`)
 

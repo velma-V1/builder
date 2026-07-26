@@ -19,8 +19,9 @@ non_responsibilities:
   - Does not decide approvals (routes destructive/deletion/external/limit-increase to CMP-APPROVAL).
   - Does not write audit records (calls CMP-AUDITW); does not execute tools (that is CMP-TOOLGW).
   - Grants no permanent/unrestricted authority (01K §2.9/#4) and cannot widen a task's granted scope.
-authoritative_state:   none for runtime state (R1); issues CTR-PERMISSION-GRANT records (scoped/expiring),
-                       written via CMP-ORCH transaction; every grant/denial audited via CMP-AUDITW.
+authoritative_state:   none in the runtime-state DB (R1); sole writer of its grant tables in the PH-3
+                       security-spine store (ODI-RPH3-01, separate from the runtime-state DB); every
+                       grant/denial audited via CMP-AUDITW.
 inputs:
   - active CTR-TASK (risk_class + autonomy level) + CTR-PERMISSION + CTR-OWNERSHIP contracts (read-only)
   - action request (operation, permission class, target path/resource, purpose)
@@ -36,7 +37,8 @@ interfaces:
   - "PathAuthority.canonicalize(raw_path, ownership) -> CanonicalPath  # raises on escape"
   - "AutonomyEnvelope.classify(action, level) -> {auto | requires_card}"
 dependencies:
-  - CMP-ORCH (reads validated contracts; grants persisted inside the single write transaction, R1)
+  - CMP-ORCH (read-only reader for validated task/permission/ownership contracts; grants persisted in the
+    PH-3 security-spine store, ODI-RPH3-01 — not the runtime-state DB, R1 preserved)
   - CMP-APPROVAL (deletion/destructive/external/limit-increase decisions route here for a card)
   - CMP-AUDITW (every decision + grant + denial is audited)
 owned_contracts:       [ CTR-PERMISSION-GRANT ]

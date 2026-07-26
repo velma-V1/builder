@@ -33,7 +33,7 @@ owned by `docs/planning/DEPENDENCY-MAP.md` / `WORKSTREAM-MAP.md`; this holds onl
 | CMP-WATCH → CMP-AUDITW | `AuditWriter.append` (every intervention) |
 | CMP-PERM → CMP-APPROVAL | `ApprovalEngine.enqueue` (deletion/destructive/external/out-of-envelope) |
 | CMP-PERM → CMP-AUDITW | `AuditWriter.append` (decisions/grants/denials) |
-| CMP-APPROVAL → CMP-ORCH | queue + records persisted in the single write tx |
+| CMP-APPROVAL → CMP-ORCH | read-only reader for task context (records persist in the PH-3 security-spine store, ODI-RPH3-01) |
 | CMP-TOOLGW → CMP-TOOLREG | `ToolRegistry.lookup` (default-deny on miss) |
 | CMP-TOOLGW → CMP-PERM | `PermissionEngine.revalidate` (TOCTOU at call time) |
 | CMP-TOOLGW → CMP-FILEOP | file-touching actions routed to the safe file-op service |
@@ -79,12 +79,16 @@ neither writes runtime state (that stays CMP-ORCH, R1). CMP-DIAG here is the PH-
 
 ## 5. State / store-ownership matrix
 
-| Store | Written by | Read by |
+Per ODI-RPH3-01 (resolved DEP-RPH3 §): PH-3 records live in **PH-3-owned stores separate from the
+runtime-state DB** (which stays Orchestrator-only, R1). Each store has a single writer per domain.
+
+| Store | Written by (sole) | Read by |
 |---|---|---|
-| audit chain (0004_*) | CMP-AUDITW (sole) | CMP-AUDITV, exporters, operator |
-| permission grants | CMP-ORCH tx on behalf of CMP-PERM | CMP-TOOLGW, CMP-FILEOP |
-| approval queue + records | CMP-ORCH tx on behalf of CMP-APPROVAL | CMP-PERM, CMP-TOOLGW, CMP-DIAG |
-| tool registry + quarantine | CMP-ORCH tx on behalf of CMP-TOOLREG | CMP-TOOLGW |
+| audit store (`migrations/audit/0001_audit_chain.sql`) | CMP-AUDITW | CMP-AUDITV, exporters, operator |
+| security-spine store: permission grants (`migrations/security/0001_*`) | CMP-PERM | CMP-TOOLGW, CMP-FILEOP |
+| security-spine store: approval queue + records | CMP-APPROVAL | CMP-PERM, CMP-TOOLGW, CMP-DIAG |
+| security-spine store: tool registry + quarantine | CMP-TOOLREG | CMP-TOOLGW |
+| runtime-state DB (PH-2) | CMP-ORCH only (R1; unmodified) | CMP-WATCH/CMP-DIAG read-only |
 | (none) — Watchdog | — (read-only) | CMP-WATCH observes ORCH/journal |
 
 ## 6. Contract & schema usage matrix
