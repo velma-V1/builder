@@ -34,10 +34,55 @@ frozen PH-2 module; the separate-store option is preferred to keep RPH3 fully se
 
 ## 3. Schemas & migrations (SHA-pinned, transactional)
 
+Every data structure required by **XSC-RPH3** (cross-store protocol) and **WIR-RPH3** (Watchdog receiver) is
+inventoried here. The security-spine store carries the domain records **and** the per-domain **operation-intent**
+tables + the WIR **intervention journal**; the audit store enforces `UNIQUE(op_key)`.
+
 | Store | Migration | Tables | Owner (sole writer) |
 |---|---|---|---|
-| security-spine | `migrations/security/0001_security_spine.sql` | `permission_grants`, `approval_records`, `approval_queue`, `tool_registry`, `tool_declarations`, `tool_quarantine` | CMP-PERM / CMP-APPROVAL / CMP-TOOLREG (per-table) |
-| audit | `migrations/audit/0001_audit_chain.sql` | `audit_records` (append-only, `sequence`, `predecessor_hash`, `record_hash`, optional `signature`) + `BEFORE UPDATE/DELETE` triggers `RAISE(ABORT)` | CMP-AUDITW |
+| security-spine | `migrations/security/0001_security_spine.sql` | domain records: `permission_grants`, `approval_records`, `approval_queue`, `tool_registry`, `tool_declarations`, `tool_quarantine`; **operation-intent** tables: `permission_intents`, `approval_intents`, `tool_registry_intents`; **receiver journal**: `intervention_journal` | per-table single writer: CMP-PERM (`permission_*`), CMP-APPROVAL (`approval_*`), CMP-TOOLREG (`tool_*`), WIR (`intervention_journal`) |
+| audit | `migrations/audit/0001_audit_chain.sql` | `audit_records` (append-only, `sequence`, `predecessor_hash`, `record_hash`, optional `signature`, `op_key`, `record_kind`) + `UNIQUE(op_key)` + `BEFORE UPDATE/DELETE` triggers `RAISE(ABORT)` | CMP-AUDITW |
+
+### 3.1 Operation-intent / journal table shape (XSC-RPH3 · WIR-RPH3)
+
+`permission_intents` / `approval_intents` / `tool_registry_intents` / `intervention_journal` share this shape
+(each owned by its domain's sole writer):
+
+| Column | Type / rule |
+|---|---|
+| `op_key` | TEXT **PRIMARY KEY**, immutable (= XSC `K`); the join key across all three stores |
+| `operation_class` | INTEGER CHECK in (1,2,3) (XSC class) |
+| `domain` | TEXT (permission / approval / tool / watchdog) |
+| `target_ref` | TEXT (one task_id / grant_id / service_id / resource_ref; single-target only) |
+| `requested_action` | TEXT (the verb, e.g. `issue_grant`, `PAUSE_TASK`, `RESTART_SERVICE`) |
+| `status` | TEXT CHECK in (`PENDING`,`COMMITTED`,`ABORTED`,`UNCERTAIN`,`QUARANTINED`) |
+| `reconciliation_state` | TEXT CHECK in (`NONE`,`ROLL_FORWARD`,`ROLL_BACK`,`QUARANTINE`) |
+| `audit_seq` | INTEGER NULL — FK-by-value to `audit_records.sequence` (set at completion audit) |
+| `failure_code` | TEXT NULL — failure / uncertainty code on ABORTED/UNCERTAIN |
+| `quarantine_state` | TEXT NULL — set for Class-3 UNCERTAIN→QUARANTINED subjects |
+| `created_ts` / `updated_ts` / `completed_ts` | INTEGER (monotonic) — created, last transition, completion |
+
+**Indexes:** `INDEX(status)` (startup reconciliation scan of non-terminal rows), `INDEX(operation_class,status)`
+(per-class reconciliation), `INDEX(target_ref)` (affected-work lookup, INV-3). Audit store: `UNIQUE(op_key)`
+(the exactly-once / at-most-once guard) + `INDEX(op_key)` (join) + existing `sequence` PK.
+
+**Ownership & sole-writer rules.** Each `*_intents` table is written **only** by its owning domain writer
+(same authorizer partition as the domain records, DEP-RPH3 §4A); `intervention_journal` is written **only** by
+the WIR. No cross-domain writes; consumers read via `mode=ro`. The audit store is written **only** by
+CMP-AUDITW.
+
+**Retention & cleanup.** `COMMITTED` intents are superseded by the committed domain record + the audit record;
+they may be pruned after a bounded horizon (default: retention-policy window) — pruning an intent never
+touches its audit record. `ABORTED` intents are retained for a bounded audit window then pruned. `QUARANTINED`
+intents are **held** (not pruned) until operator/approval-gated recovery clears them. **Audit records are
+never pruned** by this process (append-only; governed by `CTR-RETENTION-POLICY`, PH-7).
+
+**Crash-recovery & migration order.** Both migrations apply under the PH-1 SHA-256-pinned transactional runner
+(§ below), each in one transaction (no partial schema). At startup, the domain writers run XSC-RPH3 §5
+reconciliation over the intent tables **before serving any request**; the audit chain is verified
+(CMP-AUDITV) first. Migration order within the security-spine store: domain + intent + journal tables are
+created in the single `0001_security_spine.sql` transaction (no inter-table ordering hazard); the audit store
+migration is independent (no cross-store FK — the link is `op_key` by value).
 
 **JSON-Schema contract schemas** (Draft 2020-12, `additionalProperties:false` at authority objects), authored
 under `schemas/contracts/`:
@@ -76,9 +121,9 @@ un-exported `_OrchestratorStateWriter`). Consumers receive typed **read-only** q
 
 | Domain writer | Permitted write tables | Exposed to consumers |
 |---|---|---|
-| CMP-PERM (`permission._grant_writer`) | `permission_grants` (+ its `_pending` intents) | read-only `get_grant`, `is_valid` |
-| CMP-APPROVAL (`approval._record_writer`) | `approval_records`, `approval_queue` (+ `_pending`) | read-only `get_record`, `is_valid` |
-| CMP-TOOLREG (`tools._registry_writer`) | `tool_registry`, `tool_declarations`, `tool_quarantine` (+ `_pending`) | read-only `lookup` |
+| CMP-PERM (`permission._grant_writer`) | `permission_grants`, `permission_intents` | read-only `get_grant`, `is_valid` |
+| CMP-APPROVAL (`approval._record_writer`) | `approval_records`, `approval_queue`, `approval_intents` | read-only `get_record`, `is_valid` |
+| CMP-TOOLREG (`tools._registry_writer`) | `tool_registry`, `tool_declarations`, `tool_quarantine`, `tool_registry_intents` | read-only `lookup` |
 | WIR (`watchdog._receiver_journal`) | `intervention_journal` | read-only reconciliation reads |
 
 **SQLite authorizer enforcement (where practical).** Every connection installs `sqlite3` `set_authorizer`:

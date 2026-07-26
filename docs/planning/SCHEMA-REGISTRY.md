@@ -26,9 +26,9 @@ Regenerated when a schema is added or versioned. All contract schemas use JSON S
 |---|---|---|---|
 | activation store | `migrations/contracts/0001_activation_store.sql` | PH-1 | WAL, FK, append-only events (Section 1 plan T4) |
 | runtime-state DB | `migrations/runtime/*.sql` | PH-2 | tasks/lanes/queues/leases/journal/counters |
-| security-spine (permission/approval/tool) | `migrations/security/0001_security_spine.sql` | PH-3 | PH-3-owned store, separate from runtime DB (DEP-RPH3 §2/§3, ODI-RPH3-01); per-domain sole writer; R1 preserved |
+| security-spine (permission/approval/tool + `*_intents` + `intervention_journal`) | `migrations/security/0001_security_spine.sql` | PH-3 | PH-3-owned store, separate from runtime DB (DEP-RPH3 §2/§3/§3.1, ODI-RPH3-01); per-domain sole writer incl. operation-intent tables (XSC-RPH3); R1 preserved |
 | model fingerprint/exec/quota | `migrations/runtime/*` | PH-4 | |
-| audit chain | `migrations/audit/0001_audit_chain.sql` | PH-3 | separate append-only hash-chained store; CMP-AUDITW sole writer; `RAISE(ABORT)` on UPDATE/DELETE |
+| audit chain | `migrations/audit/0001_audit_chain.sql` | PH-3 | separate append-only hash-chained store; CMP-AUDITW sole writer; `UNIQUE(op_key)`; `RAISE(ABORT)` on UPDATE/DELETE |
 
 ## Roadmap PH-3 (RPH3) contract schemas (Draft 2020-12; authored RPH3 implementation, arch DEP-RPH3)
 
