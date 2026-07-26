@@ -1,10 +1,32 @@
 # Roadmap PH-3 — Implementation-Readiness Certificate (CERT-RPH3)
 
 **Document ID:** CERT-RPH3 · **Repository path:** `docs/planning/RPH3-IMPLEMENTATION-READINESS-CERTIFICATE.md`
-**Status:** Derived certification (RPH3 planning, Pass 10) · **Established:** 2026-07-26. **Governing:** the
-full RPH3 planning corpus + `01M`/`01K`/`01R`/`docs/10`. **Namespace:** RPH3. **Verdict (this pass):**
-`RPH3_CERTIFIED_WITH_NONBLOCKING_GAPS`. **This certifies planning readiness only — it is NOT implementation
-authorization, NOT a merge authorization, and NOT roadmap PH-3 completion.**
+**Status:** Derived certification (RPH3 planning) · **Established:** 2026-07-26. **Governing:** the full RPH3
+planning corpus + `01M`/`01K`/`01R`/`docs/10`. **Namespace:** RPH3. **Current verdict:**
+`RPH3_PLANNING_REPAIR_REQUIRED` (repair in progress) → superseded by a corrected certificate at §8 once the
+final audit passes. **This certifies planning readiness only — NOT implementation authorization, NOT a merge
+authorization, and NOT roadmap PH-3 completion.**
+
+## 0. Supersession & correction history
+
+- **v1 — commit `1d3b860` (SUPERSEDED, INVALID):** issued verdict `RPH3_CERTIFIED_WITH_NONBLOCKING_GAPS`. This
+  certified an **invalid planning state**: its 12 audits (A1–A12) failed to detect the defect classes below.
+  The verdict is **withdrawn**; the historical record is retained here per the never-delete rule (not edited
+  in place).
+- **Defects the v1 audits missed:** (D1) `01M`/`01K` acceptance criteria conflated with the separate approved-
+  decision lists; ambiguous `01M #NN`/`01K #NN` references. (D2) no crash-consistent protocol across the
+  runtime-state DB / security-spine store / audit store. (D3) the seven Watchdog interventions had no defined
+  receiver; the frozen PH-2 transition writer was implied to execute service-restart/quarantine/restore/
+  snapshot commands it does not support. (D4) stale migration/dependency contradictions (`migrations/runtime/
+  0004_*`, audit-append-via-CMP-ORCH, a `10A` CMP-LEASE-consumption claim). (D5) PH-5 enforcement (process-
+  tree termination, orphan prevention, sandbox quarantine/recording/evidence) falsely certifiable by
+  `PROM-RPH3`. (D6) shared security-spine store had no enforceable per-domain ownership.
+- **v2 — corrected certification (§8):** issued only after every repair below lands and the full final audit
+  (§3, rebuilt) passes. Until then the verdict is `RPH3_PLANNING_REPAIR_REQUIRED`.
+
+> The §2–§7 body below is the v1 content retained for provenance; the §3 audits and §7 verdict were the
+> **defective** ones. The authoritative corrected audits, evidence, and verdict are in **§8** (added after
+> repairs). Where §2–§7 and §8 disagree, **§8 governs.**
 
 ## 1. Purpose
 

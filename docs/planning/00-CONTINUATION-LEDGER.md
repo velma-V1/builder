@@ -218,3 +218,19 @@ is repository-native and usable without chat history; a future implementer start
 **Standing constraints (in force until explicitly lifted):** no implementation without authorization; no merge
 to `main`; do not modify `main`; roadmap not amended; RPH3 identifiers stay disjoint from the substrate; the
 four substrate blockers are external prerequisites for any PR #10 merge, not RPH3 work.
+
+### RPH3 Pass-10 certification REJECTED — verdict downgraded (2026-07-26)
+
+Operator **rejected** the Pass-10 certification. Commit `1d3b860` issued verdict
+`RPH3_CERTIFIED_WITH_NONBLOCKING_GAPS` for an **invalid planning state**: its audits did not detect (a)
+`01M`/`01K` traceability defects — decision-list numbers (`01M §2` 36 decisions, `01K §2` 33 decisions)
+conflated with acceptance criteria (`01M §6` 32, `01K §5` 25), and ambiguous `01M #NN`/`01K #NN` references;
+(b) architecture gaps — no crash-consistent cross-store protocol, no defined Watchdog intervention receiver,
+false implication that the frozen PH-2 transition writer can execute non-transition interventions; (c) stale
+migration/dependency contradictions (`migrations/runtime/0004_*`, audit-append-via-CMP-ORCH, a `10A` claim
+that RPH3 consumes CMP-LEASE); (d) PH-5 enforcement (process-tree termination, orphan prevention, sandbox
+quarantine/recording/evidence) falsely certifiable under `PROM-RPH3`; (e) no enforceable shared-store ownership.
+
+**Verdict downgraded to `RPH3_PLANNING_REPAIR_REQUIRED`.** Continuous corpus repair in progress on
+`claude/roadmap-ph3-security-spine-planning` (autonomous; logical corrections committed separately); a
+corrected certificate is issued only after the full final audit passes. Standing constraints unchanged.
