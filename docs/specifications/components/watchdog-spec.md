@@ -91,6 +91,15 @@ required_tests:
 
 ## Authority separation note
 
-CMP-WATCH observes but never writes authoritative state (R1). Any state change it triggers (pause, contain,
-reconcile, restore) is applied through CMP-ORCH's single write transaction and recorded by CMP-AUDITW — the
-Watchdog holds no writable authoritative connection. Recorded here and in `RPH3-INTEGRATION.md` §Ownership.
+CMP-WATCH observes but never writes authoritative state (R1) and **holds no writable authoritative
+connection**. The seven `WatchdogControl.*` calls above are **typed requests issued to the Watchdog
+Intervention Receiver (WIR)**, not executions performed by the observer — see
+`docs/planning/RPH3-WATCHDOG-INTERVENTION-RECEIVER.md` (WIR-RPH3). The WIR (executor facet of the `01M §3.2`
+interface) validates each request (allowlist, expected-state, bounded scope, idempotency, auth), then executes
+it through a **real** interface: `PAUSE_TASK`/`CONTAIN_TASK`/task-`RECONCILE_STATE`/task-`QUARANTINE_RESOURCE`
+via the frozen `CMP-ORCH.apply_transition` (task state only); `RESTART_SERVICE` via a PH-3 Service Supervisor
+(OS process supervision, **not** a DB write). **`RESTORE_APPROVED_STATE` and `ACTIVATE_VERIFIED_SNAPSHOT` are
+INERT until PH-7; non-task `QUARANTINE_RESOURCE` is INERT until PH-5.** `apply_transition` performs **only**
+task-state transitions — it does not execute service-restart, resource-quarantine, restore, or snapshot
+commands. Every applied intervention is audited before it reports `APPLIED` (XSC-RPH3). Recorded here and in
+`RPH3-INTEGRATION.md` §Ownership.

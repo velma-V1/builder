@@ -91,7 +91,7 @@ consumer-impact (`01D §3.2`).
 - **Prerequisites:** frozen CMP-ORCH read-only reader + CMP-JOURNAL `reconcile_startup` (PH-2). **Soft:** T4
   (CMP-AUDITW) for intervention-audit wiring — built against the CMP-AUDITW interface contract, integrated
   when T4 lands.
-- **Public interfaces:** `WatchdogControl.{PAUSE_TASK,CONTAIN_TASK,RESTART_SERVICE,RECONCILE_STATE,QUARANTINE_RESOURCE,RESTORE_APPROVED_STATE,ACTIVATE_VERIFIED_SNAPSHOT}`, `HeartbeatMonitor.observe` (see `watchdog-spec.md`).
+- **Public interfaces:** `WatchdogControl.{PAUSE_TASK,CONTAIN_TASK,RESTART_SERVICE,RECONCILE_STATE,QUARANTINE_RESOURCE,RESTORE_APPROVED_STATE,ACTIVATE_VERIFIED_SNAPSHOT}` (typed **requests** to the Watchdog Intervention Receiver — `RPH3-WATCHDOG-INTERVENTION-RECEIVER.md`, WIR-RPH3), `HeartbeatMonitor.observe` (see `watchdog-spec.md`). The observer holds no writable connection; the WIR executes task-state commands via frozen `CMP-ORCH.apply_transition`, `RESTART_SERVICE` via a PH-3 Service Supervisor, and marks `RESTORE_APPROVED_STATE`/`ACTIVATE_VERIFIED_SNAPSHOT` (PH-7) + non-task `QUARANTINE_RESOURCE` (PH-5) INERT.
 - **Contracts/Schemas:** owns none; consumes CTR-RECOVERY-JOURNAL, CTR-AUDIT-RECORD. No new schema.
 - **Files:** `watchdog/{process,heartbeat,thresholds,control,interventions,models,errors}.py`, `tests/watchdog/**`.
 - **TDD order:** (1) heartbeat/stall unit tests (monotonic; wall-clock change cannot fabricate a stall) →
