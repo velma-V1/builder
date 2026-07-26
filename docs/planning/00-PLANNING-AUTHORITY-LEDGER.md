@@ -258,7 +258,7 @@ Status legend: `PLANNED` (registered here; authored by the named pass). Each inh
 | VEP-RPH3 | `docs/planning/RPH3-VERIFICATION-EVIDENCE-PROMOTION.md` | Verification/evidence/promotion architecture; `01M`(32)+`01K`(25) traceability; VM-2; `PROM-RPH3` | Plan (subordinate to `01G`/MATRIX-VERIF) | RPH3 Pass 6 | **EXISTS** (Pass 6; 18 VR rows) |
 | FRR-RPH3 | `docs/planning/RPH3-FAILURE-RECOVERY-ROLLBACK.md` | Failure/recovery/rollback (Watchdog-loss, fail-closed, quarantine) | Plan (subordinate to `01M`/`04`) | RPH3 Pass 7 | **EXISTS** (Pass 7; 18 FM rows) |
 | RES-ALLOC-000 | `docs/planning/RESOURCE-ALLOCATION-PLAN.md` | Resource envelopes + staged thresholds + reservation policy | Plan (subordinate to `01M §3.3`/`01J §3.3`) | Planning (RPH3 Pass 7; G-02) | **EXISTS** (Pass 7) |
-| SEC-RPH3 | `docs/planning/RPH3-SECURITY-TRUST-BOUNDARIES.md` | Security assets/threats/trust boundaries; `SEC-RPH3-xx` tests | Plan (subordinate to `01K`/`01E`/`01M`) | RPH3 Pass 8 | PLANNED |
+| SEC-RPH3 | `docs/planning/RPH3-SECURITY-TRUST-BOUNDARIES.md` | Security assets/threats/trust boundaries; `SEC-RPH3-xx` tests | Plan (subordinate to `01K`/`01E`/`01M`) | RPH3 Pass 8 | **EXISTS** (Pass 8; 8 assets, 13 threats, 4 zones, SEC-RPH3-01..12) |
 | DEP-RPH3 | `docs/planning/RPH3-DEPLOYMENT-MIGRATION.md` | Platform footprint + PH-3 schemas/migrations (permission-grant, approval-record, tool-declaration, audit-chain; `0004_*` under freeze) | Plan (subordinate to `01O`/`01N`) | RPH3 Pass 9 | PLANNED |
 | CERT-RPH3 | `docs/planning/RPH3-IMPLEMENTATION-READINESS-CERTIFICATE.md` | Final inventory, audits, handoff, readiness certificate | Derived certification | RPH3 Pass 10 | PLANNED |
 
