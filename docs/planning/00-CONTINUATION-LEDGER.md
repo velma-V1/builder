@@ -293,3 +293,30 @@ evidence defect**; verdict returned to `RPH3_PLANNING_REPAIR_REQUIRED` pending R
   certificate wording is corrected accordingly. R13 changes no reviewed artifact.
 
 Recommendation on record: `READY_FOR_OPERATOR_AUTHORIZATION_OF_RPH3-T4`.
+
+### RPH3-T4 implementation (audit foundation) — 2026-07-26
+
+Operator authorization received (`AUTHORIZED: BEGIN RPH3-T4 ONLY`, from tip `76f1162`). Implemented the
+tamper-evident audit chain (CMP-AUDITW writer + CMP-AUDITV validator) — the first genuine RPH3 implementation
+gate — on `claude/roadmap-ph3-security-spine-planning`. **Lane A / Watchdog remain paused; no other RPH3 task
+started; PR #10 unmerged; `main` untouched.**
+
+Delivered (authorized 10-step sequence):
+1. `migrations/audit/0001_audit_chain.sql` — separate append-only hash-chained store; `record_kind ∈
+   {INTENT, COMPLETION}`; **`UNIQUE(op_key, record_kind)`**; `BEFORE UPDATE/DELETE` `RAISE(ABORT)`; SHA-256
+   pinned in the writer (mirrors CMP-ORCH's runner).
+2. `src/factory/audit/{models,errors}.py` — `RecordKind`, `AuditEvent` (no chain-identity fields →
+   forge-resistant), `AuditRecord` (+ `compute_hash`), `BreakClass`, `IntegrityVerdict`, `ChainHead`.
+3. `src/factory/audit/writer.py` — `AuditWriter` sole appender (sequence=prev+1, genesis anchor, computes all
+   chain-identity fields), head/export, fail-closed.
+4. `src/factory/audit/validator.py` — `AuditValidator` read-only; verify_chain/verify_export/classify_break.
+5. `UNIQUE(op_key, record_kind)` enforcement (≤1 INTENT + ≤1 COMPLETION; duplicate rejected).
+6. Class-3 completion-after-intent enforcement.
+7. Concurrency + duplicate handling (retry past a taken sequence; no fork/gap; exhaustion fails closed).
+8. Partial-write fault injection (failed append rolls back; mid-apply migration fails closed).
+9. Chain-corruption + tampering tests (deletion / truncation / reorder / rewrite / bad-anchor, incl. a
+   consistent re-forge — record self-verifies but is still detected via linkage / expected-head).
+10. Evidence report `docs/verification/roadmap-ph3-t4-audit-evidence.md` + gate `scripts/verify_roadmap_ph3_t4.py`.
+
+Results: **42 audit tests pass** (99.34% branch coverage on `src/factory/audit`); **full repo 508 passed,
+1 skipped (Windows-only) — no regression**; ruff clean; mypy --strict clean; T4 gate **9/9 PASS**.
