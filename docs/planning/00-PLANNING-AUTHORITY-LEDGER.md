@@ -97,9 +97,9 @@ present and adequate), `PARTIAL` (present as a stub/outline needing expansion in
 | 41 | Regression Register | `docs/planning/REGRESSION-REGISTER.md` | EXISTS (established Pass 7, seeded) |
 | 42 | PH-2 Failure/Recovery/Rollback Plan | `docs/planning/PH2-FAILURE-RECOVERY-ROLLBACK.md` | EXISTS (Pass 7) |
 | 27 | Implementation Checklist | `docs/templates/checklist/COMPLETION-CHECKLIST.template.md` | EXISTS |
-| 28 | Phase Exit Checklist | `docs/templates/checklist/PHASE-EXIT-CHECKLIST.template.md` | MISSING (gap G-05) |
+| 28 | Phase Exit Checklist | `docs/templates/checklist/PHASE-EXIT-CHECKLIST.template.md` | EXISTS (RPH3 Pass 10; G-05 resolved) |
 | 29 | Implementation Handoff Template | `docs/templates/handoff/SECTION-HANDOFF.template.md`; `WORKSTREAM-HANDOFF.template.md` | EXISTS |
-| 30 | Verification Report Template | `docs/templates/VERIFICATION-REPORT.template.md` (precedent: S1 report) | MISSING (gap G-06; S1 report is the de-facto model) |
+| 30 | Verification Report Template | `docs/templates/VERIFICATION-REPORT.template.md` (precedent: S1 report) | EXISTS (RPH3 Pass 6; G-06 resolved) |
 | 31 | Release Planning Documents | `docs/release/RELEASE-PLAN.md` | EXISTS |
 | 32 | Installer Planning | `docs/release/INSTALLER-PLAN.md` | EXISTS |
 | 33 | Migration Planning | `docs/release/UPDATE-AND-MIGRATION-PLAN.md` | EXISTS |
@@ -260,7 +260,7 @@ Status legend: `PLANNED` (registered here; authored by the named pass). Each inh
 | RES-ALLOC-000 | `docs/planning/RESOURCE-ALLOCATION-PLAN.md` | Resource envelopes + staged thresholds + reservation policy | Plan (subordinate to `01M §3.3`/`01J §3.3`) | Planning (RPH3 Pass 7; G-02) | **EXISTS** (Pass 7) |
 | SEC-RPH3 | `docs/planning/RPH3-SECURITY-TRUST-BOUNDARIES.md` | Security assets/threats/trust boundaries; `SEC-RPH3-xx` tests | Plan (subordinate to `01K`/`01E`/`01M`) | RPH3 Pass 8 | **EXISTS** (Pass 8; 8 assets, 13 threats, 4 zones, SEC-RPH3-01..12) |
 | DEP-RPH3 | `docs/planning/RPH3-DEPLOYMENT-MIGRATION.md` | Platform footprint + PH-3 schemas/migrations (permission-grant, approval-record, tool-declaration, audit-record; separate PH-3 stores under freeze); resolves ODI-RPH3-01 | Plan (subordinate to `01O`/`01N`) | RPH3 Pass 9 | **EXISTS** (Pass 9) |
-| CERT-RPH3 | `docs/planning/RPH3-IMPLEMENTATION-READINESS-CERTIFICATE.md` | Final inventory, audits, handoff, readiness certificate | Derived certification | RPH3 Pass 10 | PLANNED |
+| CERT-RPH3 | `docs/planning/RPH3-IMPLEMENTATION-READINESS-CERTIFICATE.md` | Final inventory, 12 audits, implementation-start package, readiness certificate | Derived certification | RPH3 Pass 10 | **EXISTS** (Pass 10; verdict `RPH3_CERTIFIED_WITH_NONBLOCKING_GAPS`) |
 
 ### 9.3 Contracts & schemas owned by roadmap PH-3
 
@@ -274,8 +274,8 @@ new SHA-pinned `0004_*` migration under the schema-freeze rule (SCHEMA-REGISTRY)
 - **G-02 RESOURCE-ALLOCATION-PLAN — RESOLVED (RPH3 Pass 7):** `docs/planning/RESOURCE-ALLOCATION-PLAN.md`
   authored (envelopes + staged thresholds + reservation policy; PH-4 extends it for CMP-RESSCHED).
 - **G-06 VERIFICATION-REPORT template — RESOLVED (RPH3 Pass 6):** `docs/templates/VERIFICATION-REPORT.template.md`
-  created (generalizes the Section-1 report). **G-05 PHASE-EXIT-CHECKLIST** — scheduled RPH3 Pass 10.
-  Non-blocking.
+  created (generalizes the Section-1 report). **G-05 PHASE-EXIT-CHECKLIST — RESOLVED (RPH3 Pass 10):**
+  `docs/templates/checklist/PHASE-EXIT-CHECKLIST.template.md` created.
 
 ### 9.5 Authority-relationship verification (this pass)
 

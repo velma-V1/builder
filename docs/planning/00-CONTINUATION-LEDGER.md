@@ -188,6 +188,7 @@ distinct from the Worker Execution Substrate (out-of-roadmap; `docs/WORKER-EXECU
 | RPH3 Pass 7 | Failure/recovery/rollback: FRR-RPH3 (18 FM rows, recovery, per-task rollback, injections, resilience); resolved gap G-02 (RESOURCE-ALLOCATION-PLAN) | `PASS_WITH_NONBLOCKING_GAPS` | `docs/planning/RPH3-FAILURE-RECOVERY-ROLLBACK.md`, `docs/planning/RESOURCE-ALLOCATION-PLAN.md`; PAL §3/§9.2/§9.4 |
 | RPH3 Pass 8 | Security/trust-boundaries: SEC-RPH3 (8 assets, 13 threats→controls, 4 trust zones, 7 core-control invariants, SEC-RPH3-01..12); PH-5 isolation + substrate blockers kept out of scope | `PASS_WITH_NONBLOCKING_GAPS` | `docs/planning/RPH3-SECURITY-TRUST-BOUNDARIES.md`; PAL §9.2 |
 | RPH3 Pass 9 | Deployment/migration: DEP-RPH3 (platform footprint, PH-3 schemas/migrations, migration ordering/rollback); **resolved ODI-RPH3-01** to a separate PH-3-owned store (frozen PH-2 untouched); reconciled Pass-4 spec phrasing + SCHEMA-REGISTRY + PLAN-S3 file map | `PASS_WITH_NONBLOCKING_GAPS` | `docs/planning/RPH3-DEPLOYMENT-MIGRATION.md`; edits to SCHEMA-REGISTRY, PLAN-S3, permission/approval/tool-registry specs, RPH3-INTEGRATION; PAL §9.2 |
+| RPH3 Pass 10 | Final integration/certification: CERT-RPH3 (corpus inventory, 12 readiness audits all PASS, implementation-start package, `PROM-RPH3`); resolved gap G-05 (PHASE-EXIT-CHECKLIST template). **RPH3 planning COMPLETE.** | `RPH3_CERTIFIED_WITH_NONBLOCKING_GAPS` | `docs/planning/RPH3-IMPLEMENTATION-READINESS-CERTIFICATE.md`, `docs/templates/checklist/PHASE-EXIT-CHECKLIST.template.md`; PAL §3/§9.2/§9.4 |
 
 **Next allowed action**
 
@@ -199,3 +200,21 @@ merge, `main`/PR #10 untouched, roadmap not amended).
 
 Proceeding to **RPH3 Pass 6** (verification/evidence/promotion architecture — VEP-RPH3) and onward through
 Pass 10 (readiness certificate).
+
+### RPH3 planning COMPLETE (2026-07-26)
+
+All ten RPH3 planning passes are complete on `claude/roadmap-ph3-security-spine-planning`. Certificate:
+`CERT-RPH3` — verdict `RPH3_CERTIFIED_WITH_NONBLOCKING_GAPS`. The roadmap PH-3 implementation-planning package
+is repository-native and usable without chat history; a future implementer starts at
+`docs/planning/RPH3-IMPLEMENTATION-READINESS-CERTIFICATE.md`.
+
+**Decision gate — nothing pre-authorized.** Plausible next actions (operator selects):
+1. Authorize **roadmap PH-3 product implementation** (first task RPH3-T4, Lane B audit foundation).
+2. Authorize a **dedicated PR #10 correction** to clear the four substrate blockers XIB-01..04 (separate from
+   RPH3; owned by that correction / PH-5).
+3. Merge PR #10 (Worker Execution Substrate) into `main` — still draft/unmerged.
+4. Other operator-directed work.
+
+**Standing constraints (in force until explicitly lifted):** no implementation without authorization; no merge
+to `main`; do not modify `main`; roadmap not amended; RPH3 identifiers stay disjoint from the substrate; the
+four substrate blockers are external prerequisites for any PR #10 merge, not RPH3 work.
