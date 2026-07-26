@@ -285,8 +285,11 @@ evidence defect**; verdict returned to `RPH3_PLANNING_REPAIR_REQUIRED` pending R
   §1/§2/§3/§6/§9, DEP-RPH3 §3/§3.1, SCHEMA-REGISTRY, audit-writer-spec (append-only unchanged — two distinct
   rows, no update).
 - **D11 (evidence):** the audit report named `59eb778` + uncommitted edits and recorded an unclean tree.
-  Fixed: report re-run against the clean committed R12 tree (parent `971d49e`); the uncommitted-tree record is
-  replaced with clean-tree + remote-head verification; totals updated to **30/30** with the new Class-3
-  audit-record cardinality checks.
+  Fixed: report re-run against the clean committed R12 tree; the uncommitted-tree record is replaced with
+  clean-tree + remote-head verification; totals updated to **30/30** with the new Class-3 audit-record
+  cardinality checks. **R12 = `5a5e10310b6e9f12022970e61fcd09e4ec8877a5`** (parent `971d49e`).
+- **R13 (evidence hygiene, docs-only):** per operator note, the audit report now literally prints
+  `Reviewed commit: 5a5e10310b6e9f12022970e61fcd09e4ec8877a5`, and this ledger records the same SHA; the
+  certificate wording is corrected accordingly. R13 changes no reviewed artifact.
 
 Recommendation on record: `READY_FOR_OPERATOR_AUTHORIZATION_OF_RPH3-T4`.

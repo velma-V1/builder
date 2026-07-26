@@ -48,7 +48,7 @@ body in `docs/planning/superseded/RPH3-CERT-v1-SUPERSEDED.md`). This is the auth
 | D8 missing protocol tables in migration inventory | `*_intents` + `intervention_journal` tables; `op_key`/status/reconciliation/audit_seq columns; `UNIQUE(op_key, record_kind)`; indexes; retention; migration-order | DEP-RPH3 §3/§3.1/§4A (R9) |
 | D9 residual PH-5/PH-7 enforcement assigned to PH-3 | Split `01M-AC-19`, `01K-AC-21`, `01M-AC-30` into RPH3 request/containment half + `EG-PH5-11/12`/`EG-PH7-01` enforcement half | TRACE-RPH3 §3; VEP VR-03/07/15 (R10) |
 | D10 `UNIQUE(op_key)` made Class 3 impossible | Audit store now `UNIQUE(op_key, record_kind)`: ≤1 `INTENT` + ≤1 `COMPLETION` per op; Class-3 completion cannot precede intent; op-intent tables keep `op_key` unique | XSC-RPH3 §1/§2/§3/§6/§9; DEP-RPH3 §3/§3.1; SCHEMA-REGISTRY; audit-writer-spec (R12) |
-| D11 audit report did not identify the final committed tree | Report re-run against clean committed HEAD; records exact commit; C-check replaced with clean-tree + remote-head verification; totals updated w/ Class-3 audit-record check | `docs/verification/rph3-planning-audit.md` (R12) |
+| D11 audit report did not identify the final committed tree | Report re-run against the clean committed tree; now literally prints `Reviewed commit: 5a5e103…` (R12); C-check replaced with clean-tree + remote-head verification; totals updated w/ Class-3 audit-record check | `docs/verification/rph3-planning-audit.md` (R12/R13) |
 
 ### 1.2 Final-audit result (repository-wide sweeps)
 
@@ -98,7 +98,7 @@ Specifically proven by the final audit:
 | C16 | `01M-AC-19`/`01K-AC-21`/`01M-AC-30` split into RPH3 + PH-5/PH-7 gates, no obligation dropped (D9) | PASS |
 | C17 | Certificate header verdict = v2; no active REPAIR_REQUIRED; v1 in superseded doc; audit report exists | PASS |
 | C18 | Audit store `UNIQUE(op_key, record_kind)`; Class 3 carries `INTENT`+`COMPLETION`; completion≮intent; no bare `UNIQUE(op_key)` asserted (D10) | PASS |
-| C19 | Audit report reviews the clean **committed** R12 tree (parent `971d49e`); clean-tree + remote-head verification replaces the old uncommitted-tree record (D11) | PASS |
+| C19 | Audit report reviews the clean **committed** tree and literally records `Reviewed commit: 5a5e103…` (R12, parent `971d49e`); clean-tree + remote-head verification replaces the old uncommitted-tree record (D11) | PASS |
 
 Full reproducible evidence: `docs/verification/rph3-planning-audit.md` (**30/30 checks**).
 

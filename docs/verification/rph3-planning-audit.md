@@ -2,9 +2,10 @@
 
 **Document ID:** AUDIT-RPH3 · **Repository path:** `docs/verification/rph3-planning-audit.md`
 **Reviewed branch:** `claude/roadmap-ph3-security-spine-planning`
-**Reviewed commit:** the **R12 commit** on this branch (the commit that adds this report). Its parent is
-`971d49e` (R11). The exact R12 SHA is the branch tip after R12 — recorded in `CONTINUATION-LEDGER §10`
-and reproducible with `git rev-parse HEAD` on this branch (must equal `git rev-parse origin/claude/roadmap-ph3-security-spine-planning`).
+**Reviewed commit: `5a5e10310b6e9f12022970e61fcd09e4ec8877a5`** (R12; parent `971d49e`, R11).
+This exact SHA is the reviewed corpus. This line is added in the immediately following documentation-only
+commit (R13), which changes no reviewed artifact — it records the SHA and this hygiene fix only. Reproduce
+with `git rev-parse HEAD` on this branch (must equal `git rev-parse origin/claude/roadmap-ph3-security-spine-planning`).
 **Base (PH-2 tip):** `7b1922e` · **Date (UTC):** 2026-07-26T05:31:22Z
 
 Reproduce: check out the R12 commit and run the audit block below from the repo root. This report reviews the
