@@ -249,7 +249,26 @@ Repository-wide final audit: **22/23 automated checks PASS**, the one flag a fil
 "no-reuse" declarations (zero actual substrate-identifier reuse; corpus uses `PROM-RPH3`/`SEC-RPH3-*`).
 Implementation files untouched (docs-only). New authoritative docs: TRACE-RPH3, XSC-RPH3, WIR-RPH3.
 
-**Corrected verdict: `RPH3_CERTIFIED_WITH_NONBLOCKING_GAPS` (v2)** — CERT-RPH3 §8 (v1 verdict at commit
-`1d3b860` superseded in place, retained per never-delete). Certifies **planning readiness only** — NOT
-implementation authorization, NOT merge authorization, NOT PH-3 completion. Standing constraints unchanged;
-next action requires explicit operator authorization to begin roadmap PH-3 implementation (first task RPH3-T4).
+**Corrected verdict: `RPH3_CERTIFIED_WITH_NONBLOCKING_GAPS` (v2).** Certifies **planning readiness only** — NOT
+implementation authorization, NOT merge authorization, NOT PH-3 completion.
+
+### RPH3 planning repair — review round 2 (2026-07-26)
+
+Operator review of the v2 certificate: "major improvement, but would not authorize implementation yet" — four
+further corrections. Repaired in R8–R11 (still autonomous, docs-only):
+- **Correction 1 (R8):** XSC-RPH3 replaced the `authoritative ⟺ audited` biconditional with **3 operation
+  classes** (reversible security-store / frozen-PH-2 transition / external-irreversible) + **INV-1..INV-4**; no
+  fabricated rollback; uncertain external outcomes → `UNCERTAIN`→`QUARANTINED`; every WIR command mapped to its
+  class (`RESTART_SERVICE` = Class 3). (defect D7)
+- **Correction 2 (R9):** DEP-RPH3 migration inventory now defines the `*_intents` tables + `intervention_journal`
+  with `op_key`/status/reconciliation/audit_seq columns, `UNIQUE(op_key)`, indexes, ownership, retention,
+  migration-order. (D8)
+- **Correction 3 (R10):** split `01M-AC-19`, `01K-AC-21`, `01M-AC-30` into an RPH3 request/containment half +
+  PH-5/PH-7 enforcement gates (`EG-PH5-11/12`, `EG-PH7-01..03`); no obligation removed. (D9)
+- **Correction 4 (R11):** CERT-RPH3 restructured — top-level verdict now v2 certified, the interim
+  `RPH3_PLANNING_REPAIR_REQUIRED` is closed (not active), the v1 body moved to
+  `docs/planning/superseded/RPH3-CERT-v1-SUPERSEDED.md` (INVALID/historical); reproducible evidence in
+  `docs/verification/rph3-planning-audit.md` (**28/28 checks, 0 false positives**).
+
+Standing constraints unchanged; next action requires explicit operator authorization to begin roadmap PH-3
+implementation (first task RPH3-T4). Recommendation on record: `READY_FOR_OPERATOR_AUTHORIZATION_OF_RPH3-T4`.
