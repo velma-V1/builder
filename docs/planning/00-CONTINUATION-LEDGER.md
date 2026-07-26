@@ -234,3 +234,22 @@ quarantine/recording/evidence) falsely certifiable under `PROM-RPH3`; (e) no enf
 **Verdict downgraded to `RPH3_PLANNING_REPAIR_REQUIRED`.** Continuous corpus repair in progress on
 `claude/roadmap-ph3-security-spine-planning` (autonomous; logical corrections committed separately); a
 corrected certificate is issued only after the full final audit passes. Standing constraints unchanged.
+
+### RPH3 planning repair COMPLETE — corrected certification (2026-07-26)
+
+Repair commits R1–R7 landed. Defect classes cleared: **D1** (rebuilt `01M-AC-01..32`/`01K-AC-01..25` +
+`01M-DEC`/`01K-DEC` traceability in TRACE-RPH3; corpus-wide identifier rewrite; output-validation → `01K-DEC-25`
+not `01K-AC-25`); **D2** (XSC-RPH3 crash-consistent cross-store protocol, audit-as-commit-point, every crash
+window, fail-closed); **D3** (WIR-RPH3 Watchdog intervention receiver; no false `apply_transition` claim;
+INERT PH-5/PH-7 commands); **D4** (separate PH-3 stores `migrations/security/0001` + `migrations/audit/0001`;
+audit not via CMP-ORCH; CMP-LEASE not consumed); **D5** (PH-5 enforcement gates `EG-PH5-01..10` excluded from
+`PROM-RPH3`); **D6** (DEP-RPH3 §4A structural store-ownership enforcement).
+
+Repository-wide final audit: **22/23 automated checks PASS**, the one flag a filter false-positive on the
+"no-reuse" declarations (zero actual substrate-identifier reuse; corpus uses `PROM-RPH3`/`SEC-RPH3-*`).
+Implementation files untouched (docs-only). New authoritative docs: TRACE-RPH3, XSC-RPH3, WIR-RPH3.
+
+**Corrected verdict: `RPH3_CERTIFIED_WITH_NONBLOCKING_GAPS` (v2)** — CERT-RPH3 §8 (v1 verdict at commit
+`1d3b860` superseded in place, retained per never-delete). Certifies **planning readiness only** — NOT
+implementation authorization, NOT merge authorization, NOT PH-3 completion. Standing constraints unchanged;
+next action requires explicit operator authorization to begin roadmap PH-3 implementation (first task RPH3-T4).

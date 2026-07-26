@@ -263,7 +263,7 @@ Status legend: `PLANNED` (registered here; authored by the named pass). Each inh
 | RES-ALLOC-000 | `docs/planning/RESOURCE-ALLOCATION-PLAN.md` | Resource envelopes + staged thresholds + reservation policy | Plan (subordinate to `01M §3.3`/`01J §3.3`) | Planning (RPH3 Pass 7; G-02) | **EXISTS** (Pass 7) |
 | SEC-RPH3 | `docs/planning/RPH3-SECURITY-TRUST-BOUNDARIES.md` | Security assets/threats/trust boundaries; `SEC-RPH3-xx` tests | Plan (subordinate to `01K`/`01E`/`01M`) | RPH3 Pass 8 | **EXISTS** (Pass 8; 8 assets, 13 threats, 4 zones, SEC-RPH3-01..12) |
 | DEP-RPH3 | `docs/planning/RPH3-DEPLOYMENT-MIGRATION.md` | Platform footprint + PH-3 schemas/migrations (permission-grant, approval-record, tool-declaration, audit-record; separate PH-3 stores under freeze); resolves ODI-RPH3-01 | Plan (subordinate to `01O`/`01N`) | RPH3 Pass 9 | **EXISTS** (Pass 9) |
-| CERT-RPH3 | `docs/planning/RPH3-IMPLEMENTATION-READINESS-CERTIFICATE.md` | Final inventory, 12 audits, implementation-start package, readiness certificate | Derived certification | RPH3 Pass 10 | **EXISTS** (Pass 10; verdict `RPH3_CERTIFIED_WITH_NONBLOCKING_GAPS`) |
+| CERT-RPH3 | `docs/planning/RPH3-IMPLEMENTATION-READINESS-CERTIFICATE.md` | Final inventory, audits, implementation-start package, readiness certificate; §0 supersedes invalid v1, §8 corrected v2 | Derived certification | RPH3 Pass 10 / repair R7 | **EXISTS** (v2 §8; verdict `RPH3_CERTIFIED_WITH_NONBLOCKING_GAPS`; v1 `1d3b860` superseded) |
 
 ### 9.3 Contracts & schemas owned by roadmap PH-3
 
