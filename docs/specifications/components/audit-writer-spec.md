@@ -31,8 +31,9 @@ interfaces:
   - "AuditWriter.head() -> AuditRecord | None                # current chain tip (read)"
   - "AuditWriter.export(range) -> AuditExport                # integrity-checked on the way out"
 dependencies:
-  - CMP-SCHEMA (PH-1 SHA-256-pinned transactional migration pattern for the audit-chain schema; new 0004_*)
-  - CMP-ORCH (append occurs inside a durable transaction; flush-before-success)
+  - CMP-SCHEMA (PH-1 SHA-256-pinned transactional migration pattern for `migrations/audit/0001_audit_chain.sql`)
+  - (no CMP-ORCH dependency) — the audit chain is a **separate PH-3 store**; CMP-AUDITW is its sole writer and
+    performs its own durable, flush-before-success append. It does **not** write via CMP-ORCH (R1 = runtime DB only).
 owned_contracts:       [ CTR-AUDIT-RECORD ]
 permitted_authority:   BASE-P; the ONLY component permitted to append audit records; append is atomic +
                        durable before the audited action is reported successful.
@@ -61,7 +62,7 @@ required_tests:
 
 ## Lifecycle
 
-- **Initialization:** open/create the audit-chain store; run the SHA-256-pinned `0004_*` migration; load
+- **Initialization:** open/create the audit store; run the SHA-256-pinned `migrations/audit/0001_audit_chain.sql`; load
   optional signing key; verify the existing chain tip (delegates to CMP-AUDITV).
 - **Runtime:** serve `append` under a durable transaction — compute sequence = prev+1 and predecessor hash,
   write, flush, then allow the audited action to report success.

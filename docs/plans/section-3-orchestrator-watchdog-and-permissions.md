@@ -24,7 +24,7 @@ separate process), journal`) plus the PH-1 contract system:
 | CMP-ORCH (PH-2, R1) | `_OrchestratorStateWriter.apply_transition(...)` (state-affecting transitions incl. `AWAITING_APPROVAL`) | CMP-PERM, CMP-APPROVAL routing |
 | CMP-ORCH (PH-2) | `SQLiteOrchestratorStateReader.get_task/get_events` (`mode=ro`) | CMP-WATCH, CMP-DIAG |
 | CMP-JOURNAL (PH-2) | `reconcile_startup(reader, task_ids) -> ReconciliationOutcome` | CMP-WATCH, CMP-DIAG (no blind resume) |
-| CMP-SCHEMA (PH-1) | SHA-256-pinned transactional migration runner | audit-chain / security-spine schemas (`0004_*`) |
+| CMP-SCHEMA (PH-1) | SHA-256-pinned transactional migration runner | PH-3 schemas in separate stores: `migrations/security/0001_security_spine.sql`, `migrations/audit/0001_audit_chain.sql` (no runtime `0004_*`) |
 | PH-1 contracts | validated Task/Permission/Ownership (`CTR-TASK` risk_class R5 + autonomy Dec A; `CTR-PERMISSION`; `CTR-OWNERSHIP`), read-only | CMP-PERM, CMP-APPROVAL |
 | CTR-TASK-WS-SM (PH-2) | legal transition table (`AWAITING_APPROVAL`) | CMP-APPROVAL |
 
@@ -253,7 +253,7 @@ Lane B:  RPH3-T4 ──► RPH3-T3 ──► RPH3-T2 ──► RPH3-T5 ───
   build order **APPROVAL (T3) before PERM (T2)** breaks it (APPROVAL build-depends only on ORCH+AUDITW; PERM
   build-depends on APPROVAL+ORCH+AUDITW). A runtime call relationship is **not** treated as a build dependency.
 - **Shared components:** CMP-AUDITW underlies T3/T2/T5 (every privileged action audits). **Shared contracts:**
-  the four PH-3 contracts (one owner each). **Shared schemas:** `0004_*` + audit store. **Shared rollback:**
+  the four PH-3 contracts (one owner each). **Shared schemas:** `migrations/security/0001_security_spine.sql` + `migrations/audit/0001_audit_chain.sql`. **Shared rollback:**
   per-task `git revert`; audit append-only; Watchdog stateless. **Shared failure domain:** the security-spine
   store + separate audit store.
 - **Parallelism:** Lane A ∥ Lane B (max 2 workstreams, `docs/10A §3A`). Within Lane B, all tasks serialize

@@ -117,7 +117,7 @@ Validated this pass against `docs/10 §5`, `DEPENDENCY-MAP §1/§4/§5`, `WORKST
 | Check | Result | Basis |
 |---|---|---|
 | Prerequisite PH-2 satisfied | PASS | PH-2 COMPLETE (`claude/ph3-worker-engine`, 93 tests, PROM-PH2); RPH3 base = PH-2 tip `7b1922e` |
-| RPH3 consumes only frozen PH-2 interfaces | PASS | CMP-ORCH single-writer (R1), CMP-JOURNAL, CMP-LEASE; RPH3 adds no PH-2 change |
+| RPH3 consumes only frozen PH-2 interfaces | PASS | CMP-ORCH (`apply_transition` + read-only reader, R1), CMP-JOURNAL (`reconcile_startup`), CMP-SCHEMA (migration runner). **CMP-LEASE is NOT an RPH3 dependency** (execution-phase, PH-4/5/6). RPH3 adds no PH-2 change |
 | RPH3 → PH-4/PH-5 consumption edge defined | PASS | `DEPENDENCY-MAP §1` `PH-3→{PH-4,PH-5}`; PH-4 consumes permission + tool-gateway, PH-5 consumes permission/secret interfaces |
 | Ordering constraint honored (no bypass) | PASS | PH-4 may consume the substrate seam **only after** RPH3 security interfaces (permission enforcement + tool gateway) are frozen (roadmap §11; WES-CLASS §1) — recorded, not bypassed |
 | No cycle introduced | PASS | `PH-2→RPH3→{PH-4,PH-5}` is a forward DAG edge (`DEPENDENCY-MAP §4` acyclic) |

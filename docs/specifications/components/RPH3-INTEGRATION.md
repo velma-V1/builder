@@ -46,7 +46,7 @@ owned by `docs/planning/DEPENDENCY-MAP.md` / `WORKSTREAM-MAP.md`; this holds onl
 
 | Component | Depends on |
 |---|---|
-| CMP-AUDITW | CMP-SCHEMA (0004_* audit-chain), CMP-ORCH (durable append) |
+| CMP-AUDITW | CMP-SCHEMA (migration runner for `migrations/audit/0001_audit_chain.sql`) — separate audit store; CMP-AUDITW is its **sole** writer (durable append in the audit store, **not** via CMP-ORCH) |
 | CMP-AUDITV | CMP-AUDITW |
 | CMP-PERM | CMP-ORCH, CMP-APPROVAL, CMP-AUDITW |
 | CMP-APPROVAL | CMP-ORCH, CMP-AUDITW |
@@ -98,11 +98,12 @@ runtime-state DB** (which stays Orchestrator-only, R1). Each store has a single 
 | CMP-PERM | CTR-PERMISSION-GRANT | `permission-grant` |
 | CMP-APPROVAL | CTR-APPROVAL-RECORD | `approval-record` |
 | CMP-TOOLREG | CTR-TOOL-DECLARATION | `tool-declaration` |
-| CMP-AUDITW | CTR-AUDIT-RECORD | `audit-chain` (`migrations/runtime/0004_*` under schema-freeze SHA pinning) |
+| CMP-AUDITW | CTR-AUDIT-RECORD | `audit-chain` (`migrations/audit/0001_audit_chain.sql`, **separate audit store**, SHA-pinned) |
 | CMP-AUDITV / CMP-TOOLGW / CMP-FILEOP / CMP-DIAG / CMP-WATCH | (consume the above) | (none new) |
 
-All new schemas follow the PH-1 SHA-256-pinned transactional runner (`CTR-MIGRATION`); the substrate added
-none, so RPH3 introduces the first post-PH-2 migration (`0004_*`).
+Security-spine tables (permission/approval/tool) live in `migrations/security/0001_security_spine.sql`. All
+new schemas follow the PH-1 SHA-256-pinned transactional runner (`CTR-MIGRATION`) in **separate PH-3 stores**;
+the frozen PH-2 runtime migrations (`0001–0003`) are unchanged and no runtime `0004_*` is added (DEP-RPH3 §2–3).
 
 ## 7. Failure / recovery / rollback dependency map
 

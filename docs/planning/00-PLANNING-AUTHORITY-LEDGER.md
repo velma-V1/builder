@@ -269,8 +269,9 @@ Status legend: `PLANNED` (registered here; authored by the named pass). Each inh
 
 Per CONTRACT-REGISTRY (owner PH-3): `CTR-PERMISSION-GRANT` (CMP-PERM), `CTR-APPROVAL-RECORD` (CMP-APPROVAL),
 `CTR-TOOL-DECLARATION` (CMP-TOOLREG), `CTR-AUDIT-RECORD` (CMP-AUDITW). Schemas to author (Pass 9):
-`permission-grant`, `approval-record`, `tool-declaration`, `audit-chain`. Any structural runtime-DB need is a
-new SHA-pinned `0004_*` migration under the schema-freeze rule (SCHEMA-REGISTRY); the substrate added none.
+`permission-grant`, `approval-record`, `tool-declaration`, `audit-record`. PH-3 records live in **separate
+PH-3 stores** — `migrations/security/0001_security_spine.sql` + `migrations/audit/0001_audit_chain.sql` (SHA-
+pinned) — **not** in the frozen runtime DB and **not** a runtime `0004_*` (ODI-RPH3-01 resolved, DEP-RPH3 §2).
 
 ### 9.4 Gap ownership updates
 
