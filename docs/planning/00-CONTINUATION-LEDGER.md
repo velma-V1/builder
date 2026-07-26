@@ -261,7 +261,7 @@ further corrections. Repaired in R8–R11 (still autonomous, docs-only):
   fabricated rollback; uncertain external outcomes → `UNCERTAIN`→`QUARANTINED`; every WIR command mapped to its
   class (`RESTART_SERVICE` = Class 3). (defect D7)
 - **Correction 2 (R9):** DEP-RPH3 migration inventory now defines the `*_intents` tables + `intervention_journal`
-  with `op_key`/status/reconciliation/audit_seq columns, `UNIQUE(op_key)`, indexes, ownership, retention,
+  with `op_key`/status/reconciliation/audit_seq columns, audit `UNIQUE(op_key, record_kind)` (R12), indexes, ownership, retention,
   migration-order. (D8)
 - **Correction 3 (R10):** split `01M-AC-19`, `01K-AC-21`, `01M-AC-30` into an RPH3 request/containment half +
   PH-5/PH-7 enforcement gates (`EG-PH5-11/12`, `EG-PH7-01..03`); no obligation removed. (D9)
@@ -271,4 +271,22 @@ further corrections. Repaired in R8–R11 (still autonomous, docs-only):
   `docs/verification/rph3-planning-audit.md` (**28/28 checks, 0 false positives**).
 
 Standing constraints unchanged; next action requires explicit operator authorization to begin roadmap PH-3
-implementation (first task RPH3-T4). Recommendation on record: `READY_FOR_OPERATOR_AUTHORIZATION_OF_RPH3-T4`.
+implementation (first task RPH3-T4).
+
+### RPH3 planning repair — review round 3 (R12, 2026-07-26)
+
+Operator review of the round-2 v2 certificate found **one blocking architectural contradiction** and **one
+evidence defect**; verdict returned to `RPH3_PLANNING_REPAIR_REQUIRED` pending R12. Both fixed in R12
+(docs-only):
+- **D10 (blocking):** the audit store's `UNIQUE(op_key)` made **Class 3 impossible** — it needs both an
+  `INTENT` (pre-execution) and a `COMPLETION` (post-execution) audit record. Fixed: audit store now
+  **`UNIQUE(op_key, record_kind)`** with `record_kind ∈ {INTENT, COMPLETION}` (≤1 each per op; Class-3
+  completion cannot precede intent); operation-intent tables keep `op_key` unique. Updated XSC-RPH3
+  §1/§2/§3/§6/§9, DEP-RPH3 §3/§3.1, SCHEMA-REGISTRY, audit-writer-spec (append-only unchanged — two distinct
+  rows, no update).
+- **D11 (evidence):** the audit report named `59eb778` + uncommitted edits and recorded an unclean tree.
+  Fixed: report re-run against the clean committed R12 tree (parent `971d49e`); the uncommitted-tree record is
+  replaced with clean-tree + remote-head verification; totals updated to **30/30** with the new Class-3
+  audit-record cardinality checks.
+
+Recommendation on record: `READY_FOR_OPERATOR_AUTHORIZATION_OF_RPH3-T4`.

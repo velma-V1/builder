@@ -36,12 +36,13 @@ frozen PH-2 module; the separate-store option is preferred to keep RPH3 fully se
 
 Every data structure required by **XSC-RPH3** (cross-store protocol) and **WIR-RPH3** (Watchdog receiver) is
 inventoried here. The security-spine store carries the domain records **and** the per-domain **operation-intent**
-tables + the WIR **intervention journal**; the audit store enforces `UNIQUE(op_key)`.
+tables + the WIR **intervention journal**; the audit store enforces `UNIQUE(op_key, record_kind)` (an
+operation may carry an `INTENT` and a `COMPLETION` audit record — see XSC-RPH3 §2 cardinality).
 
 | Store | Migration | Tables | Owner (sole writer) |
 |---|---|---|---|
 | security-spine | `migrations/security/0001_security_spine.sql` | domain records: `permission_grants`, `approval_records`, `approval_queue`, `tool_registry`, `tool_declarations`, `tool_quarantine`; **operation-intent** tables: `permission_intents`, `approval_intents`, `tool_registry_intents`; **receiver journal**: `intervention_journal` | per-table single writer: CMP-PERM (`permission_*`), CMP-APPROVAL (`approval_*`), CMP-TOOLREG (`tool_*`), WIR (`intervention_journal`) |
-| audit | `migrations/audit/0001_audit_chain.sql` | `audit_records` (append-only, `sequence`, `predecessor_hash`, `record_hash`, optional `signature`, `op_key`, `record_kind`) + `UNIQUE(op_key)` + `BEFORE UPDATE/DELETE` triggers `RAISE(ABORT)` | CMP-AUDITW |
+| audit | `migrations/audit/0001_audit_chain.sql` | `audit_records` (append-only, `sequence`, `predecessor_hash`, `record_hash`, optional `signature`, `op_key`, `record_kind` CHECK in (`INTENT`,`COMPLETION`)) + **`UNIQUE(op_key, record_kind)`** (≤1 INTENT + ≤1 COMPLETION per op) + `BEFORE UPDATE/DELETE` triggers `RAISE(ABORT)` | CMP-AUDITW |
 
 ### 3.1 Operation-intent / journal table shape (XSC-RPH3 · WIR-RPH3)
 
@@ -63,8 +64,11 @@ tables + the WIR **intervention journal**; the audit store enforces `UNIQUE(op_k
 | `created_ts` / `updated_ts` / `completed_ts` | INTEGER (monotonic) — created, last transition, completion |
 
 **Indexes:** `INDEX(status)` (startup reconciliation scan of non-terminal rows), `INDEX(operation_class,status)`
-(per-class reconciliation), `INDEX(target_ref)` (affected-work lookup, INV-3). Audit store: `UNIQUE(op_key)`
-(the exactly-once / at-most-once guard) + `INDEX(op_key)` (join) + existing `sequence` PK.
+(per-class reconciliation), `INDEX(target_ref)` (affected-work lookup, INV-3). Audit store:
+**`UNIQUE(op_key, record_kind)`** (the exactly-once / at-most-once guard — permits one `INTENT` + one
+`COMPLETION` per `K`, rejects duplicates of either) + `INDEX(op_key)` (join) + existing `sequence` PK.
+**Class-3 rule:** a `COMPLETION` insert is rejected unless an `INTENT` for the same `op_key` already exists
+(completion cannot precede intent).
 
 **Ownership & sole-writer rules.** Each `*_intents` table is written **only** by its owning domain writer
 (same authorizer partition as the domain records, DEP-RPH3 §4A); `intervention_journal` is written **only** by

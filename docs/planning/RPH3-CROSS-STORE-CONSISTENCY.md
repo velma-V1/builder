@@ -29,13 +29,20 @@ There is **no** window in which an operation is *reported successful* without a 
 |---|---|---|
 | Runtime-state DB (frozen PH-2) | CMP-ORCH only (R1); PH-3 read-only + `apply_transition` calls | PH-2 `BEGIN IMMEDIATE`; durable journal (`01M-AC-12`) |
 | Security-spine store (PH-3) | per-domain sole writer (CMP-PERM / CMP-APPROVAL / CMP-TOOLREG / WIR) | WAL; single-writer per table set (DEP-RPH3 §4A) |
-| Audit store (PH-3) | CMP-AUDITW only | WAL; append-only hash chain; `UNIQUE(op_key)` |
+| Audit store (PH-3) | CMP-AUDITW only | WAL; append-only hash chain; `record_kind ∈ {INTENT, COMPLETION}`; `UNIQUE(op_key, record_kind)` |
 
 ## 2. Operation identity & idempotency key
 
 Every operation `OP` carries `op_id = (domain, verb, subject_ref, actor, causal_ref)` and idempotency key
-`op_key = K = sha256(canonical(op_id) ‖ epoch)`. `K` is the primary key of the intent record and is unique in
-the audit store (`UNIQUE(op_key)`), making every step idempotent and correlating the three stores.
+`op_key = K = sha256(canonical(op_id) ‖ epoch)`. `K` is the **primary key of the operation-intent row**
+(exactly one intent row per operation). In the **audit store**, an operation may have up to **two** records —
+an `INTENT` and a `COMPLETION` — so audit uniqueness is **`UNIQUE(op_key, record_kind)`**, not `UNIQUE(op_key)`.
+
+**Audit-record cardinality (per `op_key`):** **zero or one `INTENT`** record, **zero or one `COMPLETION`**
+record. A second `INTENT` (or second `COMPLETION`) for the same `K` is rejected. **For Class 3, `COMPLETION`
+cannot precede `INTENT`** (the pre-execution intent audit must be durable first). Class 1/2 write a single
+`COMPLETION` audit record (their intent lives in the operation-intent table, not the audit store); **Class 3
+writes both** an `INTENT` (before execution) and a `COMPLETION` (after) audit record.
 
 ## 3. Protocol classes
 
@@ -68,10 +75,12 @@ back** and whose completion **cannot be un-done by writing to a store**. Note: p
 enforcement** itself is PH-5, not RPH3; when RPH3 *issues* a termination request that reaches an executor, the
 request is treated as Class 3.)*
 
-`S1 durable AUDIT INTENT (before execution)` *(CMP-AUDITW appends a `intent` audit record for `K` — so a
-record of the attempt exists even across a crash)* → `S2 execute the external/irreversible effect` →
-`S3 completion audit (durable, records proven outcome)` → `S4 mark COMMITTED`. **Reconciliation:** if an
-`intent` audit exists for `K` but no completion audit, the outcome is **unproven** → the affected
+`S1 durable AUDIT INTENT (before execution)` *(CMP-AUDITW appends an audit record with `record_kind = INTENT`
+for `K` — a distinct row from the later completion, allowed by `UNIQUE(op_key, record_kind)` — so a record of
+the attempt exists even across a crash)* → `S2 execute the external/irreversible effect` →
+`S3 completion audit (durable, `record_kind = COMPLETION`, records proven outcome; rejected if no INTENT for
+`K` exists)` → `S4 mark COMMITTED`. **Reconciliation:** if an `INTENT` audit exists for `K` but no
+`COMPLETION` audit, the outcome is **unproven** → the affected
 subject/resource enters `UNCERTAIN` → `QUARANTINED` (INV-4); it is never reported successful (INV-1) and never
 silently retried against an unknown side effect. A proven-idempotent Class-3 op (e.g. delete of an
 already-absent path) may be safely re-driven; otherwise operator/approval-gated recovery.
@@ -99,8 +108,10 @@ reconciles (INV-3). (4) Reconciliation uses the PH-2 `reconcile_startup` outcome
 
 ## 6. Duplicate replay
 
-All steps idempotent on `K`: intent insert is unique-on-`K`; audit append is `UNIQUE(op_key)` (a second append
-for `K` is rejected); status set is monotonic. Result: **exactly-once effect for Class 1/2**; Class 3 gets
+All steps idempotent on `K`: the operation-intent insert is unique-on-`K`; audit append is
+`UNIQUE(op_key, record_kind)` — at most one `INTENT` and one `COMPLETION` per `K`, so a **second `INTENT`** (or
+a **second `COMPLETION`**) for `K` is rejected while the `INTENT`+`COMPLETION` pair is allowed; status set is
+monotonic. Result: **exactly-once effect for Class 1/2**; Class 3 gets
 **at-most-once execution** guarded by the pre-execution audit intent (a duplicate that finds an `intent` for
 `K` without a completion audit does not re-execute — it reconciles to QUARANTINED unless proven idempotent).
 
@@ -121,13 +132,19 @@ not used until operator/approval recovery.
 
 ## 9. Tests & evidence (VR-RPH3-19)
 
-- *integration* — Class 1 happy path: one COMMITTED record + one completion audit joined by `K`; Class 2:
-  transition + completion audit, task not served until reconcile; Class 3: intent-audit precedes execution.
+- *integration* — Class 1 happy path: one COMMITTED record + one `COMPLETION` audit joined by `K`; Class 2:
+  transition + `COMPLETION` audit, task not served until reconcile; **Class 3: exactly one `INTENT` audit +
+  one `COMPLETION` audit for `K` (two rows, `UNIQUE(op_key, record_kind)`), `INTENT` durable before execution
+  and before `COMPLETION`**.
+- *cardinality* — `UNIQUE(op_key, record_kind)` admits an `INTENT`+`COMPLETION` pair but **rejects a second
+  `INTENT`** and **a second `COMPLETION`** for the same `K`; a `COMPLETION` with no prior `INTENT` for a
+  Class-3 op is rejected.
 - *failure-path (fault injection per window, per class)* — Class 1 pre-audit → ABORTED, no authority granted,
   **no success reported**; Class 2 post-transition/pre-audit → contained + roll-forward, not served, no
-  success reported; Class 3 post-execute/pre-audit → **QUARANTINED** (INV-4).
+  success reported; Class 3 post-execute/pre-`COMPLETION` → **UNCERTAIN → QUARANTINED** (INV-4), `INTENT`
+  record present as evidence of the attempt.
 - *adversarial* — honor a `PENDING` record (refused); report success with audit store forced unavailable
-  (fails closed); duplicate `K` (Class 1/2 single effect; Class 3 no re-execute).
+  (fails closed); duplicate `K` (Class 1/2 single effect; Class 3 no re-execute); forge a second `COMPLETION`.
 - *property* — for random crash injection at any instruction: **INV-1..INV-4 all hold** post-reconciliation.
 - **Evidence:** `cross-store-consistency` ETM rows; VM-2 gate (VEP §5) + `PROM-RPH3` requirement (VR-RPH3-19).
 

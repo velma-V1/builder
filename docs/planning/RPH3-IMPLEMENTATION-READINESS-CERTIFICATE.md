@@ -21,16 +21,18 @@ NOT roadmap PH-3 completion.**
   (D4) stale migration/dependency contradictions; (D5) PH-5/PH-7 enforcement falsely certifiable by
   `PROM-RPH3`; (D6) no enforceable shared-store ownership. Review round 2 added: (D7) cross-store invariant
   self-contradiction (biconditional); (D8) missing protocol tables in the migration inventory; (D9) residual
-  PH-5/PH-7 enforcement assigned to PH-3.
-- **v2 — this document (authoritative).** Repairs R1–R10 landed; the reproducible final audit
-  (`docs/verification/rph3-planning-audit.md`) passes. There is **no** active `RPH3_PLANNING_REPAIR_REQUIRED`
-  verdict — that was the interim state during repair and is now closed.
+  PH-5/PH-7 enforcement assigned to PH-3. Review round 3 added: (D10) `UNIQUE(op_key)` in the audit store made
+  Class 3 impossible (it needs both an `INTENT` and a `COMPLETION` audit record); (D11) the audit report did
+  not identify the final committed tree and recorded an unclean working tree.
+- **v2 — this document (authoritative).** Repairs R1–R12 landed; the reproducible final audit
+  (`docs/verification/rph3-planning-audit.md`, re-run against the clean committed tree) passes. There is **no**
+  active `RPH3_PLANNING_REPAIR_REQUIRED` verdict — that was the interim state during repair and is now closed.
 
 ## 1. Certificate (authoritative)
 
-Issued after the repair commits **R1–R11** and the repository-wide final audit. Repair provenance: the invalid
-v1 verdict (commit `1d3b860`) is superseded (see §0; full v1 body in
-`docs/planning/superseded/RPH3-CERT-v1-SUPERSEDED.md`). This is the authoritative certificate.
+Issued after the repair commits **R1–R12** and the repository-wide final audit (re-run against the clean
+committed tree). Repair provenance: the invalid v1 verdict (commit `1d3b860`) is superseded (see §0; full v1
+body in `docs/planning/superseded/RPH3-CERT-v1-SUPERSEDED.md`). This is the authoritative certificate.
 
 ### 1.1 Repair summary (defects → corrections)
 
@@ -43,15 +45,18 @@ v1 verdict (commit `1d3b860`) is superseded (see §0; full v1 body in
 | D5 PH-5 enforcement falsely certifiable | `EG-PH5-*`/`EG-PH7-*` gates excluded from `PROM-RPH3`; RPH3 keeps request contract + fail-closed-no-executor | TRACE-RPH3 §3; VEP §2a/§6 (R2/R10) |
 | D6 unenforceable shared-store ownership | Private per-domain writers, SQLite authorizer, isolation tests | DEP-RPH3 §4A (R6) |
 | D7 cross-store invariant self-contradiction (biconditional) | Replaced with 3 operation classes (reversible / frozen-PH-2 / external-irreversible) + INV-1..4; no fabricated rollback; `UNCERTAIN`→`QUARANTINED` | XSC-RPH3 §0/§3/§10a; WIR-RPH3 (R8) |
-| D8 missing protocol tables in migration inventory | `*_intents` + `intervention_journal` tables; `op_key`/status/reconciliation/audit_seq columns; `UNIQUE(op_key)`; indexes; retention; migration-order | DEP-RPH3 §3/§3.1/§4A (R9) |
+| D8 missing protocol tables in migration inventory | `*_intents` + `intervention_journal` tables; `op_key`/status/reconciliation/audit_seq columns; `UNIQUE(op_key, record_kind)`; indexes; retention; migration-order | DEP-RPH3 §3/§3.1/§4A (R9) |
 | D9 residual PH-5/PH-7 enforcement assigned to PH-3 | Split `01M-AC-19`, `01K-AC-21`, `01M-AC-30` into RPH3 request/containment half + `EG-PH5-11/12`/`EG-PH7-01` enforcement half | TRACE-RPH3 §3; VEP VR-03/07/15 (R10) |
+| D10 `UNIQUE(op_key)` made Class 3 impossible | Audit store now `UNIQUE(op_key, record_kind)`: ≤1 `INTENT` + ≤1 `COMPLETION` per op; Class-3 completion cannot precede intent; op-intent tables keep `op_key` unique | XSC-RPH3 §1/§2/§3/§6/§9; DEP-RPH3 §3/§3.1; SCHEMA-REGISTRY; audit-writer-spec (R12) |
+| D11 audit report did not identify the final committed tree | Report re-run against clean committed HEAD; records exact commit; C-check replaced with clean-tree + remote-head verification; totals updated w/ Class-3 audit-record check | `docs/verification/rph3-planning-audit.md` (R12) |
 
 ### 1.2 Final-audit result (repository-wide sweeps)
 
-**Reproducible audit report: `docs/verification/rph3-planning-audit.md`.** **28 automated checks run — 28
-PASS, 0 FAIL, no false positive** (the namespace check now excludes the "no `SEC-PH3-*`/`PROM-PH3` reuse"
-declaration sentences; the corpus uses `PROM-RPH3`/`SEC-RPH3-*` exclusively). Implementation files
-(`src/`,`tests/`,`scripts/`,`migrations/`) **untouched** across R1–R11 (docs-only).
+**Reproducible audit report: `docs/verification/rph3-planning-audit.md`** (re-run against the clean committed
+R12 tree). **30 automated checks — 30 PASS, 0 FAIL.** Two checks apply a documented context filter (a
+"no `SEC-PH3-*`/`PROM-PH3` reuse" declaration; the D10 defect description naming the old `UNIQUE(op_key)`) so
+they are not miscounted — the corpus uses `PROM-RPH3`/`SEC-RPH3-*` and `UNIQUE(op_key, record_kind)`.
+Implementation files (`src/`,`tests/`,`scripts/`,`migrations/`) **untouched** across R1–R12 (docs-only).
 
 Specifically proven by the final audit:
 - every `01M-AC-01..32` and `01K-AC-01..25` mapped exactly and semantically in TRACE-RPH3;
@@ -64,7 +69,7 @@ Specifically proven by the final audit:
 - the cross-store protocol defines **3 operation classes** (reversible / frozen-PH-2 / external-irreversible)
   and enforces **INV-1..INV-4**; no fabricated rollback; uncertain external outcomes → `UNCERTAIN`/`QUARANTINED`;
 - the migration inventory contains every XSC/WIR structure (`*_intents`, `intervention_journal`, `op_key`,
-  `UNIQUE(op_key)`, status/reconciliation/audit_seq columns, indexes, retention, migration order);
+  `UNIQUE(op_key, record_kind)`, status/reconciliation/audit_seq columns, indexes, retention, migration order);
 - `01M-AC-19`, `01K-AC-21`, `01M-AC-30` are split — RPH3 request/containment half + PH-5/PH-7 enforcement half;
 - no runtime `0004_*` contradiction; migration layout consistent (`migrations/security/0001`, `migrations/audit/0001`);
 - no RPH3 document disagrees about CMP-LEASE consumption (not an RPH3 dependency);
@@ -89,16 +94,18 @@ Specifically proven by the final audit:
 | C12 | RPH3 namespace disjoint from substrate (`PROM-RPH3`/`SEC-RPH3-*`) | PASS |
 | C13 | Roadmap unamended; PH-2 frozen; PR #10 + impl files untouched; branch clean+synced | PASS |
 | C14 | Cross-store protocol has 3 classes + INV-1..4; no fabricated rollback; `UNCERTAIN` state (D7) | PASS |
-| C15 | Migration inventory covers `*_intents`/`intervention_journal`/`op_key`/`UNIQUE(op_key)`/status+recon columns (D8) | PASS |
+| C15 | Migration inventory covers `*_intents`/`intervention_journal`/`op_key`/`UNIQUE(op_key,record_kind)`/status+recon columns (D8) | PASS |
 | C16 | `01M-AC-19`/`01K-AC-21`/`01M-AC-30` split into RPH3 + PH-5/PH-7 gates, no obligation dropped (D9) | PASS |
 | C17 | Certificate header verdict = v2; no active REPAIR_REQUIRED; v1 in superseded doc; audit report exists | PASS |
+| C18 | Audit store `UNIQUE(op_key, record_kind)`; Class 3 carries `INTENT`+`COMPLETION`; completion≮intent; no bare `UNIQUE(op_key)` asserted (D10) | PASS |
+| C19 | Audit report reviews the clean **committed** R12 tree (parent `971d49e`); clean-tree + remote-head verification replaces the old uncommitted-tree record (D11) | PASS |
 
-Full reproducible evidence: `docs/verification/rph3-planning-audit.md` (28/28 checks).
+Full reproducible evidence: `docs/verification/rph3-planning-audit.md` (**30/30 checks**).
 
 ### 1.4 Corrected verdict
 
 **`RPH3_CERTIFIED_WITH_NONBLOCKING_GAPS` (v2).** The roadmap PH-3 implementation-planning package is complete,
-internally consistent, and free of the D1–D9 defect classes. Non-blocking items (§6): PR #10 substrate
+internally consistent, and free of the D1–D11 defect classes. Non-blocking items (§6): PR #10 substrate
 blockers XIB-01..04 (external); PH-7-deferred criteria `01M-AC-24..29`; PH-5/PH-7 enforcement gates
 `EG-PH5-01..12` + `EG-PH7-01..03` (interface-defined here, enforced/certified in PH-5/PH-7). **This certifies
 planning readiness only — NOT implementation authorization, NOT merge authorization, NOT PH-3 completion.**

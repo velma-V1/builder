@@ -24,10 +24,12 @@ inputs:
   - audit events (actor, action class, task/resource ref, decision, timestamp, optional payload hash)
   - configured signing key (optional)
 outputs:
-  - appended AuditRecord (sequence, predecessor_hash, record_hash, optional signature)
+  - appended AuditRecord (sequence, predecessor_hash, record_hash, optional signature, op_key, record_kind ∈ {INTENT, COMPLETION})
   - export bundles (for CMP-AUDITV / operator)
 interfaces:
-  - "AuditWriter.append(event: AuditEvent) -> AuditRecord   # sole append path; sequence = prev+1"
+  - "AuditWriter.append(event: AuditEvent) -> AuditRecord   # sole append path; sequence = prev+1; carries op_key + record_kind"
+  - "# UNIQUE(op_key, record_kind): <=1 INTENT + <=1 COMPLETION per op_key (XSC-RPH3 Class 3 needs both);"
+  - "# a COMPLETION for a Class-3 op is rejected unless an INTENT for that op_key already exists (completion !< intent)"
   - "AuditWriter.head() -> AuditRecord | None                # current chain tip (read)"
   - "AuditWriter.export(range) -> AuditExport                # integrity-checked on the way out"
 dependencies:
@@ -57,6 +59,9 @@ required_tests:
   - hash-chain: each record links predecessor identity + monotonic sequence
   - durability: record is flushed before the audited action reports success
   - concurrency: two appends against the same head — one wins, the other retries; no gap/fork
+  - record_kind cardinality: an `INTENT`+`COMPLETION` pair for one op_key is accepted; a **second INTENT** or
+    **second COMPLETION** for the same op_key is rejected (`UNIQUE(op_key, record_kind)`)
+  - Class-3 ordering: a `COMPLETION` whose op_key has no prior `INTENT` is rejected (completion cannot precede intent)
   - security: caller cannot forge sequence/predecessor/hash fields
 ```
 

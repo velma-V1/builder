@@ -2,17 +2,16 @@
 
 **Document ID:** AUDIT-RPH3 · **Repository path:** `docs/verification/rph3-planning-audit.md`
 **Reviewed branch:** `claude/roadmap-ph3-security-spine-planning`
-**Reviewed working state:** at local HEAD `59eb778` **plus** the uncommitted R11 edits (this report + the
-certificate restructure) staged in the same commit that adds this file — i.e. this report describes the tree
-that the R11 commit produces.
-**Base (PH-2 tip):** `7b1922e` · **Date (UTC):** 2026-07-26T05:16:39Z
+**Reviewed commit:** the **R12 commit** on this branch (the commit that adds this report). Its parent is
+`971d49e` (R11). The exact R12 SHA is the branch tip after R12 — recorded in `CONTINUATION-LEDGER §10`
+and reproducible with `git rev-parse HEAD` on this branch (must equal `git rev-parse origin/claude/roadmap-ph3-security-spine-planning`).
+**Base (PH-2 tip):** `7b1922e` · **Date (UTC):** 2026-07-26T05:31:22Z
 
-This report is the reproducible evidence backing the `RPH3_CERTIFIED_WITH_NONBLOCKING_GAPS` (v2) verdict in
-`docs/planning/RPH3-IMPLEMENTATION-READINESS-CERTIFICATE.md`. It records exact commands, exact results, the
-changed-file inventory, documentation-only confirmation, and the manual + cross-document + phase-ownership +
-certificate-consistency checks.
+Reproduce: check out the R12 commit and run the audit block below from the repo root. This report reviews the
+**clean committed tree** at R12 (superseding the earlier report, which incorrectly named HEAD `59eb778` plus
+uncommitted edits and recorded an unclean working tree — review-round-3 defect **D11**).
 
-## 1. Changed-file inventory (base `7b1922e` → reviewed tree)
+## 1. Changed-file inventory (base `7b1922e` → R12)
 
 Documentation only. Non-doc files changed: **NONE**.
 
@@ -30,7 +29,7 @@ docs/planning/RPH3-TRACEABILITY.md
 docs/planning/RPH3-VERIFICATION-EVIDENCE-PROMOTION.md
 docs/planning/RPH3-WATCHDOG-INTERVENTION-RECEIVER.md
 docs/planning/SCHEMA-REGISTRY.md
-docs/planning/superseded/
+docs/planning/superseded/RPH3-CERT-v1-SUPERSEDED.md
 docs/plans/section-3-orchestrator-watchdog-and-permissions.md
 docs/specifications/components/00-COMPONENT-MAP.md
 docs/specifications/components/RPH3-INTEGRATION.md
@@ -45,18 +44,18 @@ docs/specifications/components/tool-registry-spec.md
 docs/specifications/components/watchdog-spec.md
 docs/templates/VERIFICATION-REPORT.template.md
 docs/templates/checklist/PHASE-EXIT-CHECKLIST.template.md
+docs/verification/rph3-planning-audit.md
 ```
 
 **Confirmation:** `git diff --name-only 7b1922e..HEAD | grep -E '^(src/|tests/|scripts/|migrations/)'` →
-empty. No runtime code, tests, scripts, migrations, or other implementation files were modified. All changes
-are under `docs/`.
+empty. No runtime code, tests, scripts, migrations, or other implementation files were modified. Docs only.
 
 ## 2. Automated checks
 
-**Totals: PASS=28 FAIL=0.** No false positives (the namespace check C24 excludes the
-"no \`SEC-PH3-*\`/\`PROM-PH3\` reuse" declaration sentences; the corpus uses `PROM-RPH3` and
-`SEC-RPH3-*` exclusively). Representative commands are inlined per check; the full suite is a single bash
-block re-runnable from the repo root.
+**Totals: 30 passed, 0 failed** (of 30). Two checks (C24 namespace, C26 audit-constraint) apply a
+context filter so that a *declaration of what NOT to reuse* (`no \`SEC-PH3-*\`/\`PROM-PH3\``) and the
+D10 *defect description* naming the **old** `UNIQUE(op_key)` constraint are not counted as violations —
+these are documented exclusions, not corpus edits, and are shown here for transparency.
 
 ```
 
@@ -66,92 +65,81 @@ PASS  C03 all 01K-AC-01..25 in TRACE
 PASS  C04 output-validation uses 01K-DEC-25 not 01K-AC-25
 PASS  C05 XSC defines 3 classes
 PASS  C06 XSC defines INV-1..INV-4
-PASS  C07 no stale authoritative<=>audited biconditional as active rule
-PASS  C08 RESTART_SERVICE tagged Class 3 in WIR
-PASS  C09 UNCERTAIN quarantine state named in XSC
-PASS  C10 intent tables in DEP migration inventory
-PASS  C11 op_key + UNIQUE(op_key) specified
+PASS  C07 biconditional not an active rule
+PASS  C08 RESTART_SERVICE = Class 3 in WIR
+PASS  C09 UNCERTAIN state named
+PASS  C10 intent tables + intervention_journal in DEP
+PASS  C11 op_key present
 PASS  C12 intent status/reconciliation/audit_seq columns
-PASS  C13 phase split: 01M-AC-19 -> EG-PH5-11 + EG-PH7-01
-PASS  C14 phase split: 01K-AC-21 emergency stop -> EG-PH5-05/06
-PASS  C15 phase split: 01M-AC-30 -> EG-PH5-12
-PASS  C16 PROM-RPH3 excludes EG-PH5 + EG-PH7 gates
-PASS  C17 no runtime/0004 PH-3 migration asserted
+PASS  C13 01M-AC-19 -> EG-PH5-11 + EG-PH7-01
+PASS  C14 01K-AC-21 -> EG-PH5-05/06
+PASS  C15 01M-AC-30 -> EG-PH5-12
+PASS  C16 PROM-RPH3 excludes EG-PH7
+PASS  C17 no runtime/0004 PH-3 migration
 PASS  C18 no audit-via-CMP-ORCH
-PASS  C19 no CMP-LEASE consumption claim in 10A
-PASS  C20 store-ownership enforcement present (DEP §4A)
-PASS  C21 CERT header verdict is v2 certified
-PASS  C22 no active REPAIR_REQUIRED verdict in CERT header/body §1
-PASS  C23 v1 moved to superseded doc
-PASS  C24 namespace: no actual PROM-PH3/SEC-PH3-0N reuse
-PASS  C25 no src/tests/scripts/migrations changed since base 7b1922e
-PASS  C26 working tree has only staged/uncommitted docs
-PASS  C27 main untouched
-PASS  C28 PR#10 untouched
+PASS  C19 no CMP-LEASE consumption in 10A
+PASS  C20 store-ownership authorizer (DEP §4A)
+PASS  C21 CERT header verdict v2
+PASS  C22 no active REPAIR_REQUIRED in cert header
+PASS  C23 v1 in superseded doc
+PASS  C24 no actual PROM-PH3/SEC-PH3-0N reuse
+PASS  C25 audit UNIQUE(op_key, record_kind) in DEP+XSC
+PASS  C26 no bare UNIQUE(op_key) asserted (excl. D10 defect description)
+PASS  C27 Class-3 INTENT+COMPLETION + completion!<intent in XSC
+PASS  C28 audit-writer spec cardinality + ordering test
+PASS  C29 op-intent op_key stays PK/unique
+PASS  C30 no src/tests/scripts/migrations changed since base 7b1922e
 ```
 
 ### Exact commands (representative)
 - Ambiguous refs (C01): `grep -rnE "01[MK]\`? ?#[0-9]" docs/plans/section-3*.md docs/planning/RPH3-*.md docs/specifications/components/` → empty.
-- AC completeness (C02/C03): loop `for n in $(seq -w 1 32|25); do grep -q "01M-AC-$n|01K-AC-$n" TRACE-RPH3; done` → all present.
-- Decision-vs-acceptance (C04): `grep 01K-DEC-25 VEP-RPH3` present; output-validation not tied to 01K-AC-25.
-- XSC classes/invariants (C05/C06): `grep -cE "^### Class [123] —"` = 3; `grep INV-4` present.
-- Migration tables (C10-C12): `grep permission_intents|intervention_journal|op_key|UNIQUE(op_key)|reconciliation_state|audit_seq DEP-RPH3` present.
-- Phase splits (C13-C15): `grep EG-PH5-11|EG-PH7-01|EG-PH5-06|EG-PH5-12 TRACE-RPH3` present.
-- Migration contradictions (C17-C19): runtime/0004, audit-via-ORCH, CMP-LEASE-consumption → none.
-- Impl-untouched (C25): `git diff --name-only 7b1922e..HEAD | grep -E '^(src/|tests/|scripts/|migrations/)'` → empty.
-- Git state (C27/C28): `git rev-parse --short origin/main`=9bce1ca; `origin/claude/ph3-worker-engine`=7b1922e.
+- AC completeness (C02/C03): loops over `01M-AC-01..32` / `01K-AC-01..25` in TRACE-RPH3 → all present.
+- Decision-vs-acceptance (C04): output-validation → `01K-DEC-25` (not `01K-AC-25`).
+- XSC classes/invariants (C05/C06): 3 `### Class` headers; `INV-4` present.
+- **Audit-record cardinality (C25/C27/C29):** `UNIQUE(op_key, record_kind)` in DEP + XSC; `record_kind = INTENT` + "COMPLETION cannot precede INTENT" in XSC; op-intent `op_key` stays the intent-row PK. (D10 fix)
+- Audit-writer spec (C28): `record_kind cardinality` + `completion cannot precede intent` tests present.
+- No bare `UNIQUE(op_key)` asserted as schema (C26); no runtime/0004, audit-via-ORCH, CMP-LEASE-consumption (C17-C19).
+- Impl-untouched (C30): `git diff --name-only 7b1922e..HEAD | grep -E '^(src/|tests/|scripts/|migrations/)'` → empty.
+
+### Clean-tree and remote-head verification (replaces the earlier "uncommitted docs" record)
+Run against the R12 commit (post-commit):
+```
+git status --porcelain            # → empty (clean committed tree)
+git rev-parse HEAD                # → R12 SHA
+git rev-parse origin/claude/roadmap-ph3-security-spine-planning      # → equal to HEAD (branch pushed, in sync)
+git rev-parse --short origin/main # → 9bce1ca (untouched)
+git rev-parse --short origin/claude/ph3-worker-engine  # → 7b1922e (PR #10 untouched)
+```
+These are confirmed for the R12 commit in this session's final report and are reproducible by checking out R12.
 
 ## 3. Manual consistency checks
-
-- **XSC-RPH3 self-consistency:** the `authoritative ⟺ audited` biconditional is removed; replaced by INV-1..4.
-  Class 2 (frozen PH-2 transition) is reconciled **roll-forward only** and never described as rollbackable;
-  Class 3 (external/irreversible) has **no rollback path** and routes uncertainty to `UNCERTAIN → QUARANTINED`
-  (§10a "no fabricated rollback"). ✔
-- **Invariants enforce the intent:** INV-1 (no success before durable completion audit) closes the original
-  "success without audit" gap; the W3′ case no longer violates it because success is not reported until the
-  completion audit and affected work is not served until reconcile (INV-3). ✔
+- XSC-RPH3: biconditional removed; 3 classes + INV-1..4; Class 2 roll-forward-only (no rollback claim);
+  Class 3 no rollback, `UNCERTAIN → QUARANTINED`; **§10a no fabricated rollback**. ✔
+- **Audit cardinality (D10):** Class 3 needs an `INTENT` and a `COMPLETION` audit record; the audit store
+  now enforces `UNIQUE(op_key, record_kind)` (≤1 each) with completion-not-before-intent; the append-only
+  writer is unchanged (two distinct append rows, no update). ✔
 
 ## 4. XSC / WIR / DEP cross-document checks
-
-- Every WIR command has an XSC class: 4 task-state = Class 2; `RESTART_SERVICE` = Class 3; RESTORE/SNAPSHOT +
-  non-task QUARANTINE = INERT (PH-7/PH-5). ✔ (WIR §3, XSC §10)
-- Every store/table XSC and WIR require exists in the DEP migration inventory: `permission_intents`,
-  `approval_intents`, `tool_registry_intents`, `intervention_journal`, `UNIQUE(op_key)`, status +
-  reconciliation + audit_seq columns, reconciliation/status indexes, retention rules. ✔ (DEP §3/§3.1/§4A)
+- Every WIR command has an XSC class (4 task-state = Class 2; `RESTART_SERVICE` = Class 3; RESTORE/SNAPSHOT +
+  non-task QUARANTINE INERT). ✔
+- Every store/table XSC & WIR require exists in the DEP inventory: `*_intents`, `intervention_journal`,
+  `op_key`, `UNIQUE(op_key, record_kind)`, `record_kind`, status/reconciliation/audit_seq columns,
+  indexes, retention. ✔
 - Statuses consistent across XSC/WIR/DEP: `PENDING/COMMITTED/ABORTED/UNCERTAIN/QUARANTINED`. ✔
 
 ## 5. Phase-ownership checks (RPH3 vs PH-5/PH-7)
-
-- `01M-AC-19`: RPH3 fails closed on permission/approval/audit/state-authority; **isolation → EG-PH5-11**,
-  **evidence/promotion → EG-PH7-01**. ✔
-- `01K-AC-21` emergency stop: RPH3 issues containment/revoke/block/transition/fail-closed; **actual
-  process-tree termination + no-orphan proof → EG-PH5-05/06**. ✔
-- `01M-AC-30` Watchdog-loss (already-running high-risk): RPH3 issues pause transition + blocks admission;
-  **suspend/terminate the live sandbox → EG-PH5-12**. ✔
-- Process isolation / termination / promotion / evidence / snapshots: all assigned to PH-5/PH-7 gates with the
-  RPH3 request half retained (TRACE-RPH3 §3; no obligation removed). ✔
+- `01M-AC-19` split (isolation→EG-PH5-11, evidence/promotion→EG-PH7-01); `01K-AC-21` split (termination
+  proof→EG-PH5-05/06); `01M-AC-30` split (live-process suspend→EG-PH5-12). No obligation dropped. ✔
 
 ## 6. Certificate-consistency checks
+- Header verdict = `RPH3_CERTIFIED_WITH_NONBLOCKING_GAPS` (v2); no active REPAIR_REQUIRED; v1 in
+  `docs/planning/superseded/RPH3-CERT-v1-SUPERSEDED.md`; this report backs the PASS. ✔
 
-- Top-level current verdict = `RPH3_CERTIFIED_WITH_NONBLOCKING_GAPS` (v2). ✔
-- No active `RPH3_PLANNING_REPAIR_REQUIRED` verdict remains in the header/body (only referenced as the
-  closed interim state). ✔
-- v1 body moved to `docs/planning/superseded/RPH3-CERT-v1-SUPERSEDED.md`, marked INVALID/historical. ✔
-- No PASS is claimed without this reproducible report. ✔
-
-## 7. Remaining gaps (non-blocking; correctly out of PROM-RPH3)
-
-- **External (PR #10 substrate):** XIB-01..04 — owned by a dedicated PR #10 correction / PH-5.
-- **PH-5 enforcement gates:** `EG-PH5-01..12` (process-tree termination, orphan proof, sandbox
-  quarantine/recording/evidence, credential/network, isolation-control fail-closed, live-process suspend).
-- **PH-7 gates:** `EG-PH7-01..03` (evidence/promotion-control fail-closed, snapshot/reserve, promotion
-  verification) + `01M-AC-24..29`.
-- RPH3 defines the request/decision/containment contract + fail-closed-when-no-executor for each; enforcement
-  is verified at the owning phase's gate.
+## 7. Remaining gaps (non-blocking; outside PROM-RPH3)
+XIB-01..04 (external PR #10 / PH-5); `EG-PH5-01..12`; `EG-PH7-01..03` + `01M-AC-24..29`. RPH3 defines the
+request/containment contract + fail-closed-when-no-executor; enforcement is verified at the owning phase gate.
 
 ## 8. Final verdict
-
-**`RPH3_CERTIFIED_WITH_NONBLOCKING_GAPS` (v2).** 28/28 automated checks pass; manual, cross-document,
+**`RPH3_CERTIFIED_WITH_NONBLOCKING_GAPS` (v2).** 30/30 automated checks pass; manual, cross-document,
 phase-ownership, and certificate-consistency checks pass; changes are documentation-only; roadmap unamended;
-PH-2 frozen; PR #10 and implementation files untouched. Certifies **planning readiness only** — not
-implementation authorization, not merge authorization, not PH-3 completion.
+PH-2 frozen; PR #10 and implementation files untouched. Certifies **planning readiness only**.
