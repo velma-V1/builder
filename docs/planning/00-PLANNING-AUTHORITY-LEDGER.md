@@ -82,7 +82,7 @@ present and adequate), `PARTIAL` (present as a stub/outline needing expansion in
 | 12 | Workstream Map | `docs/planning/WORKSTREAM-MAP.md` | EXISTS |
 | 13 | Parallel Execution Map | `docs/planning/WORKSTREAM-MAP.md` + roadmap §9 | EXISTS |
 | 14 | Critical Path Map | `docs/10-IMPLEMENTATION-ROADMAP.md §8` | EXISTS |
-| 15 | Resource Allocation Plan | `docs/planning/RESOURCE-ALLOCATION-PLAN.md` | MISSING (gap G-02) |
+| 15 | Resource Allocation Plan | `docs/planning/RESOURCE-ALLOCATION-PLAN.md` | EXISTS (RPH3 Pass 7; G-02 resolved) |
 | 16 | Repository Layout Map | `docs/00-DOCUMENTATION-INDEX.md` "Required future structure" | EXISTS |
 | 17 | Verification Matrix | `docs/planning/VERIFICATION-MATRIX.md` | EXISTS |
 | 18 | Acceptance Matrix | `docs/planning/VERIFICATION-MATRIX.md` (acceptance rows) | EXISTS |
@@ -256,7 +256,8 @@ Status legend: `PLANNED` (registered here; authored by the named pass). Each inh
 | PLAN-S3 | `docs/plans/section-3-orchestrator-watchdog-and-permissions.md` | Roadmap PH-3 executable task plan (RPH3-T1…T5 + execution/dependency graph + external-blocker register §7) | Plan | RPH3 Pass 5 | **EXISTS** (expanded Pass 5) |
 | SPEC-RPH3-set | `docs/specifications/components/{watchdog,permission,approval,audit-writer,audit-validator,tool-registry,tool-gateway,safe-mode,file-op-service}-spec.md` + `RPH3-INTEGRATION.md` | Per-component 18-field specs for CMP-WATCH/PERM/APPROVAL/AUDITW/AUDITV/TOOLREG/TOOLGW/DIAG + CMP-FILEOP | Component spec | RPH3 Pass 4 | **EXISTS** (authored Pass 4; 9 specs + integration) |
 | VEP-RPH3 | `docs/planning/RPH3-VERIFICATION-EVIDENCE-PROMOTION.md` | Verification/evidence/promotion architecture; `01M`(32)+`01K`(25) traceability; VM-2; `PROM-RPH3` | Plan (subordinate to `01G`/MATRIX-VERIF) | RPH3 Pass 6 | **EXISTS** (Pass 6; 18 VR rows) |
-| FRR-RPH3 | `docs/planning/RPH3-FAILURE-RECOVERY-ROLLBACK.md` | Failure/recovery/rollback (Watchdog-loss, fail-closed, quarantine) | Plan (subordinate to `01M`/`04`) | RPH3 Pass 7 | PLANNED |
+| FRR-RPH3 | `docs/planning/RPH3-FAILURE-RECOVERY-ROLLBACK.md` | Failure/recovery/rollback (Watchdog-loss, fail-closed, quarantine) | Plan (subordinate to `01M`/`04`) | RPH3 Pass 7 | **EXISTS** (Pass 7; 18 FM rows) |
+| RES-ALLOC-000 | `docs/planning/RESOURCE-ALLOCATION-PLAN.md` | Resource envelopes + staged thresholds + reservation policy | Plan (subordinate to `01M §3.3`/`01J §3.3`) | Planning (RPH3 Pass 7; G-02) | **EXISTS** (Pass 7) |
 | SEC-RPH3 | `docs/planning/RPH3-SECURITY-TRUST-BOUNDARIES.md` | Security assets/threats/trust boundaries; `SEC-RPH3-xx` tests | Plan (subordinate to `01K`/`01E`/`01M`) | RPH3 Pass 8 | PLANNED |
 | DEP-RPH3 | `docs/planning/RPH3-DEPLOYMENT-MIGRATION.md` | Platform footprint + PH-3 schemas/migrations (permission-grant, approval-record, tool-declaration, audit-chain; `0004_*` under freeze) | Plan (subordinate to `01O`/`01N`) | RPH3 Pass 9 | PLANNED |
 | CERT-RPH3 | `docs/planning/RPH3-IMPLEMENTATION-READINESS-CERTIFICATE.md` | Final inventory, audits, handoff, readiness certificate | Derived certification | RPH3 Pass 10 | PLANNED |
@@ -270,8 +271,8 @@ new SHA-pinned `0004_*` migration under the schema-freeze rule (SCHEMA-REGISTRY)
 
 ### 9.4 Gap ownership updates
 
-- **G-02 RESOURCE-ALLOCATION-PLAN** — scheduled into RPH3 planning (Watchdog resource thresholds,
-  `01M §3.3/§3.6`); authored RPH3 Pass 6/7. Non-blocking.
+- **G-02 RESOURCE-ALLOCATION-PLAN — RESOLVED (RPH3 Pass 7):** `docs/planning/RESOURCE-ALLOCATION-PLAN.md`
+  authored (envelopes + staged thresholds + reservation policy; PH-4 extends it for CMP-RESSCHED).
 - **G-06 VERIFICATION-REPORT template — RESOLVED (RPH3 Pass 6):** `docs/templates/VERIFICATION-REPORT.template.md`
   created (generalizes the Section-1 report). **G-05 PHASE-EXIT-CHECKLIST** — scheduled RPH3 Pass 10.
   Non-blocking.
