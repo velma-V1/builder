@@ -254,7 +254,7 @@ Status legend: `PLANNED` (registered here; authored by the named pass). Each inh
 | Document ID | Path | Purpose (single) | Authority | Owning pass | Status |
 |---|---|---|---|---|---|
 | PLAN-S3 | `docs/plans/section-3-orchestrator-watchdog-and-permissions.md` | Roadmap PH-3 executable task plan (RPH3-T1…T5 + execution/dependency graph) | Plan | RPH3 Pass 5 | PARTIAL (stub) |
-| SPEC-RPH3-set | `docs/specifications/components/{watchdog,permission,approval,audit-writer,audit-validator,tool-registry,tool-gateway,safe-mode,file-op-service}-spec.md` + `RPH3-INTEGRATION.md` | Per-component 18-field specs for CMP-WATCH/PERM/APPROVAL/AUDITW/AUDITV/TOOLREG/TOOLGW/DIAG + file-op | Component spec | RPH3 Pass 4 | PLANNED |
+| SPEC-RPH3-set | `docs/specifications/components/{watchdog,permission,approval,audit-writer,audit-validator,tool-registry,tool-gateway,safe-mode,file-op-service}-spec.md` + `RPH3-INTEGRATION.md` | Per-component 18-field specs for CMP-WATCH/PERM/APPROVAL/AUDITW/AUDITV/TOOLREG/TOOLGW/DIAG + CMP-FILEOP | Component spec | RPH3 Pass 4 | **EXISTS** (authored Pass 4; 9 specs + integration) |
 | VEP-RPH3 | `docs/planning/RPH3-VERIFICATION-EVIDENCE-PROMOTION.md` | Verification/evidence/promotion architecture; `01M`(32)+`01K`(25) traceability; VM-2; `PROM-RPH3` | Plan (subordinate to `01G`/MATRIX-VERIF) | RPH3 Pass 6 | PLANNED |
 | FRR-RPH3 | `docs/planning/RPH3-FAILURE-RECOVERY-ROLLBACK.md` | Failure/recovery/rollback (Watchdog-loss, fail-closed, quarantine) | Plan (subordinate to `01M`/`04`) | RPH3 Pass 7 | PLANNED |
 | SEC-RPH3 | `docs/planning/RPH3-SECURITY-TRUST-BOUNDARIES.md` | Security assets/threats/trust boundaries; `SEC-RPH3-xx` tests | Plan (subordinate to `01K`/`01E`/`01M`) | RPH3 Pass 8 | PLANNED |
@@ -284,6 +284,8 @@ new SHA-pinned `0004_*` migration under the schema-freeze rule (SCHEMA-REGISTRY)
   planning docs → component/task/interface instances → verification reports. DAG; verified by inspection.
 - **Namespace disjointness:** the §9.1 table is verified disjoint from WES-CLASS §3 and from the vacated
   `docs/planning/PH3-*.md` filenames (WES-CLASS §4).
-- **File-op component note:** roadmap §PH-3 lists a "safe file-op service" with no dedicated `CMP-*` row in
-  COMPONENT-MAP (file-op lives with the tool/security surface). Flagged for RPH3 Pass 4 to either add a
-  `CMP-FILEOP` row (COMPONENT-MAP change-control) or fold file-op into CMP-TOOLGW's spec. Non-blocking here.
+- **File-op component note — RESOLVED (RPH3 Pass 4):** `CMP-FILEOP` added as COMPONENT-MAP #40 via
+  change-control (count 39→40), correcting a prior omission (roadmap §PH-3 already names "safe file-op"); its
+  spec is `docs/specifications/components/file-op-service-spec.md`. Not folded into CMP-TOOLGW — file-op has a
+  distinct owned path (`src/factory/fileops/**`) and responsibility (path authority, escape blocking, Dec B
+  deletion-gating, archive limits).

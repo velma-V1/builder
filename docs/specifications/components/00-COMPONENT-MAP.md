@@ -13,7 +13,11 @@
 - **BASE-R (recovery):** fail closed on unknown/inconsistent/corrupt/security state → BLOCKED/QUARANTINED (`01M §2.25`); resume only after reconciliation (`01M §2.12`); preserve evidence before restart (`01M §2.15`).
 - **BASE-RES (resource):** bounded by versioned Resource Scheduler policy; reservations before use (`01J §3.3`, `01K §3.1`); ≤1 GPU-heavy on 12 GB (`01D §2.13`).
 
-## Components (39)
+## Components (40)
+
+> **Change-control note (2026-07-26, RPH3 Pass 4):** #40 **CMP-FILEOP** added to correct a prior omission —
+> roadmap §PH-3 names a "safe file-op" component and the section-3 plan owns `src/factory/fileops/**`, but no
+> dedicated row existed. This records an existing roadmap component, not a new architectural decision.
 
 Fields: responsibility · authoritative state · inputs/outputs · interfaces · dependencies · owned contracts · +/− authority · trust · failure/degrade/recovery · security · resource · tests · phase.
 
@@ -56,5 +60,7 @@ Fields: responsibility · authoritative state · inputs/outputs · interfaces ·
 37. **CMP-DIAG — Diagnostics** [PH-8/Safe Mode PH-3]: inspection + approved repair; **Safe Mode no autonomous writes**.
 38. **CMP-PKG — Packaging** [PH-8]: build from clean commit; immutable identities, SBOM, hashes; co-owns CTR-RELEASE-MANIFEST.
 39. **CMP-RELVER — Release verification** [PH-8]: lifecycle/failure-path release verification on Windows 11 Home ±activation; co-owns CTR-RELEASE-MANIFEST; stable requires zero critical/high; verdict `PASS/FAIL/BLOCKED/INCONCLUSIVE`.
+
+40. **CMP-FILEOP — Safe file-op service** [PH-3]: single safe file-operation path; canonicalizes+validates every path and blocks symlink/junction/reserved-name/traversal/case/archive escapes; **all deletion approval-gated (Dec B)**; archive entry/depth/decompression limits; atomic in-scope writes; owns no contract (consumes CTR-PERMISSION-GRANT/CTR-APPROVAL-RECORD); tests `01K` #10/#11.
 
 Full 18-field specifications per component are in `docs/specifications/components/<component>-spec.md` (authored per phase); this map is the authoritative index and cross-reference.

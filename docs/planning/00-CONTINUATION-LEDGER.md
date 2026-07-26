@@ -182,10 +182,11 @@ distinct from the Worker Execution Substrate (out-of-roadmap; `docs/WORKER-EXECU
 | RPH3 Pass 1 | Implementation-readiness realignment (readiness verdict, governing inputs, task/contract inventory, pass plan) | `READY_FOR_RPH3_ARCHITECTURE_PLANNING` | analysis only; no files |
 | RPH3 Pass 2 | Planning-hierarchy realignment: `RPH3` identifier namespace + planning-document registry | `PASS_WITH_NONBLOCKING_GAPS` | `docs/planning/00-PLANNING-AUTHORITY-LEDGER.md §9`; `docs/planning/00-CONTINUATION-LEDGER.md §10` (this) |
 | RPH3 Pass 3 | Roadmap-execution environment alignment: PH-3 row disambiguated to `RPH3`; §3A per-task execution detail; §4 PH-2→RPH3→{PH-4,PH-5} order validation | `PASS_WITH_NONBLOCKING_GAPS` | `docs/10A-ROADMAP-EXECUTION-MAP.md` (header, §2, §3 row, §3A, §4, §5) |
+| RPH3 Pass 4 | Component implementation specifications (9 RPH3 component specs + integration review); resolved file-op gap by adding CMP-FILEOP (#40) | `PASS_WITH_NONBLOCKING_GAPS` | `docs/specifications/components/{watchdog,permission,approval,audit-writer,audit-validator,tool-registry,tool-gateway,safe-mode,file-op-service}-spec.md`, `RPH3-INTEGRATION.md`; edits to `00-COMPONENT-MAP.md`, PAL §9 |
 
 **Next allowed action**
 
-Await explicit `CONTINUE` to begin **RPH3 Pass 4** (component implementation specifications: CMP-WATCH/PERM/
-APPROVAL/AUDITW/AUDITV/TOOLREG/TOOLGW/DIAG + file-op, `docs/specifications/components/*-spec.md` +
-`RPH3-INTEGRATION.md`). Until then: no implementation, no merge, `main` and PR #10 untouched, roadmap not
-amended.
+Await explicit `CONTINUE` to begin **RPH3 Pass 5** (task-by-task expansion of PLAN-S3: expand the section-3
+stub into the executable RPH3-T1…T5 plan with the task-execution/dependency graph and per-task interfaces,
+per the CMP specs authored in Pass 4). Until then: no implementation, no merge, `main` and PR #10 untouched,
+roadmap not amended.
