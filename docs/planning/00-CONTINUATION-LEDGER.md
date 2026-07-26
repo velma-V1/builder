@@ -320,3 +320,76 @@ Delivered (authorized 10-step sequence):
 
 Results: **42 audit tests pass** (99.34% branch coverage on `src/factory/audit`); **full repo 508 passed,
 1 skipped (Windows-only) — no regression**; ruff clean; mypy --strict clean; T4 gate **9/9 PASS**.
+
+### RPH3-T3 implementation (Approval Engine / CMP-APPROVAL) — 2026-07-26
+
+Operator authorization received ("Implement the Approval Engine next … RPH3-T3 is the only newly authorized
+gate"; T4 accepted). Implementing CMP-APPROVAL on `claude/roadmap-ph3-security-spine-planning`. **Lane A /
+Watchdog remain paused; RPH3-T2 and RPH3-T5 not started; PR #10 unmerged; `main` untouched; the accepted T4
+audit foundation is unmodified.**
+
+**Contradiction found + resolution (migration packaging).** `DEP-RPH3 §3/§3.1` (frozen) pins
+`migrations/security/0001_security_spine.sql` to **all** security-spine tables created in a **single**
+transaction (permission + approval + tool records, all `*_intents`, and `intervention_journal`). RPH3-T3 can
+build only the **approval** tables — the permission/tool/watchdog domain-record schemas are unspecified by any
+frozen doc and designing them is T2/T5/WIR work that the T3 boundary forbids.
+- **Wrong fix (reverted):** an earlier T3 draft **edited `DEP-RPH3 §3` in place** to describe incremental
+  per-task migrations. Editing a frozen normative plan to fit an implementation is not allowed; the operator
+  flagged it and it was reverted (`git checkout -- docs/planning/RPH3-DEPLOYMENT-MIGRATION.md`; frozen doc now
+  byte-identical to its committed form).
+- **Resolution (recorded, not absorbed):** the frozen doc stays untouched; the incremental-migration rationale
+  and the **honest deviation disclosure** live in a new **non-normative** note,
+  `docs/planning/RPH3-T3-IMPLEMENTATION-NOTE.md`. The approval-only `0001_security_spine.sql` **does deviate**
+  from the frozen literal single-file inventory (it is not silent conformance) but preserves every frozen
+  *invariant* (ODI-RPH3-01 store boundary, §4A single-writer, §3.1 intent shape verbatim, XSC-RPH3 Class-1
+  ordering/reconciliation, SHA-pinned runner) and the frozen *end-state table set*. **Planning debt:**
+  `DEP-RPH3 §3/§3.1` must be **formally amended** (operator-signed, via the normal change process) when
+  RPH3-T2/T5/WIR land, to describe the store as an ordered set of per-task SHA-pinned migrations. This is
+  flagged for **operator acceptance**, not self-certified.
+
+Delivered (authorized scope):
+1. `migrations/security/0001_security_spine.sql` — approval domain only: `approval_records`
+   (+`commit_state`/`prior_state` XSC Class-1 marker, `requires_confirmation` for 01K §2.10-11),
+   `approval_queue`, `approval_intents` (XSC §3.1 shape verbatim + 3 indexes). SHA-256 pinned in the store
+   (`099ae959d6f06c6b944925af151d8fa8dd2b65fdffd63660cf2a4355b7878a51`).
+2. `src/factory/approval/{errors,models}.py` — `ApprovalState`, `CommitState`, `ApprovalRequest`,
+   `ApprovalCard` (full 01L §3.2 scope + `is_complete`), `ApprovalRecord`, `Denial`, `OperatorDecision`,
+   `action_fingerprint`, `Clock`.
+3. `src/factory/approval/store.py` — SHA-pinned `apply_security_migrations`; read-only `SQLiteApprovalReader`;
+   `_approval_writer_authorizer` (writer partition); `audit_completion_seq` (read-only `op_key` join into the
+   audit store).
+4. `src/factory/approval/writer.py` — private, un-exported `_ApprovalWriter` (sole writer): stage / commit /
+   rollback XSC Class-1 primitives.
+5. `src/factory/approval/engine.py` — `ApprovalEngine`: enqueue / decide / consume / revoke / expire /
+   is_valid / reconcile_startup; every lifecycle event Class-1-audited via CMP-AUDITW; security violations
+   denied + audited, never queued; fail-closed on audit failure.
+6. Tests present so far: `tests/approval/unit/test_engine.py`, `tests/approval/security/
+   test_binding_and_reuse.py`, `tests/approval/failure_paths/test_crash_reconciliation.py`,
+   `tests/approval/conftest.py`. **NOT yet written:** integration tests, a store-unit test,
+   `scripts/verify_roadmap_ph3_t3.py`, and `docs/verification/roadmap-ph3-t3-approval-evidence.md`.
+
+#### RPH3-T3 status: `RPH3-T3_PARTIAL — NOT COMPLETE`
+
+Work stopped on operator instruction to checkpoint the partial state. **Not accepted, not complete, not
+promotion-ready.**
+
+- **Work completed:** approval migration (approval domain only, SHA-pinned), `errors`/`models`/`store`/
+  `writer`/`engine`/`__init__` modules, and three test files (unit / security / failure-path). The
+  non-normative note `RPH3-T3-IMPLEMENTATION-NOTE.md` and this ledger entry.
+- **Tests currently passing (exact):** `tests/approval` = **34 passed, 0 failed**. Full repo regression =
+  **542 passed, 1 skipped** (Windows-only skip; +34 vs the 508 recorded at T4, no regression).
+- **Branch coverage (exact):** `src/factory/approval` = **92.99% branch** — **below** the ≥95% obligation
+  (engine 91%, writer 86%, store 95%, errors 88%). Coverage was **not** raised because implementation is
+  paused; closing the gap needs the not-yet-written tests above. This is a gating item for completion.
+- **Static analysis (exact):** `ruff check src/factory/approval tests/approval` → **clean (exit 0)**;
+  `mypy --strict src/factory/approval tests/approval` → **clean, 10 files (exit 0)**.
+- **Unresolved migration-contract question (blocker):** `DEP-RPH3 §3/§3.1` (frozen) mandates a **single**
+  `0001_security_spine.sql` creating **all** security-spine tables in one transaction. RPH3-T3 shipped an
+  **approval-only** `0001` (permission/tool/watchdog schemas are T2/T5/WIR design work, outside the T3
+  boundary). The frozen doc is **unmodified** (reverted to `1cf7728`); the deviation is disclosed in
+  `RPH3-T3-IMPLEMENTATION-NOTE.md`. **Operator decision required:** either (a) accept the deviation and
+  formally amend `DEP-RPH3 §3/§3.1` when T2/T5/WIR land (per-task SHA-pinned migrations), or (b) require a
+  single all-tables `0001` (which pulls T2/T5 schema design into T3). **T3 cannot be certified until this is
+  resolved.**
+- **Boundaries held:** Lane A / Watchdog paused; RPH3-T2 / RPH3-T5 not started; PR #10 unmerged; `main`
+  untouched; the accepted T4 audit foundation unmodified.
