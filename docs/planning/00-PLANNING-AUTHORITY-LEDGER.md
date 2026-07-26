@@ -255,7 +255,7 @@ Status legend: `PLANNED` (registered here; authored by the named pass). Each inh
 |---|---|---|---|---|---|
 | PLAN-S3 | `docs/plans/section-3-orchestrator-watchdog-and-permissions.md` | Roadmap PH-3 executable task plan (RPH3-T1…T5 + execution/dependency graph + external-blocker register §7) | Plan | RPH3 Pass 5 | **EXISTS** (expanded Pass 5) |
 | SPEC-RPH3-set | `docs/specifications/components/{watchdog,permission,approval,audit-writer,audit-validator,tool-registry,tool-gateway,safe-mode,file-op-service}-spec.md` + `RPH3-INTEGRATION.md` | Per-component 18-field specs for CMP-WATCH/PERM/APPROVAL/AUDITW/AUDITV/TOOLREG/TOOLGW/DIAG + CMP-FILEOP | Component spec | RPH3 Pass 4 | **EXISTS** (authored Pass 4; 9 specs + integration) |
-| VEP-RPH3 | `docs/planning/RPH3-VERIFICATION-EVIDENCE-PROMOTION.md` | Verification/evidence/promotion architecture; `01M`(32)+`01K`(25) traceability; VM-2; `PROM-RPH3` | Plan (subordinate to `01G`/MATRIX-VERIF) | RPH3 Pass 6 | PLANNED |
+| VEP-RPH3 | `docs/planning/RPH3-VERIFICATION-EVIDENCE-PROMOTION.md` | Verification/evidence/promotion architecture; `01M`(32)+`01K`(25) traceability; VM-2; `PROM-RPH3` | Plan (subordinate to `01G`/MATRIX-VERIF) | RPH3 Pass 6 | **EXISTS** (Pass 6; 18 VR rows) |
 | FRR-RPH3 | `docs/planning/RPH3-FAILURE-RECOVERY-ROLLBACK.md` | Failure/recovery/rollback (Watchdog-loss, fail-closed, quarantine) | Plan (subordinate to `01M`/`04`) | RPH3 Pass 7 | PLANNED |
 | SEC-RPH3 | `docs/planning/RPH3-SECURITY-TRUST-BOUNDARIES.md` | Security assets/threats/trust boundaries; `SEC-RPH3-xx` tests | Plan (subordinate to `01K`/`01E`/`01M`) | RPH3 Pass 8 | PLANNED |
 | DEP-RPH3 | `docs/planning/RPH3-DEPLOYMENT-MIGRATION.md` | Platform footprint + PH-3 schemas/migrations (permission-grant, approval-record, tool-declaration, audit-chain; `0004_*` under freeze) | Plan (subordinate to `01O`/`01N`) | RPH3 Pass 9 | PLANNED |
@@ -272,7 +272,8 @@ new SHA-pinned `0004_*` migration under the schema-freeze rule (SCHEMA-REGISTRY)
 
 - **G-02 RESOURCE-ALLOCATION-PLAN** — scheduled into RPH3 planning (Watchdog resource thresholds,
   `01M §3.3/§3.6`); authored RPH3 Pass 6/7. Non-blocking.
-- **G-05 PHASE-EXIT-CHECKLIST**, **G-06 VERIFICATION-REPORT template** — generalized during RPH3 Pass 6/10.
+- **G-06 VERIFICATION-REPORT template — RESOLVED (RPH3 Pass 6):** `docs/templates/VERIFICATION-REPORT.template.md`
+  created (generalizes the Section-1 report). **G-05 PHASE-EXIT-CHECKLIST** — scheduled RPH3 Pass 10.
   Non-blocking.
 
 ### 9.5 Authority-relationship verification (this pass)
