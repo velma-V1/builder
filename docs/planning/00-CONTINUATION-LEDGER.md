@@ -507,3 +507,31 @@ review, and a separately authorized merge decision.
 **Non-blocking promotion debt:** SQLite `ResourceWarning` messages observed during some Python 3.13/3.14
 approval coverage runs. They do not reopen T3/T2/T5 acceptance, but must be cleaned up before final
 RPH3 promotion.
+
+### RPH3-T1 CMP-WATCH Lane A and internal WIR - 2026-07-30
+
+#### Status: `RPH3-T1_COMPLETE - READY_FOR_CROSS_LANE_INTEGRATION`
+
+- **Delivered:** `src/factory/watchdog/**`; next ordered migration
+  `migrations/security/0004_watchdog.sql` (internal intervention journal, SHA-256
+  `21ad8fa85055e1e55b703a55865a442b4e1af907c39baf668f7fcf34a4488b80`);
+  39 unit/store/security/failure/integration tests; dedicated 8-check T1 verifier; evidence,
+  requirement matrix, and failure-path matrix.
+- **Behavior:** read-only process-side observation; monotonic authenticated heartbeat/stall
+  detection; staged thresholds and hysteresis; deterministic failures; bounded recovery;
+  fail-closed Watchdog-loss policy; exact seven-command internal WIR; expected-state, idempotency,
+  bounded-target, authentication, and authority gating; Class-2 task transition and Class-3 restart
+  audit ordering; crash reconciliation; private WIR journal writer/read-only consumer partition.
+- **Windows matrix:** CPython 3.12.13, 3.13.14, and 3.14.6 each passed the dedicated verifier
+  (**8/8**) and full repository (**794 passed, 1 classified Windows skip**).
+- **Coverage/static:** focused Watchdog = **39 passed**, **95.92%** branch-aware coverage; Ruff
+  clean; strict mypy clean.
+- **Migration integrity:** prior security SQL files unchanged with exact pins
+  `099ae959...`, `a65d227d...`, `0050e74f...`; `0004_watchdog.sql` tested on fresh/existing DB,
+  idempotent startup, malformed input, and tampering.
+- **Warnings/debt:** no warning emitted by the recorded M1 runs. Previously tracked SQLite
+  `ResourceWarning` debt remains assigned to M3.
+- **Boundaries held:** Lane A remains CMP-WATCH; WIR remains internal; Lane B remains accepted
+  T2/T3/T4/T5; restore/snapshot and non-task quarantine remain inert; no PH-4/PH-5 execution
+  subsystem, main/PR 10 modification, merge, or `PROM-RPH3`.
+- **Next authorized milestone:** M2 cross-lane integration.
