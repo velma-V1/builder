@@ -681,3 +681,38 @@ sandbox/secret/network backends + pure-logic cache/staging.
   temporary* repos only); `main` (`9bce1ca`) unchanged; PR #10 (`7b1922e`) draft/unmodified; RPH-3
   spine, substrate, and PH-4 routing unmodified; no merge, no promotion. `PROM-PH5 := NOT_AUTHORIZED`.
 - **Next:** PH-6 simulated workstream core.
+
+### PH-6 simulated core - 2026-07-30
+
+Continued the directive from the PH-5 commit `26f9657` on `claude/ph4-ph5-ph6-preinstall`. Implemented
+the PH-6 simulated workstream core, demonstrated end-to-end against the PH-4/PH-5 deterministic fakes.
+
+#### Status: `PH6_SIMULATED_CORE_COMPLETE — LIVE_INTEGRATION_PENDING`
+
+- **Owner paths (section-6 plan):** `src/factory/workstream` (6.1 CTR-WORKSTREAM + admission +
+  ownership), `src/factory/workstream/lane` (6.2 lane lifecycle SM + isolated checkouts),
+  `src/factory/workstream/conflict` (6.3 conflict-beyond-files + immutable baseline),
+  `src/factory/workstream/scheduler` (6.4 priority/interruption + 3-failure quarantine),
+  `src/factory/integration` (6.5 coordinator + simulated IP-3).
+- **Delivered:** `AdmissionController` (≤3 cap + independence gate, not path-disjointness alone);
+  `OwnershipRegistry` (single-writer + shared-contract leases); 12-state `LaneMachine` with
+  legal-transition + task-consistency enforcement + audit; `IsolatedCheckoutAssigner`;
+  `ConflictDetector` (10 dimensions: file/module/symbol/schema/api/migration/config/dependency/
+  generated/logical); `BaselineTracker` (immutable baseline + drift detection); `WorkstreamScheduler`
+  (checkpointed interruption, resume order, starvation); `FailureCounter` (normalized signature,
+  3-failure quarantine, transient exclusion); `IntegrationCoordinator` (compare/validate/combine/
+  assign remediation, `COORDINATOR_EDITS_SOURCE=False` — never edits source); `run_simulated_ip3`.
+- **Gates (exact):** `scripts/verify_ph6_preinstall.py` **11/11** (incl. the simulated
+  three-workstream gate + coordinator-never-edits-source); PH-6 focused tests **35 passed**
+  (workstream 29, integration 6); branch coverage **100.00%** across the PH-6 packages (≥95%); Ruff
+  clean; mypy `--strict` clean (27 files); full repository **1023 passed, 1 skipped** (Windows-only;
+  +35 vs the 988 PH-5 state, no regression); PH-5 verifier still 10/10; PH-4 verifier still 10/10;
+  RPH-3 integrated verifier still 10/10; Worker Execution Substrate verifier still 18/18.
+- **Evidence:** `docs/verification/ph6-preinstall-evidence.md`, `ph6-requirement-to-test-matrix.md`,
+  `ph6-failure-path-matrix.md`, `ph6-simulated-ip3-report.md`, `ph6-pending-live-gate-register.md`.
+- **Boundaries held:** no installation, no live runtime (sandbox/router assignment simulated via the
+  PH-4/PH-5 fakes); the integration coordinator never edits source (structural); `main` (`9bce1ca`)
+  unchanged; PR #10 (`7b1922e`) draft/unmodified; RPH-3 spine, substrate, PH-4 routing, and PH-5
+  isolation unmodified; no merge, no promotion. `PROM-PH6 := NOT_AUTHORIZED`.
+- **Next:** await operator decision on installation + live validation (PH-4/PH-5/PH-6 live gates) or
+  integration/merge; PREINSTALLATION for PH-4/PH-5/PH-6 is COMPLETE.
