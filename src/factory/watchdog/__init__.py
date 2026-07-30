@@ -8,6 +8,13 @@ from factory.watchdog.failures import (
     stable_failure_identity,
 )
 from factory.watchdog.heartbeat import HeartbeatMonitor
+from factory.watchdog.integration import (
+    CrossLaneOutcome,
+    CrossLaneResult,
+    LaneBSignal,
+    LaneBSignalKind,
+    RPH3CrossLaneBridge,
+)
 from factory.watchdog.interventions import WatchdogInterventionReceiver
 from factory.watchdog.models import (
     ALL_INTERVENTION_COMMANDS,
@@ -29,6 +36,8 @@ from factory.watchdog.thresholds import ThresholdPolicy, ThresholdStateMachine
 
 __all__ = [
     "ALL_INTERVENTION_COMMANDS",
+    "CrossLaneOutcome",
+    "CrossLaneResult",
     "DegradationRoute",
     "FailureObservation",
     "HealthState",
@@ -39,6 +48,9 @@ __all__ = [
     "InterventionOutcome",
     "InterventionRequest",
     "InterventionResult",
+    "LaneBSignal",
+    "LaneBSignalKind",
+    "RPH3CrossLaneBridge",
     "RecoveryPolicy",
     "SQLiteInterventionReader",
     "SensorSample",

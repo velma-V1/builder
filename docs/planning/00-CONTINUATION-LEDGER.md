@@ -535,3 +535,28 @@ RPH3 promotion.
   T2/T3/T4/T5; restore/snapshot and non-task quarantine remain inert; no PH-4/PH-5 execution
   subsystem, main/PR 10 modification, merge, or `PROM-RPH3`.
 - **Next authorized milestone:** M2 cross-lane integration.
+
+### RPH3 M2 cross-lane integration - 2026-07-30
+
+#### Status: `RPH3_CROSS_LANE_INTEGRATION_COMPLETE - READY_FOR_INTEGRATED_VERIFICATION`
+
+- **Baseline:** committed/pushed/clean-tree-verified M1 SHA
+  `0a1479b53e5de200a7c46a5022aac158d8241501`; accepted T2/T3/T4/T5 unchanged.
+- **Delivered:** `factory.watchdog.integration.RPH3CrossLaneBridge` (inside CMP-WATCH), typed
+  Lane B signals/results, 15 unit/security/failure/concurrency/end-to-end tests, dedicated 7-check
+  verifier, evidence report, requirement matrix, and failure-path matrix.
+- **Behavior:** real public Permission/Approval/Audit/ToolGateway/FileOp/Safe Mode result wiring;
+  explicit deny/card/expiry/replay propagation; audit-break containment; dependency-loss pause;
+  Safe Mode read-only escalation; durable WIR replay; conflict/stale/unavailable/missing-target
+  fail-closed outcomes; no tool/file/store/host bypass.
+- **Exact gates:** focused **15 passed**, integration module **100.00% branch**; cross-lane verifier
+  **7/7**; T1 **8/8**; T2 **10/10**; T3 **9/9**; T4 **9/9**; T5 **10/10**; full repository
+  **809 passed, 1 classified Windows skip**; Ruff-all and strict mypy clean.
+- **Bounded verifier correction:** T1 coverage now enumerates its original T1 modules while the new
+  M2 module is independently held to 100% by the M2 verifier. No threshold or test was weakened.
+- **Boundaries held:** Lane A=CMP-WATCH; WIR internal; Lane B=T2/T3/T4/T5; no new execution/intake/
+  continuation component; no direct host execution; no main/PR 10/PH-4/PH-5/merge/`PROM-RPH3`.
+- **Tracked debt:** the T3 verifier reproduced two SQLite `ResourceWarning` instances from unclosed
+  one-shot connections in `tests/approval/failure_paths/test_writer_faults.py`; root-cause cleanup
+  remains assigned to M3.
+- **Next authorized milestone:** M3 integrated RPH3 verification.

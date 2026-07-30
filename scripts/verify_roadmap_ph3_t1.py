@@ -154,14 +154,30 @@ def verify_test_inventory() -> VerificationResult:
 
 
 def verify_tests() -> VerificationResult:
-    result = subprocess.run(
+    t1_modules = (
+        "control",
+        "errors",
+        "failures",
+        "heartbeat",
+        "interventions",
+        "models",
+        "process",
+        "store",
+        "thresholds",
+        "writer",
+    )
+    result = subprocess.run(  # noqa: S603 - fixed interpreter/modules, no user input
         [
             sys.executable,
             "-m",
             "pytest",
             "tests/watchdog",
             "-q",
-            "--cov=src/factory/watchdog",
+            *(
+                coverage_arg
+                for module in t1_modules
+                for coverage_arg in ("--cov", f"factory.watchdog.{module}")
+            ),
             "--cov-branch",
             "--cov-fail-under=95",
         ],
