@@ -424,3 +424,39 @@ Permission Enforcement (CMP-PERM) complete against `permission-spec`, `01R` Dec 
 - **Verifier:** `scripts/verify_roadmap_ph3_t2.py` → **10/10 PASS**.
 - **Boundaries held:** Lane A / Watchdog paused; RPH3-T5 not started (authorized next); PR #10 unmerged;
   `main` untouched; the accepted T4 audit foundation and the T3 approval domain unmodified.
+
+### RPH3-T5 implementation (Tools enforcement) — 2026-07-30
+
+#### RPH3-T5 status: `RPH3-T5_COMPLETE — READY_FOR_OPERATOR_REVIEW`
+
+CMP-TOOLREG + CMP-TOOLGW + CMP-FILEOP + CMP-DIAG (Safe Mode, PH-3 scope) complete against their specs,
+`01R` Dec B, `XSC-RPH3` (Class-1 registry ops, Class-3 file delete), `DEP-RPH3` §2/§3/§4A. **Not yet
+operator-accepted; not `PROM-RPH3`. RPH3 performs no direct host execution (PH-5 owns OS enforcement).**
+
+- **Delivered:** `migrations/security/0003_tools.sql` (tool domain: `tool_registry`, `tool_declarations`,
+  `tool_quarantine`, `tool_registry_intents`; SHA-pinned
+  `0050e74f80932fb58ea15d1f60f95661c7589d57dd623aad7691e26ea73a69b5`; `IF NOT EXISTS schema_migrations`);
+  `src/factory/tools/{errors,models,store,writer,registry,gateway,__init__}.py`;
+  `src/factory/fileops/{errors,models,service,__init__}.py`; `src/factory/safemode/__init__.py`; tests
+  (tools unit/security/failure-path/integration, fileops, safemode); `scripts/verify_roadmap_ph3_t5.py`;
+  `docs/verification/roadmap-ph3-t5-tools-evidence.md`. `SCHEMA-REGISTRY.md` updated (0003 present).
+- **Behavior:** registry default-DENY (unregistered/quarantined uncallable), complete-declaration +
+  provenance required, version pinning, repeated-failure quarantine (durable, no auto-release), Class-1
+  audited register/quarantine/release + reconciliation; gateway single no-bypass path (default-deny +
+  TOCTOU permission revalidation + resource/termination REQUEST CONTRACTS + limit-increase→approval +
+  untrusted-output validation + **fail-closed without a PH-5 sandbox executor — no direct host exec**);
+  file-op path canonicalization/containment (reused PathAuthority), **Decision-B delete with no path
+  without a consumed approval (Class-3 INTENT+COMPLETION audit)**, atomic bounded writes, archive
+  bomb/zip-slip caps; Safe Mode read-only inspect/export + approval+permission-gated audited repair with
+  **no autonomous-write path** and out-of-scope refusal. Private per-domain sole-writer denies writes to
+  approval/permission tables.
+- **Tests (exact):** RPH3-T5 = **88 passed, 0 failed** (tools 57 [unit 38, security 6, failure-path 11,
+  integration 2], fileops 21, safemode 10). Full repo = **721 passed, 1 skipped** (Windows-only; +88 vs
+  633 at T2, no regression).
+- **Coverage (exact):** tools **98.7%**, fileops **97.6%**, safemode **98%** branch (each ≥95%).
+- **Static analysis (exact):** ruff over all T5 src + tests + verifier → **clean**; mypy --strict per
+  package (tools/fileops/safemode + tests) → **clean**.
+- **Verifier:** `scripts/verify_roadmap_ph3_t5.py` → **10/10 PASS**.
+- **Boundaries held:** Lane A / Watchdog **not started**; no PH-5 enforcement gate (EG-PH5-*) claimed;
+  PR #10 unmerged; `main` untouched; the accepted T4 audit foundation + T3 approval + T2 permission
+  domains unmodified. **This completes the authorized T3 → T2 → T5 sequence; stopping.**
