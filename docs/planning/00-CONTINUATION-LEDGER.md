@@ -645,3 +645,39 @@ re-verified on this environment: integrated verifier 10/10, full repo 811 passed
   substrate unmodified; no merge, no promotion. `PROM-PH4 := NOT_AUTHORIZED`.
 - **Next:** PH-5 preinstallation isolation core (Git/worktree/sandbox/secret/network brokers with
   deterministic fake backends), then PH-6 simulated workstream core.
+
+### PH-5 preinstallation core - 2026-07-30
+
+Continued the operator directive from the PH-4 commit `9dd851b` on `claude/ph4-ph5-ph6-preinstall`.
+Implemented the PH-5 isolation core: real Git on temporary repositories + deterministic fake
+sandbox/secret/network backends + pure-logic cache/staging.
+
+#### Status: `PH5_PREINSTALLATION_CORE_COMPLETE — LIVE_SANDBOX_PENDING`
+
+- **Owner paths (section-5 plan):** `src/factory/git` (5.1 branch/worktree/checkpoint), `src/factory/
+  sandbox` (5.2 backend interface + fake WSL/Docker backend + isolation policy), `src/factory/secret`
+  + `src/factory/network` (5.3 brokers + fake backends), `src/factory/cache` + `src/factory/staging`
+  (5.4 cache isolation + quarantined staging).
+- **Delivered:** `GitManager` (approved-baseline task branches, worktree lifecycle, owned-path
+  checkpoints, exact change tracking, protected-ref + force-push denial, unexplained-change block,
+  CTR-COMMIT-TRAILER validation, CTR-BASELINE-MANIFEST); sandbox `SandboxBackend` + `FakeWslDocker
+  Backend` + policy (non-root, prohibited privileges, no writable host-project mount, Decision-C
+  Windows-native denial, hard limits, runtime-unavailable results, restart reconcile, boundary-failure
+  destroy + clearance); `SecretBroker` + `FakeSecretBackend` (scoped TTL leases, redaction,
+  revoke-and-forget, pre-export scan, CTR-SECRET-REF); `NetworkBroker` + `FakeNetworkBackend`
+  (default-deny, allowlists, expiry, no inbound, redirect containment, destination validation,
+  transfer limits, CTR-NETWORK-APPROVAL); `ContentAddressedCache` (immutable, project/sandbox scoped,
+  contamination-preventing, credential-free, invalidation); `QuarantinedStaging` (single exit,
+  inventory+hash+provenance, path-escape/secret/executable/archive-bomb/scope inspection, promotion
+  denied without clean gate + authorization, complete process-tree termination).
+- **Gates (exact):** `scripts/verify_ph5_preinstall.py` **10/10**; PH-5 focused tests **84 passed**
+  (git 23, sandbox 19, secret 11, network 11, cache 9, staging 11); branch coverage **100.00%** across
+  the six PH-5 packages (≥95%); Ruff clean; mypy `--strict` clean (42 files); full repository
+  **988 passed, 1 skipped** (Windows-only; +84 vs the 904 PH-4 state, no regression); PH-4 verifier
+  still 10/10; RPH-3 integrated verifier still 10/10; Worker Execution Substrate verifier still 18/18.
+- **Evidence:** `docs/verification/ph5-preinstall-evidence.md`, `ph5-requirement-to-test-matrix.md`,
+  `ph5-failure-path-matrix.md`, `ph5-pending-live-gate-register.md`.
+- **Boundaries held:** no installation, no live WSL2/Docker/network/secrets (Git uses real *local
+  temporary* repos only); `main` (`9bce1ca`) unchanged; PR #10 (`7b1922e`) draft/unmodified; RPH-3
+  spine, substrate, and PH-4 routing unmodified; no merge, no promotion. `PROM-PH5 := NOT_AUTHORIZED`.
+- **Next:** PH-6 simulated workstream core.
