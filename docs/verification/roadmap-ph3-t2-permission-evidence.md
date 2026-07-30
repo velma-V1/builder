@@ -1,5 +1,8 @@
 # RPH3-T2 (CMP-PERM) — Verification Evidence Report
 
+> Historical Linux/Python 3.12 evidence. The Windows/Python 3.12-3.14 correction is recorded in
+> `docs/verification/roadmap-ph3-windows-python314-correction-evidence.md`.
+
 **Phase / component:** roadmap PH-3, Task **RPH3-T2** — Permission Enforcement (CMP-PERM). **Branch:**
 `claude/roadmap-ph3-security-spine-planning` (this commit). **Date:** 2026-07-30. **Governing:**
 `permission-spec` (interfaces + required tests), `01K` §2.4-8/§2.26-27 (AC-02/03/04/10), `01R` Dec A

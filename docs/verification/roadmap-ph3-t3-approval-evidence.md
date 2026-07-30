@@ -1,5 +1,8 @@
 # RPH3-T3 (CMP-APPROVAL) — Verification Evidence Report
 
+> Historical Linux/Python 3.12 evidence. The Windows/Python 3.12-3.14 correction is recorded in
+> `docs/verification/roadmap-ph3-windows-python314-correction-evidence.md`.
+
 **Phase / component:** roadmap PH-3, Task **RPH3-T3** — Approval Engine (CMP-APPROVAL). **Branch:**
 `claude/roadmap-ph3-security-spine-planning` (this commit). **Date:** 2026-07-30. **Governing:**
 `approval-spec` (interfaces + required tests), `01K` §2.6-11 (approvals, non-reuse `01K-AC-03`, separate

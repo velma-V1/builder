@@ -460,3 +460,27 @@ operator-accepted; not `PROM-RPH3`. RPH3 performs no direct host execution (PH-5
 - **Boundaries held:** Lane A / Watchdog **not started**; no PH-5 enforcement gate (EG-PH5-*) claimed;
   PR #10 unmerged; `main` untouched; the accepted T4 audit foundation + T3 approval + T2 permission
   domains unmodified. **This completes the authorized T3 → T2 → T5 sequence; stopping.**
+
+### RPH3 T3/T2/T5 Windows and Python 3.14 correction — 2026-07-29
+
+Operator authorized a bounded correction from
+`8fee3a7f8d8a13e6bb741cc3d52d596e9358b843` on
+`claude/roadmap-ph3-security-spine-planning`. Correction implementation commit:
+`928535961e9e1224d00a933b3be0cc899e954b96`.
+
+#### Status: `RPH3-T3/T2/T5_CORRECTED — READY_FOR_OPERATOR_REVIEW`
+
+- **Windows checkout portability:** `.gitattributes` now sets `*.sql text eol=lf`. No SQL text changed;
+  all eight byte-exact SHA-256 pins remain exact. A fresh `core.autocrlf=true` checkout passed all 16
+  portability/hash cases.
+- **Python 3.14 compatibility:** eight frozen-dataclass public exceptions are now normal typed exception
+  classes with constructor, attributes, `str`, `repr`, traceback, chaining, and context behavior verified.
+- **Matrix:** CPython 3.12.13, 3.13.14, and 3.14.6 each passed focused tests (34), T3 (9/9), T2 (10/10),
+  T5 (10/10), and the full repository (**755 passed, 1 explicitly classified Windows skip**).
+- **Migration behaviors:** 26 focused cases passed for new DB, existing/idempotent startup, failure
+  rollback, and tampered-migration rejection.
+- **Static/coverage:** repository Ruff clean; strict mypy clean for all affected packages and new tests;
+  all T3/T2/T5 coverage thresholds remain above 95%.
+- **Evidence:** `docs/verification/roadmap-ph3-windows-python314-correction-evidence.md`.
+- **Boundaries held:** `main` unchanged; PR #10 draft/unmerged/unmodified; Watchdog and Lane A not started;
+  no `PROM-RPH3`, phase promotion, merge, or new milestone claim.

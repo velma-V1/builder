@@ -1,5 +1,8 @@
 # RPH3-T5 (Tools enforcement) — Verification Evidence Report
 
+> Historical Linux/Python 3.12 evidence. The Windows/Python 3.12-3.14 correction is recorded in
+> `docs/verification/roadmap-ph3-windows-python314-correction-evidence.md`.
+
 **Phase / component:** roadmap PH-3, Task **RPH3-T5** — CMP-TOOLREG (registry) + CMP-TOOLGW (gateway) +
 CMP-FILEOP (safe file-op) + CMP-DIAG (Safe Mode, PH-3 scope). **Branch:**
 `claude/roadmap-ph3-security-spine-planning` (this commit). **Date:** 2026-07-30. **Governing:**

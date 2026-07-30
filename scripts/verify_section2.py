@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import sqlite3
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -187,7 +186,7 @@ def verify_test_coverage() -> VerificationResult:
 
 def verify_test_execution() -> VerificationResult:
     result = subprocess.run(
-        ["python3.12", "-m", "pytest", "tests/orchestrator/", "-q"],
+        [sys.executable, "-m", "pytest", "tests/orchestrator/", "-q"],
         capture_output=True,
         text=True,
     )
@@ -204,7 +203,7 @@ def verify_test_execution() -> VerificationResult:
 def verify_ruff_linting() -> VerificationResult:
     result = subprocess.run(
         [
-            "python3.12",
+            sys.executable,
             "-m",
             "ruff",
             "check",
@@ -226,7 +225,7 @@ def verify_ruff_linting() -> VerificationResult:
 def verify_mypy_strict() -> VerificationResult:
     result = subprocess.run(
         [
-            "python3.12",
+            sys.executable,
             "-m",
             "mypy",
             "src/factory/orchestrator/",
@@ -292,7 +291,7 @@ def verify_partial_migration_prevention() -> VerificationResult:
 
 def verify_git_commits() -> VerificationResult:
     result = subprocess.run(
-        ["git", "log", "--oneline", "-10"],
+        ["git", "log", "--oneline", "-10"],  # noqa: S607
         capture_output=True,
         text=True,
     )
@@ -306,7 +305,7 @@ def verify_git_commits() -> VerificationResult:
             found_commits += 1
     passed = found_commits >= 4
     return VerificationResult(
-        name="Git history includes T2.1–T2.5 boundary commits",
+        name="Git history includes T2.1-T2.5 boundary commits",
         passed=passed,
         detail=f"Found {found_commits}/5+ meaningful task commits in recent history",
     )
@@ -339,11 +338,11 @@ def main() -> int:
     total_count = len(results)
 
     print("\n" + "=" * 80)
-    print("PH-2 VERIFICATION SUITE — PROM-PH2 EXIT GATE")
+    print("PH-2 VERIFICATION SUITE - PROM-PH2 EXIT GATE")
     print("=" * 80 + "\n")
 
     for result in results:
-        status = "✓ PASS" if result.passed else "✗ FAIL"
+        status = "PASS" if result.passed else "FAIL"
         print(f"{status:8} | {result.name:50} | {result.detail}")
 
     print("\n" + "=" * 80)
@@ -351,10 +350,10 @@ def main() -> int:
     print("=" * 80 + "\n")
 
     if passed_count == total_count:
-        print("🎯 PROM-PH2 EXIT GATE: PASS — Section 2 is production-ready.\n")
+        print("PROM-PH2 EXIT GATE: PASS - Section 2 is production-ready.\n")
         return 0
     else:
-        print("⚠️  PROM-PH2 EXIT GATE: INCOMPLETE — Fix failures above.\n")
+        print("PROM-PH2 EXIT GATE: INCOMPLETE - Fix failures above.\n")
         return 1
 
 
