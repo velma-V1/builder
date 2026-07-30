@@ -390,3 +390,37 @@ Approval Engine (CMP-APPROVAL) complete against `approval-spec`, `XSC-RPH3` Clas
   end-state inventory unchanged; `0001_security_spine.sql` retained as the approval bootstrap.
 - **Boundaries held:** Lane A / Watchdog paused; RPH3-T5 not started; PR #10 unmerged; `main` untouched;
   the accepted T4 audit foundation unmodified. (RPH3-T2 authorized next in this run.)
+
+### RPH3-T2 implementation (Permission Enforcement / CMP-PERM) — 2026-07-30
+
+Operator authorized autonomous continuation (T3 → T2 → T5). Migration model **resolved** by the operator:
+ordered per-domain migrations in one security-spine store; `DEP-RPH3 §3/§3.1` and `SCHEMA-REGISTRY.md`
+amended accordingly (directly-affected plans/registries only).
+
+#### RPH3-T2 status: `RPH3-T2_COMPLETE — READY_FOR_OPERATOR_REVIEW`
+
+Permission Enforcement (CMP-PERM) complete against `permission-spec`, `01R` Dec A/B, `XSC-RPH3` Class-1,
+`DEP-RPH3` §2/§3/§4A. **Not yet operator-accepted; not `PROM-RPH3`.**
+
+- **Delivered:** `migrations/security/0002_permission.sql` (permission domain; SHA-pinned
+  `a65d227d9683eb060c834ae8b3cb65f33186ba37420b4065eec8623f8ded88cb`; `CREATE TABLE IF NOT EXISTS
+  schema_migrations` so it composes with `0001` in canonical order); `src/factory/permission/{errors,
+  models,autonomy,store,writer,engine,__init__}.py`; tests (unit / autonomy / store / security /
+  failure-path / integration); `scripts/verify_roadmap_ph3_t2.py`;
+  `docs/verification/roadmap-ph3-t2-permission-evidence.md`. **Path safety reuses** the tested
+  `factory.contracts.validation.paths.PathAuthority` (canonicalize + contain + TOCTOU) rather than
+  reinventing it.
+- **Behavior:** least-privilege deny-by-default `decide` (allow/deny/requires-approval); Decision B (every
+  deletion approval-gated — no auto-delete path); Decision A (autonomy envelope); path escapes (#10)
+  denied; scoped/expiring/revocable grants; TOCTOU `revalidate`; XSC-RPH3 Class-1 (issue/revoke/expire) via
+  CMP-AUDITW; startup reconciliation; fail-closed on audit/storage failure; private `_PermissionWriter`
+  sole-writer with an authorizer that denies writes to `approval_*` and any non-permission table.
+- **Tests (exact):** `tests/permission` = **69 passed, 0 failed** (unit 33, security 18, failure-path 15,
+  integration 3). Full repo = **633 passed, 1 skipped** (Windows-only; +69 vs 564 at T3, no regression).
+- **Coverage (exact):** `src/factory/permission` = **100.00% branch** (obligation ≥95%).
+- **Static analysis (exact):** ruff `src/factory/permission tests/permission
+  scripts/verify_roadmap_ph3_t2.py` → **clean**; mypy --strict `src/factory/permission tests/permission`
+  → **clean (16 files)**.
+- **Verifier:** `scripts/verify_roadmap_ph3_t2.py` → **10/10 PASS**.
+- **Boundaries held:** Lane A / Watchdog paused; RPH3-T5 not started (authorized next); PR #10 unmerged;
+  `main` untouched; the accepted T4 audit foundation and the T3 approval domain unmodified.

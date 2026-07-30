@@ -107,6 +107,11 @@ def apply_security_migrations(database_path: Path, migrations_root: Path) -> Non
                     "MIGRATION_MALFORMED", f"malformed migration filename: {path.name}"
                 )
             version = int(match.group(1))
+            # The security-spine dir is shared by all PH-3 domains (DEP-RPH3 §4A). This runner owns
+            # only the approval migration(s); a valid-versioned file belonging to another domain
+            # (e.g. permission's 0002) is applied by that domain's runner, not here.
+            if path.name not in _EXPECTED_MIGRATION_HASHES:
+                continue
             if version in applied:
                 continue
 
