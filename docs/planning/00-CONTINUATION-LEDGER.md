@@ -610,3 +610,38 @@ hashes, fresh `core.autocrlf=true` checkout, strict mypy, Ruff, and resolved SQL
 changes phase-gate status only: it does not merge or modify `main`/PR #10 and does not begin another phase.
 
 **Next allowed action:** await a separate operator decision for integration/merge or the next roadmap phase.
+
+### PH-4 preinstallation core - 2026-07-30
+
+Operator corrected the working baseline (the initial `main`-based branch had no RPH3 foundation) and
+authorized continuing the PH-4/PH-5/PH-6 preinstallation directive from the promoted RPH3 base
+`3c979d72abee28776fc361bceb1b1edd55cde0ae`. Controlled branch `claude/ph4-ph5-ph6-preinstall` forked
+from that base (merge-base verified; `main` and PR #10 unchanged). RPH3 baseline independently
+re-verified on this environment: integrated verifier 10/10, full repo 811 passed / 1 skipped.
+
+#### Status: `PH4_PREINSTALLATION_CORE_COMPLETE — LIVE_RUNTIME_PENDING`
+
+- **Owner paths (section-4 plan):** `src/factory/models/ollama_adapter` (Task 4.1 fake), `src/factory/
+  workers/aider_adapter` (Task 4.2 fake), `src/factory/routing` (Task 4.3 router/roster/fingerprint/
+  records/health + adapter interface), `src/factory/scheduler` (Task 4.4 scheduler + quota). An
+  operator mid-run ownership check moved scheduler/quota/adapters out of `routing/` to these paths; no
+  abandoned duplicates remain.
+- **Delivered (deterministic fakes, offline):** `ProviderAdapter` interface; `FakeOllamaAdapter` +
+  `FakeAiderWorker`; deterministic `ModelRouter` (visible routing + reason, operator override within
+  limits, privacy-before-hosted, no silent substitution, disclosed + reverified fallback,
+  restart reconciliation); `ApprovedRoster` (CTR-ROUTE-REGISTRY, GLM-4.7 excluded); complete model
+  fingerprints (CTR-MODEL-FINGERPRINT); append-only `ExecutionLedger` (CTR-MODEL-EXEC-RECORD);
+  `ResourceScheduler` (single-active GPU-heavy, VRAM/RAM/CPU/storage ceilings, cooldown, pressure
+  order, reconcile, REDUCED_MONITORING); `QuotaLedger`; `01J §3.4` health-check triggers.
+- **Gates (exact):** `scripts/verify_ph4_preinstall.py` **10/10**; `tests/routing` **93 passed**
+  (unit 78, security 5, failure-path 7, integration 3); branch coverage **100.00%** across the four
+  PH-4 packages (≥95%); Ruff clean; mypy `--strict` clean (31 files); full repository **904 passed,
+  1 skipped** (Windows-only; +93 vs the 811 RPH3 baseline, no regression); RPH3 integrated verifier
+  still **10/10**; Worker Execution Substrate verifier still **18/18**.
+- **Evidence:** `docs/verification/ph4-preinstall-evidence.md`, `ph4-requirement-to-test-matrix.md`,
+  `ph4-failure-path-matrix.md`, `ph4-pending-live-gate-register.md`.
+- **Boundaries held:** no installation, no live Ollama/Aider execution, no network, no secrets, no
+  migrations; `main` (`9bce1ca`) unchanged; PR #10 (`7b1922e`) draft/unmodified; RPH3 spine and the
+  substrate unmodified; no merge, no promotion. `PROM-PH4 := NOT_AUTHORIZED`.
+- **Next:** PH-5 preinstallation isolation core (Git/worktree/sandbox/secret/network brokers with
+  deterministic fake backends), then PH-6 simulated workstream core.
