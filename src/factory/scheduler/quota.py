@@ -8,6 +8,7 @@ reconciliation.
 
 from __future__ import annotations
 
+import threading
 from collections.abc import Mapping
 
 from factory.routing.errors import RoutingError
@@ -15,9 +16,9 @@ from factory.routing.models import QuotaLimits, UsageCounters
 
 
 class QuotaLedger:
-    """Per-scope usage accounting with fail-closed admission."""
+    """Per-scope usage accounting with fail-closed, thread-atomic check-and-charge."""
 
-    __slots__ = ("_default", "_limits", "_usage")
+    __slots__ = ("_default", "_limits", "_lock", "_usage")
 
     def __init__(
         self,
@@ -27,6 +28,8 @@ class QuotaLedger:
         self._default = default_limits
         self._limits: dict[str, QuotaLimits] = dict(per_scope_limits or {})
         self._usage: dict[str, UsageCounters] = {}
+        # Serializes check-then-charge so two threads cannot both pass the check and overshoot.
+        self._lock = threading.Lock()
 
     def limits_for(self, scope: str) -> QuotaLimits:
         return self._limits.get(scope, self._default)
@@ -46,16 +49,17 @@ class QuotaLedger:
         )
 
     def charge(self, scope: str, *, requests: int, tokens: int, wall_time: int) -> UsageCounters:
-        """Apply a charge, or raise ``QUOTA_EXCEEDED`` without mutating state (fail-closed)."""
+        """Atomically check and apply a charge, or raise ``QUOTA_EXCEEDED`` without mutating."""
         if requests < 0 or tokens < 0 or wall_time < 0:
             raise RoutingError("QUOTA_NEGATIVE", "quota charge components must be non-negative")
-        if self.would_exceed(scope, requests=requests, tokens=tokens, wall_time=wall_time):
-            raise RoutingError("QUOTA_EXCEEDED", f"charge would exceed quota for scope {scope}")
-        updated = self.usage_for(scope).plus(
-            requests=requests, tokens=tokens, wall_time=wall_time
-        )
-        self._usage[scope] = updated
-        return updated
+        with self._lock:
+            if self.would_exceed(scope, requests=requests, tokens=tokens, wall_time=wall_time):
+                raise RoutingError("QUOTA_EXCEEDED", f"charge would exceed quota for scope {scope}")
+            updated = self.usage_for(scope).plus(
+                requests=requests, tokens=tokens, wall_time=wall_time
+            )
+            self._usage[scope] = updated
+            return updated
 
     def remaining(self, scope: str) -> QuotaLimits:
         limits = self.limits_for(scope)

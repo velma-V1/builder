@@ -122,6 +122,21 @@ def test_exact_change_tracking(manager: GitManager, repo: Path) -> None:
     assert delta.added == ("src/b.py",)
 
 
+def test_git_invocation_is_time_bounded(
+    manager: GitManager, repo: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import subprocess
+
+    def _timeout(*_args: object, **_kwargs: object) -> object:
+        raise subprocess.TimeoutExpired(cmd="git", timeout=1)
+
+    # Patch the shared subprocess module; the manager's ``subprocess.run`` resolves the same object.
+    monkeypatch.setattr(subprocess, "run", _timeout)
+    with pytest.raises(GitError) as exc:
+        manager.head_commit(repo)
+    assert exc.value.code == "GIT_TIMEOUT"
+
+
 def test_rename_is_not_miscounted(manager: GitManager, repo: Path) -> None:
     base = manager.head_commit(repo)
     manager.create_task_branch(repo, base, task_id="T1", stage_id="S1")

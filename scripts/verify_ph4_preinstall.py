@@ -186,7 +186,7 @@ def verify_tests_pass_with_coverage() -> VerificationResult:
             "--cov=src/factory/workers/aider_adapter",
             "--cov-branch", "--cov-fail-under=95",
         ],
-        capture_output=True, text=True, cwd=ROOT,
+        capture_output=True, text=True, cwd=ROOT, timeout=900,
     )
     summary = (result.stdout.strip().split("\n") or ["?"])[-1]
     return VerificationResult(
@@ -203,7 +203,7 @@ def verify_ruff() -> VerificationResult:
             "src/factory/models/ollama_adapter", "src/factory/workers/aider_adapter",
             "tests/routing",
         ],
-        capture_output=True, text=True, cwd=ROOT,
+        capture_output=True, text=True, cwd=ROOT, timeout=900,
     )
     return VerificationResult("Ruff clean (PH-4 src + tests)", result.returncode == 0, f"exit {result.returncode}")
 
@@ -216,7 +216,7 @@ def verify_mypy() -> VerificationResult:
             "src/factory/models/ollama_adapter", "src/factory/workers/aider_adapter",
             "tests/routing", "--strict",
         ],
-        capture_output=True, text=True, cwd=ROOT,
+        capture_output=True, text=True, cwd=ROOT, timeout=900,
     )
     return VerificationResult("mypy --strict clean (PH-4)", result.returncode == 0, f"exit {result.returncode}")
 

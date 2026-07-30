@@ -29,6 +29,9 @@ class NetworkApproval:
     allow_inbound: bool = False
     # Redirects may only target destinations already in the allowlist (containment, §3.3).
     follow_redirects: bool = True
+    # Infrastructure destinations (loopback / private / link-local / metadata / host-gateway) are
+    # denied unless a contract *explicitly* authorizes them. Default deny (Stage-1 hardening).
+    allow_infrastructure: bool = False
 
 
 @dataclass(frozen=True, slots=True)

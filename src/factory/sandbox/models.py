@@ -67,11 +67,22 @@ class SandboxSpec:
     windows_native: bool = False
     mounts: tuple[MountSpec, ...] = field(default_factory=tuple)
     network: NetworkPolicy = NetworkPolicy.DENY
+    # Hardened container topology (``01E`` + Stage-1 hardening). Defaults are the *safe* posture, so
+    # existing specs are compliant; explicitly weakening any of them is a policy denial. A worker is
+    # attached to exactly one internal network and never dual-homed (only the broker is dual-homed);
+    # a worker never publishes host ports.
+    read_only_rootfs: bool = True
+    cap_drop_all: bool = True
+    no_new_privileges: bool = True
+    published_ports: tuple[int, ...] = field(default_factory=tuple)
+    network_name: str = "factory-internal"
+    dual_homed: bool = False
+    is_broker: bool = False
 
 
 @dataclass(frozen=True, slots=True)
 class SandboxIdentity:
-    """Recorded execution identity (``01E §3.2``)."""
+    """Recorded execution identity + hardened topology posture (``01E §3.2``)."""
 
     uid: int
     gid: int
@@ -79,6 +90,11 @@ class SandboxIdentity:
     mounts: tuple[MountSpec, ...]
     network: NetworkPolicy
     resources: ResourceLimits
+    read_only_rootfs: bool = True
+    cap_drop_all: bool = True
+    no_new_privileges: bool = True
+    network_name: str = "factory-internal"
+    dual_homed: bool = False
 
 
 @dataclass(frozen=True, slots=True)

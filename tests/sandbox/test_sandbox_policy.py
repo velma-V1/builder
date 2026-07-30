@@ -70,3 +70,27 @@ def test_nonpositive_resource_limits_denied() -> None:
     bad = ResourceLimits(cpu_millis=1000, memory_mb=0, disk_mb=4096, pids=128, wall_clock_s=600)
     codes = {v.code for v in evaluate_spec(_spec(resources=bad))}
     assert "RESOURCE_LIMITS_REQUIRED" in codes
+
+
+@pytest.mark.security
+@pytest.mark.parametrize(
+    ("over", "code"),
+    [
+        ({"read_only_rootfs": False}, "ROOTFS_WRITABLE_DENIED"),
+        ({"cap_drop_all": False}, "CAPS_NOT_DROPPED_DENIED"),
+        ({"no_new_privileges": False}, "NO_NEW_PRIVS_DENIED"),
+        ({"published_ports": (8080,)}, "PUBLISHED_PORTS_DENIED"),
+        ({"dual_homed": True}, "DUAL_HOMED_DENIED"),
+    ],
+)
+def test_hardened_topology_weakening_is_denied(over: dict[str, object], code: str) -> None:
+    assert code in {v.code for v in evaluate_spec(_spec(**over))}
+
+
+def test_default_topology_is_the_safe_posture() -> None:
+    # A default spec is already read-only rootfs / caps-dropped / no-new-privs / one net.
+    assert evaluate_spec(_spec()) == ()
+
+
+def test_only_the_broker_may_be_dual_homed() -> None:
+    assert evaluate_spec(_spec(dual_homed=True, is_broker=True)) == ()

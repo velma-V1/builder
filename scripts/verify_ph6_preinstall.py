@@ -214,7 +214,7 @@ def verify_tests_pass_with_coverage() -> VerificationResult:
             "--cov=src/factory/workstream", "--cov=src/factory/integration",
             "--cov-branch", "--cov-fail-under=95",
         ],
-        capture_output=True, text=True, cwd=ROOT,
+        capture_output=True, text=True, cwd=ROOT, timeout=900,
     )
     summary = (result.stdout.strip().split("\n") or ["?"])[-1]
     return VerificationResult(
@@ -230,7 +230,7 @@ def verify_ruff() -> VerificationResult:
             "src/factory/workstream", "src/factory/integration",
             "tests/workstream", "tests/integration",
         ],
-        capture_output=True, text=True, cwd=ROOT,
+        capture_output=True, text=True, cwd=ROOT, timeout=900,
     )
     return VerificationResult("Ruff clean (PH-6 src + tests)", result.returncode == 0, f"exit {result.returncode}")
 
@@ -242,7 +242,7 @@ def verify_mypy() -> VerificationResult:
             "src/factory/workstream", "src/factory/integration",
             "tests/workstream", "tests/integration", "--strict",
         ],
-        capture_output=True, text=True, cwd=ROOT,
+        capture_output=True, text=True, cwd=ROOT, timeout=900,
     )
     return VerificationResult("mypy --strict clean (PH-6)", result.returncode == 0, f"exit {result.returncode}")
 

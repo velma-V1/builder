@@ -30,6 +30,32 @@ def evaluate_spec(spec: SandboxSpec) -> tuple[PolicyViolation, ...]:
         violations.append(
             PolicyViolation("ROOT_DENIED", "non-root execution is the default (01E §3.2)")
         )
+    # Hardened container topology: the safe posture is mandatory; weakening it is a denial.
+    if not spec.read_only_rootfs:
+        violations.append(
+            PolicyViolation("ROOTFS_WRITABLE_DENIED", "root filesystem must be read-only")
+        )
+    if not spec.cap_drop_all:
+        violations.append(
+            PolicyViolation("CAPS_NOT_DROPPED_DENIED", "all capabilities must be dropped")
+        )
+    if not spec.no_new_privileges:
+        violations.append(
+            PolicyViolation("NO_NEW_PRIVS_DENIED", "no-new-privileges must be set")
+        )
+    if spec.published_ports:
+        violations.append(
+            PolicyViolation(
+                "PUBLISHED_PORTS_DENIED", f"workers may not publish ports: {spec.published_ports}"
+            )
+        )
+    # Only the broker may be dual-homed; a worker is attached to exactly one internal network.
+    if spec.dual_homed and not spec.is_broker:
+        violations.append(
+            PolicyViolation(
+                "DUAL_HOMED_DENIED", "only the broker may be dual-homed; workers may not"
+            )
+        )
     for mount in spec.mounts:
         if mount.is_host_project and mount.mode is MountMode.RW:
             violations.append(

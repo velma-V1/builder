@@ -10,6 +10,7 @@ live runtime phase wires underneath the same :class:`RecordStore` port.
 
 from __future__ import annotations
 
+import threading
 from collections.abc import Iterable, Sequence
 from typing import Protocol
 
@@ -30,26 +31,29 @@ class RecordStore(Protocol):
 
 
 class InMemoryRecordStore:
-    """Deterministic, ordered, append-only record store with a duplicate-id guard."""
+    """Deterministic, ordered, append-only, thread-safe record store with a duplicate-id guard."""
 
-    __slots__ = ("_ids", "_records")
+    __slots__ = ("_ids", "_lock", "_records")
 
     def __init__(self, seed: Iterable[ExecutionRecord] = ()) -> None:
         self._records: list[ExecutionRecord] = []
         self._ids: set[str] = set()
+        self._lock = threading.Lock()
         for record in seed:
             self.append(record)
 
     def append(self, record: ExecutionRecord) -> None:
-        if record.record_id in self._ids:
-            raise RoutingError(
-                "RECORD_DUPLICATE", f"execution record {record.record_id} already exists"
-            )
-        self._ids.add(record.record_id)
-        self._records.append(record)
+        with self._lock:
+            if record.record_id in self._ids:
+                raise RoutingError(
+                    "RECORD_DUPLICATE", f"execution record {record.record_id} already exists"
+                )
+            self._ids.add(record.record_id)
+            self._records.append(record)
 
     def all(self) -> Sequence[ExecutionRecord]:
-        return tuple(self._records)
+        with self._lock:
+            return tuple(self._records)
 
 
 class ExecutionLedger:
@@ -70,6 +74,18 @@ class ExecutionLedger:
             )
         self._store.append(record)
         return record
+
+    def restore(self, records: Iterable[ExecutionRecord]) -> int:
+        """Rebuild execution history from a durable snapshot after a restart.
+
+        Records already present are skipped, so restore is idempotent and cannot raise
+        ``RECORD_DUPLICATE`` when replayed. Returns the number of records newly restored."""
+        restored = 0
+        for record in records:
+            if self.get(record.record_id) is None:
+                self._store.append(record)
+                restored += 1
+        return restored
 
     def get(self, record_id: str) -> ExecutionRecord | None:
         for record in self._store.all():

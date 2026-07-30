@@ -19,6 +19,7 @@ execution record. Its non-negotiable invariants:
 
 from __future__ import annotations
 
+import threading
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 
@@ -41,6 +42,12 @@ from factory.routing.models import (
 from factory.routing.records import ExecutionLedger
 from factory.routing.roster import ApprovedRoster
 from factory.scheduler import AdmissionResult, QuotaLedger, ResourceScheduler
+
+
+def _exec_seq(record_id: str) -> int:
+    """Parse the numeric suffix of an ``exec-N`` record id (0 if it does not match)."""
+    prefix, _, tail = record_id.rpartition("-")
+    return int(tail) if prefix == "exec" and tail.isdigit() else 0
 
 
 class ManualClock:
@@ -89,7 +96,16 @@ class ModelRouter:
     """Central routing + execution authority over the approved roster."""
 
     __slots__ = (
-        "_adapters", "_clock", "_health", "_ledger", "_quota", "_roster", "_scheduler", "_seq",
+        "_accounting",
+        "_adapters",
+        "_clock",
+        "_health",
+        "_ledger",
+        "_lock",
+        "_quota",
+        "_roster",
+        "_scheduler",
+        "_seq",
     )
 
     def __init__(
@@ -110,6 +126,9 @@ class ModelRouter:
         self._adapters = dict(adapters)
         self._clock = clock
         self._seq = 0
+        # Serializes record-id issuance, ledger append, and attempt accounting across threads.
+        self._lock = threading.Lock()
+        self._accounting: dict[ExecutionStatus, int] = {}
 
     # -- selection ---------------------------------------------------------------------------
     def _privacy_ok(self, descriptor: ModelDescriptor, privacy: Privacy) -> bool:
@@ -167,9 +186,54 @@ class ModelRouter:
         )
 
     # -- execution ---------------------------------------------------------------------------
-    def _new_record_id(self) -> str:
+    def _next_record_id(self) -> str:
+        """Issue the next unique record id. Caller must hold ``self._lock``."""
         self._seq += 1
         return f"exec-{self._seq}"
+
+    def _commit_attempt(
+        self,
+        request: RouteRequest,
+        route_key: str,
+        call: CallResult,
+        now: int,
+        *,
+        reason: str,
+        supersedes: str | None,
+        reverify: bool,
+    ) -> ExecutionRecord:
+        """Record and account an attempt of *any* outcome, then charge quota (thread-safe).
+
+        Accounting is uniform across outcomes — success, failed, timed-out, cancelled,
+        runtime-unavailable, and fallback — so both the per-status tally and the quota reflect every
+        attempt (one request + one wall-time unit each; tokens only when produced)."""
+        if call.ok and call.fingerprint is not None:
+            require_full_fingerprint(call.fingerprint)
+        with self._lock:
+            record = self._ledger.record(
+                ExecutionRecord(
+                    record_id=self._next_record_id(),
+                    task_id=request.task_id,
+                    stage_id=request.stage_id,
+                    attempt=self._ledger.next_attempt(request.task_id, request.stage_id),
+                    route_key=route_key,
+                    fingerprint_digest=call.fingerprint.digest() if call.fingerprint else "",
+                    status=call.status,
+                    started_at=now,
+                    reason=reason,
+                    supersedes=supersedes,
+                    reverification_required=reverify,
+                    error_code=call.error_code,
+                )
+            )
+            self._accounting[call.status] = self._accounting.get(call.status, 0) + 1
+        self._quota.charge(request.quota_scope, requests=1, tokens=call.tokens, wall_time=1)
+        return record
+
+    def accounting(self) -> Mapping[ExecutionStatus, int]:
+        """Per-outcome attempt tally (success/failed/timed-out/cancelled/unavailable/superseded)."""
+        with self._lock:
+            return dict(self._accounting)
 
     def _adapter_for(self, descriptor: ModelDescriptor) -> ProviderAdapter:
         try:
@@ -193,39 +257,26 @@ class ModelRouter:
 
         assert admission.reservation is not None  # admitted implies a reservation
         reservation = admission.reservation
-        adapter = self._adapter_for(descriptor)
-        call = adapter.call(
-            CallRequest(
-                task_id=request.task_id,
-                stage_id=request.stage_id,
-                route_key=descriptor.route_key,
-                prompt=request.prompt,
-                max_tokens=request.max_tokens,
-                timeout=request.timeout,
+        try:
+            adapter = self._adapter_for(descriptor)
+            call = adapter.call(
+                CallRequest(
+                    task_id=request.task_id,
+                    stage_id=request.stage_id,
+                    route_key=descriptor.route_key,
+                    prompt=request.prompt,
+                    max_tokens=request.max_tokens,
+                    timeout=request.timeout,
+                )
             )
-        )
-        if call.ok and call.fingerprint is not None:
-            require_full_fingerprint(call.fingerprint)
-        if call.ok:
-            self._quota.charge(
-                request.quota_scope, requests=1, tokens=call.tokens, wall_time=1
+            record = self._commit_attempt(
+                request, descriptor.route_key, call, now,
+                reason=call.reason, supersedes=None, reverify=False,
             )
-
-        record = self._ledger.record(
-            ExecutionRecord(
-                record_id=self._new_record_id(),
-                task_id=request.task_id,
-                stage_id=request.stage_id,
-                attempt=self._ledger.next_attempt(request.task_id, request.stage_id),
-                route_key=descriptor.route_key,
-                fingerprint_digest=call.fingerprint.digest() if call.fingerprint else "",
-                status=call.status,
-                started_at=now,
-                reason=call.reason,
-                error_code=call.error_code,
-            )
-        )
-        self._scheduler.release(reservation.reservation_id, self._clock.now())
+        finally:
+            # The reservation is released even if adapter lookup, fingerprint validation, quota
+            # charging, or ledger append raises — no leaked reservation on any failure path.
+            self._scheduler.release(reservation.reservation_id, self._clock.now())
         return ExecutionOutcome(decision, admission, record, call)
 
     def fallback(
@@ -261,46 +312,37 @@ class ModelRouter:
             return ExecutionOutcome(self.route(request), admission, None, None, True)
 
         assert admission.reservation is not None
-        adapter = self._adapter_for(descriptor)
-        call = adapter.call(
-            CallRequest(
-                task_id=request.task_id,
-                stage_id=request.stage_id,
-                route_key=substitute_route_key,
-                prompt=request.prompt,
-                max_tokens=request.max_tokens,
-                timeout=request.timeout,
+        reservation = admission.reservation
+        try:
+            adapter = self._adapter_for(descriptor)
+            call = adapter.call(
+                CallRequest(
+                    task_id=request.task_id,
+                    stage_id=request.stage_id,
+                    route_key=substitute_route_key,
+                    prompt=request.prompt,
+                    max_tokens=request.max_tokens,
+                    timeout=request.timeout,
+                )
             )
-        )
-        if call.ok and call.fingerprint is not None:
-            require_full_fingerprint(call.fingerprint)
-        # New execution record supersedes the failed one; reverification is mandatory.
-        record = self._ledger.record(
-            ExecutionRecord(
-                record_id=self._new_record_id(),
-                task_id=request.task_id,
-                stage_id=request.stage_id,
-                attempt=self._ledger.next_attempt(request.task_id, request.stage_id),
-                route_key=substitute_route_key,
-                fingerprint_digest=call.fingerprint.digest() if call.fingerprint else "",
-                status=call.status,
-                started_at=now,
+            # New execution record supersedes the failed one; reverification is mandatory.
+            record = self._commit_attempt(
+                request, substitute_route_key, call, now,
                 reason=f"fallback from {failed.route_key}: {call.reason}",
-                supersedes=failed_record_id,
-                reverification_required=True,
+                supersedes=failed_record_id, reverify=True,
             )
-        )
-        self._ledger.register_fallback(
-            FallbackRecord(
-                from_record_id=failed_record_id,
-                to_record_id=record.record_id,
-                reason=f"{failed.status.value} on {failed.route_key}",
-                failed_fingerprint_digest=failed.fingerprint_digest,
-                substitute_fingerprint_digest=record.fingerprint_digest,
-                reverification_gates=("stage_reverify", "affected_gates"),
+            self._ledger.register_fallback(
+                FallbackRecord(
+                    from_record_id=failed_record_id,
+                    to_record_id=record.record_id,
+                    reason=f"{failed.status.value} on {failed.route_key}",
+                    failed_fingerprint_digest=failed.fingerprint_digest,
+                    substitute_fingerprint_digest=record.fingerprint_digest,
+                    reverification_gates=("stage_reverify", "affected_gates"),
+                )
             )
-        )
-        self._scheduler.release(admission.reservation.reservation_id, self._clock.now())
+        finally:
+            self._scheduler.release(reservation.reservation_id, self._clock.now())
         decision = RouteDecision(
             task_id=request.task_id,
             task_type=request.task_type,
@@ -327,7 +369,17 @@ class ModelRouter:
         )
 
     def reconcile_restart(self, snapshot: RoutingSnapshot) -> tuple[ExecutionRecord, ...]:
-        """Rebuild scheduler/quota from a durable snapshot; return in-flight records to resume."""
-        self._scheduler.reconcile(snapshot.reservations, self._clock.now())
+        """Restart reconciliation (crash recovery).
+
+        Rebuilds execution history and quota from the durable snapshot, advances the record-id
+        sequence past every restored id so a new record can never collide with a restored one,
+        adopts prior reservations as **STALE** (each must pass :meth:`ResourceScheduler.revalidate`
+        before it can be reactivated), and returns the in-flight ``RUNNING`` records to resume."""
+        with self._lock:
+            self._ledger.restore(snapshot.records)
+            self._seq = max(
+                self._seq, max((_exec_seq(r.record_id) for r in snapshot.records), default=0)
+            )
         self._quota.restore(snapshot.usage)
-        return tuple(r for r in snapshot.records if r.status is ExecutionStatus.RUNNING)
+        self._scheduler.reconcile(snapshot.reservations, self._clock.now())
+        return self._ledger.in_flight()

@@ -58,6 +58,11 @@ class FakeWslDockerBackend:
             mounts=spec.mounts,
             network=spec.network,
             resources=spec.resources,
+            read_only_rootfs=spec.read_only_rootfs,
+            cap_drop_all=spec.cap_drop_all,
+            no_new_privileges=spec.no_new_privileges,
+            network_name=spec.network_name,
+            dual_homed=spec.dual_homed,
         )
         self._status[sandbox_id] = SandboxStatus.PROVISIONED
         return SandboxHandle(

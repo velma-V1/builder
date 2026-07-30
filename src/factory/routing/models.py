@@ -210,6 +210,11 @@ class Reservation:
     route_key: str
     profile: ResourceProfile
     acquired_at: int
+    # Restart-reconciliation fields (additive, backward-compatible defaults). A reservation restored
+    # from a durable snapshot after a restart is marked ``stale`` and carries the epoch that created
+    # it; it must be revalidated (task/epoch/route/resources/admission) before reactivation.
+    process_epoch: int = 0
+    stale: bool = False
 
 
 @dataclass(frozen=True, slots=True)

@@ -37,6 +37,12 @@ def test_provision_clean_spec_records_identity() -> None:
     assert handle.identity is not None
     assert handle.identity.uid == 1000
     assert handle.identity.capabilities == ()  # non-root, no added caps
+    # Hardened topology posture is recorded on the granted identity.
+    assert handle.identity.read_only_rootfs is True
+    assert handle.identity.cap_drop_all is True
+    assert handle.identity.no_new_privileges is True
+    assert handle.identity.dual_homed is False
+    assert handle.identity.network_name == "factory-internal"
     assert backend.status(handle.sandbox_id) is SandboxStatus.PROVISIONED
 
 

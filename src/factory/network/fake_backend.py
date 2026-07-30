@@ -8,6 +8,8 @@ per-contract transfer limits. Live network-namespace enforcement is LIVE_SANDBOX
 
 from __future__ import annotations
 
+import ipaddress
+
 from factory.network.errors import NetworkError
 from factory.network.models import (
     Direction,
@@ -20,6 +22,9 @@ _ALLOWED_HOST = frozenset(
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-"
 )
 
+# Names that resolve to host/orchestration infrastructure and must not be reachable by default.
+_INFRA_HOSTNAMES = frozenset({"localhost", "host.docker.internal", "metadata.google.internal"})
+
 
 def _valid_destination(host: str) -> bool:
     """Reject empty, scheme/path-bearing, wildcard, or otherwise malformed destinations."""
@@ -28,6 +33,17 @@ def _valid_destination(host: str) -> bool:
     if any(ch not in _ALLOWED_HOST for ch in host):
         return False
     return not (host.startswith(".") or host.endswith(".") or ".." in host)
+
+
+def _is_infra_destination(host: str) -> bool:
+    """True for loopback / private / link-local / metadata / host-gateway destinations."""
+    if host.lower() in _INFRA_HOSTNAMES:
+        return True
+    try:
+        ip = ipaddress.ip_address(host)
+    except ValueError:
+        return False
+    return ip.is_loopback or ip.is_private or ip.is_link_local or ip.is_reserved
 
 
 class FakeNetworkBackend:
@@ -60,6 +76,11 @@ class FakeNetworkBackend:
             return self._deny("PROTOCOL_DENIED", f"protocol {request.protocol} not permitted")
         if request.method not in approval.methods:
             return self._deny("METHOD_DENIED", f"method {request.method} not permitted")
+        if _is_infra_destination(request.destination) and not approval.allow_infrastructure:
+            return self._deny(
+                "INFRA_DENIED",
+                "loopback/private/link-local/metadata/host-gateway destination denied",
+            )
         return NetworkDecision(allowed=True, reason="permitted by contract")
 
     def evaluate_redirect(

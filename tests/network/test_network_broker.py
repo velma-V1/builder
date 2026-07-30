@@ -100,6 +100,29 @@ def test_transfer_limit_and_negative() -> None:
         b.charge(approval, -1)
 
 
+@pytest.mark.parametrize(
+    "infra",
+    [
+        "127.0.0.1",
+        "10.0.0.5",
+        "192.168.1.10",
+        "169.254.169.254",
+        "host.docker.internal",
+        "localhost",
+    ],
+)
+def test_infrastructure_destinations_denied_by_default(infra: str) -> None:
+    b = FakeNetworkBackend()
+    approval = _approval(destinations=frozenset({infra}))
+    assert b.evaluate(approval, _req(destination=infra), now=0).code == "INFRA_DENIED"
+
+
+def test_infrastructure_allowed_only_with_explicit_authorization() -> None:
+    b = FakeNetworkBackend()
+    approval = _approval(destinations=frozenset({"10.0.0.5"}), allow_infrastructure=True)
+    assert b.evaluate(approval, _req(destination="10.0.0.5"), now=0).allowed
+
+
 def test_empty_destination_is_invalid() -> None:
     assert FakeNetworkBackend().evaluate(_approval(), _req(destination=""), now=0).code == (
         "DESTINATION_INVALID"

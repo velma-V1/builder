@@ -198,7 +198,7 @@ def verify_tests_pass_with_coverage() -> VerificationResult:
             "--cov=src/factory/network", "--cov=src/factory/cache", "--cov=src/factory/staging",
             "--cov-branch", "--cov-fail-under=95",
         ],
-        capture_output=True, text=True, cwd=ROOT,
+        capture_output=True, text=True, cwd=ROOT, timeout=900,
     )
     summary = (result.stdout.strip().split("\n") or ["?"])[-1]
     return VerificationResult(
@@ -216,7 +216,7 @@ def verify_ruff() -> VerificationResult:
             "tests/git", "tests/sandbox", "tests/secret",
             "tests/network", "tests/cache", "tests/staging",
         ],
-        capture_output=True, text=True, cwd=ROOT,
+        capture_output=True, text=True, cwd=ROOT, timeout=900,
     )
     return VerificationResult("Ruff clean (PH-5 src + tests)", result.returncode == 0, f"exit {result.returncode}")
 
@@ -230,7 +230,7 @@ def verify_mypy() -> VerificationResult:
             "tests/git", "tests/sandbox", "tests/secret",
             "tests/network", "tests/cache", "tests/staging", "--strict",
         ],
-        capture_output=True, text=True, cwd=ROOT,
+        capture_output=True, text=True, cwd=ROOT, timeout=900,
     )
     return VerificationResult("mypy --strict clean (PH-5)", result.returncode == 0, f"exit {result.returncode}")
 

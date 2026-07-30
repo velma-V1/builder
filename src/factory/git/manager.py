@@ -33,6 +33,8 @@ from factory.git.trailers import render_message, validate_against
 
 _DEFAULT_PROTECTED = frozenset({"main", "master"})
 _BOT_ENV = ("-c", "user.name=Factory", "-c", "user.email=factory@localhost")
+# Bounded wall-clock for any single git invocation so a hung git process cannot block a lane.
+_DEFAULT_GIT_TIMEOUT_S = 60
 
 
 def _git_executable() -> str:
@@ -45,19 +47,32 @@ def _git_executable() -> str:
 class GitManager:
     """Controlled Git operations bound to an approved baseline and protected-ref policy."""
 
-    __slots__ = ("_git", "_protected")
+    __slots__ = ("_git", "_protected", "_timeout")
 
-    def __init__(self, protected_refs: frozenset[str] = _DEFAULT_PROTECTED) -> None:
+    def __init__(
+        self,
+        protected_refs: frozenset[str] = _DEFAULT_PROTECTED,
+        *,
+        timeout_s: int = _DEFAULT_GIT_TIMEOUT_S,
+    ) -> None:
         self._git = _git_executable()
         self._protected = protected_refs
+        self._timeout = timeout_s
 
     # -- low-level -------------------------------------------------------------------------
     def _run(self, repo: Path, *args: str) -> str:
-        result = subprocess.run(  # noqa: S603 - args are literal/validated, never shell-parsed
-            [self._git, "-C", str(repo), *args],
-            capture_output=True,
-            text=True,
-        )
+        try:
+            result = subprocess.run(  # noqa: S603 - args are literal/validated, never shell-parsed
+                [self._git, "-C", str(repo), *args],
+                capture_output=True,
+                text=True,
+                timeout=self._timeout,
+            )
+        except subprocess.TimeoutExpired as exc:
+            # ``subprocess.run`` kills + reaps the child on timeout; surface it as a bounded error.
+            raise GitError(
+                "GIT_TIMEOUT", f"git {args[0]} exceeded {self._timeout}s and was terminated"
+            ) from exc
         if result.returncode != 0:
             raise GitError("GIT_COMMAND_FAILED", f"git {args[0]} failed: {result.stderr.strip()}")
         return result.stdout
