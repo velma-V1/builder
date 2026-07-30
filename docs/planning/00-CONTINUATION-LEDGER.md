@@ -484,3 +484,26 @@ Operator authorized a bounded correction from
 - **Evidence:** `docs/verification/roadmap-ph3-windows-python314-correction-evidence.md`.
 - **Boundaries held:** `main` unchanged; PR #10 draft/unmerged/unmodified; Watchdog and Lane A not started;
   no `PROM-RPH3`, phase promotion, merge, or new milestone claim.
+
+### Operator acceptance of corrected RPH3 T3/T2/T5 gates — 2026-07-29
+
+This section supersedes the correction section's `READY_FOR_OPERATOR_REVIEW` status. The operator reviewed
+the pushed correction/evidence state (`928535961e9e1224d00a933b3be0cc899e954b96`,
+`61fcc8cf68080ab3796de906d3a279ef73c1c2bf`) and issued the following authoritative gate verdicts:
+
+- `RPH3-T3 := ACCEPTED`
+- `RPH3-T2 := ACCEPTED`
+- `RPH3-T5 := ACCEPTED`
+- `PROM-RPH3 := NOT_AUTHORIZED`
+- `ROADMAP_PH3 := INCOMPLETE`
+
+The acceptance covers the Windows/Python correction evidence: CPython 3.12/3.13/3.14 matrix, 755 passed
+with one explicit Windows skip, all T3/T2/T5 verifiers, exact migration hashes, fresh
+`core.autocrlf=true` checkout, Ruff, strict mypy, and retained coverage thresholds.
+
+**Remaining required work:** Watchdog/WIR, Lane A, final integrated RPH3 verification, final promotion
+review, and a separately authorized merge decision.
+
+**Non-blocking promotion debt:** SQLite `ResourceWarning` messages observed during some Python 3.13/3.14
+approval coverage runs. They do not reopen T3/T2/T5 acceptance, but must be cleaned up before final
+RPH3 promotion.

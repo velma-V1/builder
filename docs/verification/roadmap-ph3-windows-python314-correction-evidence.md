@@ -1,6 +1,6 @@
 # RPH3 T3/T2/T5 Windows and Python 3.14 Correction Evidence
 
-**Status:** `RPH3-T3/T2/T5_CORRECTED — READY_FOR_OPERATOR_REVIEW`
+**Status:** `RPH3-T3 := ACCEPTED`; `RPH3-T2 := ACCEPTED`; `RPH3-T5 := ACCEPTED`
 
 **Branch:** `claude/roadmap-ph3-security-spine-planning`
 
@@ -11,8 +11,8 @@
 **Date:** 2026-07-29 (America/New_York)
 
 This report supplements, and does not replace, the prior Linux T3/T2/T5 evidence. Those reports remain
-historical records of their original Linux/Python 3.12 runs. This correction is not `PROM-RPH3` and is not
-operator acceptance.
+historical records of their original Linux/Python 3.12 runs. The operator accepted the corrected T3, T2,
+and T5 gates on 2026-07-29. This acceptance is not `PROM-RPH3`: roadmap PH-3 remains incomplete.
 
 ## 1. Environment
 
@@ -99,7 +99,8 @@ audit, approval, permission, and tool runners: **26 passed, 59 deselected**.
 
 - The approval-only coverage run emitted two `ResourceWarning` messages on Python 3.13/3.14 for SQLite
   connections discovered during inspection. The tests and coverage gate pass; this correction does not
-  suppress or misreport the warnings.
+  suppress or misreport the warnings. Cleanup remains non-blocking promotion debt and is required before
+  final RPH3 promotion review.
 - The legacy PH-2 verifier now executes on Windows instead of failing on interpreter lookup/console
   encoding. Its unrelated recent-history heuristic reports 17/18 because it searches only the newest ten
   commits and no longer sees the old T2.1-T2.5 boundary messages. T3/T2/T5 verification does not depend on
@@ -109,3 +110,5 @@ audit, approval, permission, and tool runners: **26 passed, 59 deselected**.
 - Watchdog and Lane A were not started.
 - No migration hash comparison was weakened, no coverage threshold was lowered, no new milestone began,
   and no `PROM-RPH3` claim is made.
+- Remaining before any final promotion decision: Watchdog/WIR, Lane A, integrated RPH3 verification,
+  promotion review, and a separately authorized merge decision.
