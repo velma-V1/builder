@@ -11,6 +11,8 @@ The Factory is a standalone system. It is not Rabbit Hole, VELMA, or any other p
 
 ## 2. Permanent three-lane structure
 
+> **Amended by `docs/01R` (R2), 2026-07-24:** superseded — the default execution unit is up to three parallel major-stage *workstreams* (`01D`); permanent Worker/Reviewer lanes are optional secondary capacity and a temporary special case.
+
 The Factory has three permanent parallel execution lanes.
 
 Each lane contains:
@@ -25,6 +27,8 @@ Each lane contains:
 The lanes work on three separate components at the same time only when file ownership and interfaces do not conflict.
 
 ## 3. Deterministic authority
+
+> **Amended by `docs/01R` (R1), 2026-07-24:** the sole authoritative state writer is the **Orchestrator** (deterministic control-plane engine); the **Watchdog** is a separate, normally read-only supervisor (`01M`). Read "watchdog … authority/writer" below as the Orchestrator.
 
 The deterministic watchdog and state machine are the actual authority.
 
@@ -189,6 +193,8 @@ The contract family will separate:
 All contracts will share stable identifiers, version fields, provenance, status, and references to related contracts. Each contract will have one clear responsibility and will be independently schema-validated.
 
 ## 15. Hybrid contract and runtime-state storage
+
+> **Amended by `docs/01R` (R1), 2026-07-24:** below, "the deterministic watchdog is the sole authoritative database writer" means the **Orchestrator**; the Watchdog is a separate, normally read-only supervisor (`01M`).
 
 The Factory will use a hybrid architecture:
 

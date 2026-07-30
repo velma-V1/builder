@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://factory.local/schemas/contracts/task/v1.schema.json",
+  "allOf": [
+    {"$ref": "../../common/envelope-v1.schema.json#/$defs/envelope"},
+    {
+      "type": "object",
+      "required": [
+        "parent_requirements", "objective", "deliverables", "ownership_contract",
+        "permission_contract", "evidence_contract", "frozen_interfaces", "dependencies",
+        "permitted_routes", "resource_limits", "environment_class", "risk_class",
+        "autonomy_level", "checkpoint_policy", "recovery_policy", "completion_conditions"
+      ],
+      "properties": {
+        "parent_requirements": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/contractRef"},
+          "minItems": 1,
+          "maxItems": 4096
+        },
+        "objective": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+        "deliverables": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+          "maxItems": 4096
+        },
+        "ownership_contract": {"$ref": "../../common/definitions-v1.schema.json#/$defs/contractRef"},
+        "permission_contract": {"$ref": "../../common/definitions-v1.schema.json#/$defs/contractRef"},
+        "evidence_contract": {"$ref": "../../common/definitions-v1.schema.json#/$defs/contractRef"},
+        "frozen_interfaces": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+          "maxItems": 4096
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/contractRef"},
+          "maxItems": 4096
+        },
+        "permitted_routes": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/routeIdentity"},
+          "minItems": 1,
+          "maxItems": 8
+        },
+        "resource_limits": {"$ref": "../../common/definitions-v1.schema.json#/$defs/resourceCeilings"},
+        "environment_class": {"$ref": "../../common/definitions-v1.schema.json#/$defs/operatingEnvironment"},
+        "risk_class": {"enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"]},
+        "autonomy_level": {"type": "integer", "minimum": 1, "maximum": 100},
+        "checkpoint_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["commit_on_pass"],
+          "properties": {
+            "commit_on_pass": {"type": "boolean"}
+          }
+        },
+        "recovery_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["on_failure"],
+          "properties": {
+            "on_failure": {"enum": ["ROLLBACK", "HALT", "RETRY"]}
+          }
+        },
+        "completion_conditions": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+          "minItems": 1,
+          "maxItems": 4096
+        }
+      }
+    }
+  ],
+  "unevaluatedProperties": false
+}

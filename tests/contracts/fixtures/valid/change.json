@@ -1,0 +1,36 @@
+{
+  "contract_type": "change",
+  "id": "CHG-001",
+  "version": 1,
+  "schema_version": "1.0",
+  "project_id": "PROJ-001",
+  "status": "APPROVED",
+  "source": "HUMAN",
+  "created_at": "2026-07-24T00:00:00Z",
+  "created_by": "operator",
+  "related_contracts": [],
+  "target": {"id": "TASK-001", "version": 1},
+  "reason": "Update objective wording.",
+  "operations": [
+    {"op": "replace", "path": "/objective", "value": "Implement contract ingestion safely."}
+  ],
+  "affected_requirements": [],
+  "affected_tasks": [{"id": "TASK-001", "version": 1}],
+  "affected_paths": [],
+  "affected_interfaces": [],
+  "affected_permissions": [],
+  "affected_tests": [],
+  "affected_components": [],
+  "compatibility": "COMPATIBLE",
+  "protected_boundary": false,
+  "impact_result": {
+    "compatible": true,
+    "authority_expanded": false,
+    "evidence_weakened": false,
+    "protected_boundary_crossed": false
+  },
+  "required_evidence": [],
+  "rollback_target": null,
+  "approval": {"required": false},
+  "resulting_version": 2
+}

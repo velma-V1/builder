@@ -73,6 +73,8 @@ It must never depend on a model or coding worker to remember critical state. App
 
 The watchdog is the sole authoritative writer to the runtime-state database. The Dashboard, Aider, models, lanes, tools, and IDE adapters submit commands or appendable events through controlled interfaces instead of directly modifying shared state.
 
+> **Amended by `docs/01R` (R1), 2026-07-24:** the sole authoritative writer is the **Orchestrator**; the Watchdog is the separate, normally read-only supervisor (`01M`).
+
 ## 5. Contract system
 
 The Factory uses seven small linked contract families:
@@ -198,6 +200,8 @@ Monaco save actions and Aider edits enter the same policy, checkpoint, diff, evi
 ## 14. Git and sandbox boundary
 
 Every task uses an isolated branch and worktree where practical. Execution occurs in a disposable Docker environment through WSL2 unless the approved task requires a restricted Windows-native environment.
+
+> **Amended by `docs/01R` (Decision C), 2026-07-24:** for v1 the Windows-native exception does not apply — execution is WSL2 + Docker only.
 
 No worker, model, Dashboard panel, or IDE adapter receives unrestricted host access. Project mounts, network access, secrets, devices, capabilities, commands, and resource limits are explicitly granted by contract.
 

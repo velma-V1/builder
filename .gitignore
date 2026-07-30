@@ -267,6 +267,9 @@ credentials.*
 /temp/
 /tmp/
 
+# Verification run artifacts (evidence manifests are summarized into docs/verification/*)
+/artifacts/
+
 # Local builder memory and runtime databases
 /local-memory/
 /local_memory/

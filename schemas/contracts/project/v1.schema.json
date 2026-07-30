@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://factory.local/schemas/contracts/project/v1.schema.json",
+  "allOf": [
+    {"$ref": "../../common/envelope-v1.schema.json#/$defs/envelope"},
+    {
+      "type": "object",
+      "required": [
+        "name", "project_root", "repository", "project_type", "deliverables",
+        "goals", "exclusions", "operating_environments", "protected_branches",
+        "protected_path_classes", "privacy", "resource_ceilings"
+      ],
+      "properties": {
+        "name": {"type": "string", "minLength": 1, "maxLength": 256},
+        "project_root": {"$ref": "../../common/definitions-v1.schema.json#/$defs/repoPath"},
+        "repository": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["url", "default_branch"],
+          "properties": {
+            "url": {"type": "string", "minLength": 1, "maxLength": 2048},
+            "default_branch": {"type": "string", "minLength": 1, "maxLength": 256}
+          }
+        },
+        "project_type": {"enum": ["APPLICATION", "LIBRARY", "SERVICE", "TOOL", "OTHER"]},
+        "deliverables": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+          "maxItems": 4096
+        },
+        "goals": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+          "maxItems": 4096
+        },
+        "exclusions": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+          "maxItems": 4096
+        },
+        "operating_environments": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/operatingEnvironment"},
+          "minItems": 1,
+          "maxItems": 16
+        },
+        "protected_branches": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1, "maxLength": 256},
+          "maxItems": 256
+        },
+        "protected_path_classes": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/pathGlob"},
+          "maxItems": 1024
+        },
+        "privacy": {"$ref": "../../common/definitions-v1.schema.json#/$defs/privacyLevel"},
+        "resource_ceilings": {"$ref": "../../common/definitions-v1.schema.json#/$defs/resourceCeilings"}
+      }
+    }
+  ],
+  "unevaluatedProperties": false
+}

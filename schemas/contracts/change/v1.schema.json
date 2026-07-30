@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://factory.local/schemas/contracts/change/v1.schema.json",
+  "allOf": [
+    {"$ref": "../../common/envelope-v1.schema.json#/$defs/envelope"},
+    {
+      "type": "object",
+      "required": [
+        "target", "reason", "operations", "affected_requirements", "affected_tasks",
+        "affected_paths", "affected_interfaces", "affected_permissions", "affected_tests",
+        "affected_components", "compatibility", "protected_boundary", "impact_result",
+        "required_evidence", "rollback_target", "approval", "resulting_version"
+      ],
+      "properties": {
+        "target": {"$ref": "../../common/definitions-v1.schema.json#/$defs/contractRef"},
+        "reason": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+        "operations": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 256,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["op", "path"],
+            "properties": {
+              "op": {"enum": ["add", "replace", "remove"]},
+              "path": {"type": "string", "pattern": "^/(?:[^~/]|~0|~1)+(?:/(?:[^~/]|~0|~1)+)*$"},
+              "value": {}
+            },
+            "allOf": [
+              {
+                "if": {"properties": {"op": {"enum": ["add", "replace"]}}},
+                "then": {"required": ["value"]}
+              },
+              {
+                "if": {"properties": {"op": {"const": "remove"}}},
+                "then": {"not": {"required": ["value"]}}
+              }
+            ]
+          }
+        },
+        "affected_requirements": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/contractRef"},
+          "maxItems": 4096
+        },
+        "affected_tasks": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/contractRef"},
+          "maxItems": 4096
+        },
+        "affected_paths": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/pathGlob"},
+          "maxItems": 4096
+        },
+        "affected_interfaces": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+          "maxItems": 4096
+        },
+        "affected_permissions": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/contractRef"},
+          "maxItems": 4096
+        },
+        "affected_tests": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+          "maxItems": 4096
+        },
+        "affected_components": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+          "maxItems": 4096
+        },
+        "compatibility": {"enum": ["COMPATIBLE", "INCOMPATIBLE", "UNKNOWN"]},
+        "protected_boundary": {"type": "boolean"},
+        "impact_result": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "compatible", "authority_expanded", "evidence_weakened", "protected_boundary_crossed"
+          ],
+          "properties": {
+            "compatible": {"type": "boolean"},
+            "authority_expanded": {"type": "boolean"},
+            "evidence_weakened": {"type": "boolean"},
+            "protected_boundary_crossed": {"type": "boolean"},
+            "reasons": {
+              "type": "array",
+              "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+              "maxItems": 4096
+            }
+          }
+        },
+        "required_evidence": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+          "maxItems": 4096
+        },
+        "rollback_target": {
+          "anyOf": [
+            {"$ref": "../../common/definitions-v1.schema.json#/$defs/contractRef"},
+            {"type": "null"}
+          ]
+        },
+        "approval": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["required"],
+          "properties": {
+            "required": {"type": "boolean"},
+            "approved_by": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+            "approved_at": {"type": "string", "format": "date-time"}
+          }
+        },
+        "resulting_version": {"$ref": "../../common/definitions-v1.schema.json#/$defs/contractVersion"}
+      }
+    }
+  ],
+  "unevaluatedProperties": false
+}

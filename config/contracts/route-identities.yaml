@@ -1,0 +1,10 @@
+schema_version: "1.0"
+routes:
+  LANE_1_WORKER: {provider_lane: LANE_1, role: WORKER, cloud: true}
+  LANE_1_REVIEWER: {provider_lane: LANE_1, role: REVIEWER, cloud: true}
+  LANE_2_WORKER: {provider_lane: LANE_2, role: WORKER, cloud: true}
+  LANE_2_REVIEWER: {provider_lane: LANE_2, role: REVIEWER, cloud: true}
+  LANE_3_WORKER: {provider_lane: LANE_3, role: WORKER, cloud: true}
+  LANE_3_REVIEWER: {provider_lane: LANE_3, role: REVIEWER, cloud: true}
+  LOCAL_FAST: {provider_lane: LOCAL, role: WORKER, cloud: false}
+  LOCAL_SUPERVISOR: {provider_lane: LOCAL, role: REVIEWER, cloud: false}

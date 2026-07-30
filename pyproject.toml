@@ -1,0 +1,67 @@
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "factory-builder"
+version = "0.1.0"
+description = "Deterministic local-first AI software factory"
+requires-python = ">=3.12,<3.15"
+dependencies = [
+  "PyYAML==6.0.3",
+  "jsonschema==4.26.0",
+  "rfc8785==0.1.4",
+]
+
+[dependency-groups]
+dev = [
+  "hypothesis==6.161.0",
+  "mypy==2.3.0",
+  "pytest==9.1.1",
+  "pytest-cov==7.1.0",
+  "ruff==0.15.22",
+  "types-PyYAML==6.0.12.20260518",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/factory"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --strict-config"
+markers = [
+  "security: adversarial security behavior",
+  "failure_path: controlled failure and rollback behavior",
+  "windows: Windows-specific path behavior",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["src/factory/contracts"]
+
+[tool.coverage.report]
+fail_under = 95
+show_missing = true
+skip_covered = true
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+packages = ["factory.contracts"]
+warn_unreachable = true
+
+[[tool.mypy.overrides]]
+module = "jsonschema.*"
+ignore_missing_imports = true
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "S", "RUF"]
+ignore = ["S101"]
+
+[tool.ruff.lint.per-file-ignores]
+# Verification report generators: long descriptive result strings are intentional.
+"scripts/verify_*.py" = ["E501"]

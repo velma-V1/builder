@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://factory.local/schemas/common/envelope-v1.schema.json",
+  "$defs": {
+    "envelope": {
+      "type": "object",
+      "required": [
+        "contract_type",
+        "id",
+        "version",
+        "schema_version",
+        "project_id",
+        "status",
+        "source",
+        "created_at",
+        "created_by",
+        "related_contracts"
+      ],
+      "properties": {
+        "contract_type": {
+          "enum": ["project", "requirement", "task", "ownership", "permission", "evidence", "change"]
+        },
+        "id": {"type": "string", "minLength": 3, "maxLength": 67},
+        "version": {"$ref": "definitions-v1.schema.json#/$defs/contractVersion"},
+        "schema_version": {"$ref": "definitions-v1.schema.json#/$defs/schemaVersion"},
+        "project_id": {"$ref": "definitions-v1.schema.json#/$defs/projectId"},
+        "status": {"$ref": "definitions-v1.schema.json#/$defs/status"},
+        "source": {"type": "string", "minLength": 1, "maxLength": 128},
+        "created_at": {"type": "string", "format": "date-time"},
+        "created_by": {"type": "string", "minLength": 1, "maxLength": 256},
+        "related_contracts": {
+          "type": "array",
+          "items": {"$ref": "definitions-v1.schema.json#/$defs/contractRef"},
+          "maxItems": 4096
+        }
+      }
+    }
+  }
+}

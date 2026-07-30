@@ -6,7 +6,16 @@ Factory is a standalone, local-first AI software-production system designed to b
 
 ## Status
 
-**Product definition, high-level architecture, and Section 1 design and implementation plan are recorded. Implementation has not started.**
+**Full architecture, all planning resolutions (R1–R5 and the autonomy, deletion, and Windows-native decisions), and a complete pre-implementation planning system are recorded. Section 1 (Requirements & Contracts) is implemented and verified — `PASS` (96.85% coverage, ruff/mypy clean). Section 2 (Orchestrator: Task Queue & State Machine) is implemented and verified — `PASS` (100% tests, ruff/mypy clean, PROM-PH2 exit gate passed).**
+
+Continue to the next phase:
+
+- [`docs/verification/section-2-evidence-report.md`](docs/verification/section-2-evidence-report.md) — Section 2 verification report: PROM-PH2 exit gate results, 93 tests (100% pass), regression prevention gates, and migration integrity.
+- [`docs/verification/section-2-test-summary.md`](docs/verification/section-2-test-summary.md) — detailed test execution summary, code coverage analysis, and quality metrics.
+- [`HANDOFF-PH2.md`](HANDOFF-PH2.md) — the PH-2 handoff record; what was done, binding decisions, schema-freeze.
+- [`docs/01R-PLANNING-RESOLUTIONS-AND-AMENDMENTS.md`](docs/01R-PLANNING-RESOLUTIONS-AND-AMENDMENTS.md) — the resolutions and decisions in force for remaining phases.
+- [`docs/10-IMPLEMENTATION-ROADMAP.md`](docs/10-IMPLEMENTATION-ROADMAP.md) — the nine-phase build order, gates, and critical path. **Roadmap PH-3 next: Watchdog, Permissions, Approval, Audit & Tools** (unbuilt).
+- [`docs/WORKER-EXECUTION-SUBSTRATE-CLASSIFICATION.md`](docs/WORKER-EXECUTION-SUBSTRATE-CLASSIFICATION.md) — the Worker Execution Substrate (prebuilt PH-4/PH-5 execution infra on `claude/ph3-worker-engine`); **not roadmap PH-3**.
 
 The system is intentionally planned in locked sections before code is written. This prevents architecture drift, conflicting parallel edits, unverifiable completion claims, and uncontrolled autonomy.
 
@@ -53,15 +62,18 @@ OpenHands is reserved as a possible future addition after v1 evaluation. Codex i
 Read the repository in this order:
 
 1. [`PROJECT_DEFINITION.md`](PROJECT_DEFINITION.md) — governing purpose, boundaries, priorities, controls, and success criteria.
-2. [`docs/00-DOCUMENTATION-INDEX.md`](docs/00-DOCUMENTATION-INDEX.md) — source hierarchy and repository map.
+2. [`docs/00-DOCUMENTATION-INDEX.md`](docs/00-DOCUMENTATION-INDEX.md) — the complete, authoritative source hierarchy (26 levels, including the `01C`–`01Q` architecture supplements and `docs/01R`) and repository map.
 3. [`docs/01-APPROVED-DECISIONS.md`](docs/01-APPROVED-DECISIONS.md) — approved architecture, permissions, storage, local toolchain, and interface decisions.
-4. [`docs/01A-LOCAL-BUILDER-STACK-DECISION.md`](docs/01A-LOCAL-BUILDER-STACK-DECISION.md) — Ollama, Aider, Dashboard, Monaco, file explorer, IDE independence, and OpenHands deferral.
-5. [`docs/01B-SELF-HOSTING-TRANSITION-DECISION.md`](docs/01B-SELF-HOSTING-TRANSITION-DECISION.md) — staged migration from bootstrap tools into the local Builder.
-6. [`docs/02-FACTORY-ARCHITECTURE.md`](docs/02-FACTORY-ARCHITECTURE.md) — high-level component boundaries and execution flow.
-7. [`docs/03-MODEL-ROSTER.md`](docs/03-MODEL-ROSTER.md) — approved local and hosted models, roles, routing, and fallback rules.
-8. [`docs/04-RECOVERY-POLICY.md`](docs/04-RECOVERY-POLICY.md) — safe checkpoints, rollback, restart, failure, and scope-drift behavior.
-9. [`docs/05-BUILD-PLAN-MAP.md`](docs/05-BUILD-PLAN-MAP.md) — ordered build sections and self-hosting transition gates.
-10. [`docs/06-BUILDER-INTERFACE-AND-LOCAL-TOOLCHAIN.md`](docs/06-BUILDER-INTERFACE-AND-LOCAL-TOOLCHAIN.md) — dashboard, Monaco, file explorer, Aider/Ollama, and optional IDE adapter rules.
+4. [`docs/01R-PLANNING-RESOLUTIONS-AND-AMENDMENTS.md`](docs/01R-PLANNING-RESOLUTIONS-AND-AMENDMENTS.md) — approved resolutions (R1–R5) and decisions (autonomy, deletion, Windows-native isolation) that amend the items below; read this before relying on any clause it supersedes.
+5. [`docs/01A-LOCAL-BUILDER-STACK-DECISION.md`](docs/01A-LOCAL-BUILDER-STACK-DECISION.md) — Ollama, Aider, Dashboard, Monaco, file explorer, IDE independence, and OpenHands deferral.
+6. [`docs/01B-SELF-HOSTING-TRANSITION-DECISION.md`](docs/01B-SELF-HOSTING-TRANSITION-DECISION.md) — staged migration from bootstrap tools into the local Builder.
+7. [`docs/02-FACTORY-ARCHITECTURE.md`](docs/02-FACTORY-ARCHITECTURE.md) — high-level component boundaries and execution flow.
+8. [`docs/03-MODEL-ROSTER.md`](docs/03-MODEL-ROSTER.md) — approved local and hosted models, roles, routing, and fallback rules.
+9. [`docs/04-RECOVERY-POLICY.md`](docs/04-RECOVERY-POLICY.md) — safe checkpoints, rollback, restart, failure, and scope-drift behavior.
+10. [`docs/05-BUILD-PLAN-MAP.md`](docs/05-BUILD-PLAN-MAP.md) — ordered build sections and self-hosting transition gates.
+11. [`docs/06-BUILDER-INTERFACE-AND-LOCAL-TOOLCHAIN.md`](docs/06-BUILDER-INTERFACE-AND-LOCAL-TOOLCHAIN.md) — dashboard, Monaco, file explorer, Aider/Ollama, and optional IDE adapter rules.
+
+The full pre-implementation planning system — master roadmap, glossary, contract/schema registries, dependency and workstream maps, verification matrix, risk register, test strategy, release-line plans, reusable templates, the component map, and the nine phase plans — lives under `docs/10-IMPLEMENTATION-ROADMAP.md`, `docs/11-CONTROLLED-GLOSSARY-AND-CROSSWALKS.md`, `docs/planning/`, `docs/release/`, `docs/templates/`, `docs/specifications/components/`, and `docs/plans/`.
 
 ## Approved build order
 
@@ -70,7 +82,7 @@ Read the repository in this order:
 3. Deterministic watchdog
 4. Model and coding-tool routing and quotas
 5. Git/worktree and sandbox isolation
-6. Three Worker–Reviewer lanes
+6. Three parallel major-stage workstreams (Worker–Reviewer lanes are an optional secondary pattern; see `docs/01R` R2)
 7. Testing, evidence, integration, and recovery
 8. Complete dashboard, packaging, and installation
 
@@ -101,4 +113,4 @@ Read the repository in this order:
 
 ## Next work
 
-Implement Section 1 through the local-first bootstrap path, then build the minimum Builder shell and move each verified workflow inside Factory.
+Section 1 (Requirements & Contracts) is implemented and verified — see [`docs/verification/section-1-requirements-contracts.md`](docs/verification/section-1-requirements-contracts.md). Per `HANDOFF-PH1.md` and `docs/10-IMPLEMENTATION-ROADMAP.md §15`, this is the PH-1 exit gate: do not begin PH-2 (the minimum Builder shell, task queue/state machine, and deterministic watchdog) without explicit schema-freeze / phase-exit approval.

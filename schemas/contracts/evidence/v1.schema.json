@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://factory.local/schemas/contracts/evidence/v1.schema.json",
+  "allOf": [
+    {"$ref": "../../common/envelope-v1.schema.json#/$defs/envelope"},
+    {
+      "type": "object",
+      "required": [
+        "task_id", "requirement_ids", "deliverables", "test_commands",
+        "environment_identity", "scope_checks", "evidence_categories",
+        "worker_record", "reviewer_record", "artifacts", "retention",
+        "completion_formula", "permitted_limitations"
+      ],
+      "properties": {
+        "task_id": {"$ref": "../../common/definitions-v1.schema.json#/$defs/taskId"},
+        "requirement_ids": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/requirementId"},
+          "minItems": 1,
+          "maxItems": 4096
+        },
+        "deliverables": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+          "maxItems": 4096
+        },
+        "test_commands": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+          "minItems": 1,
+          "maxItems": 1024
+        },
+        "environment_identity": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+        "scope_checks": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+          "maxItems": 4096
+        },
+        "evidence_categories": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/evidenceCategory"},
+          "minItems": 1,
+          "maxItems": 32
+        },
+        "worker_record": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["summary"],
+          "properties": {
+            "summary": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"}
+          }
+        },
+        "reviewer_record": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["verdict"],
+          "properties": {
+            "verdict": {"$ref": "../../common/definitions-v1.schema.json#/$defs/verdict"},
+            "notes": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"}
+          }
+        },
+        "artifacts": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/pathGlob"},
+          "maxItems": 4096
+        },
+        "retention": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["policy"],
+          "properties": {
+            "policy": {"enum": ["STANDARD", "EXTENDED", "PERMANENT"]}
+          }
+        },
+        "completion_formula": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+        "permitted_limitations": {
+          "type": "array",
+          "items": {"$ref": "../../common/definitions-v1.schema.json#/$defs/boundedText"},
+          "maxItems": 4096
+        }
+      }
+    }
+  ],
+  "unevaluatedProperties": false
+}
