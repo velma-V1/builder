@@ -1,15 +1,16 @@
 # Roadmap PH-3 — RPH3-T3 Implementation Note (NON-NORMATIVE)
 
 **Document ID:** NOTE-RPH3-T3 · **Repository path:** `docs/planning/RPH3-T3-IMPLEMENTATION-NOTE.md`
-**Status:** **NON-NORMATIVE** implementation note, subordinate to the frozen normative plans
-(`DEP-RPH3`, `XSC-RPH3`, `approval-spec`). It records **how RPH3-T3 realized the approval domain** and
-one **bounded, recorded deviation** from the literal frozen wording of `DEP-RPH3 §3/§3.1`. It changes
-no contract and grants no authority. **Established:** 2026-07-26. **Namespace:** RPH3.
+**Status:** **NON-NORMATIVE** implementation note, subordinate to the normative plans (`DEP-RPH3`,
+`XSC-RPH3`, `approval-spec`). It records **how RPH3-T3 realized the approval domain**. **Established:**
+2026-07-26. **Updated:** 2026-07-30. **Namespace:** RPH3.
 
-> This note exists because a frozen normative document (`DEP-RPH3`) must **not** be edited to fit an
-> implementation. An earlier T3 draft edited `DEP-RPH3 §3` in place; that edit was reverted. The
-> divergence is instead disclosed here and in the continuation ledger, for explicit operator
-> acceptance, rather than hidden by mutating the frozen plan.
+> **RESOLUTION (2026-07-30).** The migration-packaging question raised by this note is **resolved**: the
+> operator adopted the **ordered per-domain migration model** (single security-spine SQLite; one
+> SHA-pinned migration per authorized domain; never edit an applied migration). `DEP-RPH3 §3/§3.1` was
+> **amended accordingly** (operator-authorized) — it now describes ordered per-domain migrations with the
+> same cumulative end-state inventory. This note is retained as the implementation record; the earlier
+> "deviation / open decision" framing below is **superseded** by that amendment and is kept for history.
 
 ## 1. What T3 built in the security-spine store
 

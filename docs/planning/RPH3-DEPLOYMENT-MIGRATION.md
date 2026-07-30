@@ -39,10 +39,28 @@ inventoried here. The security-spine store carries the domain records **and** th
 tables + the WIR **intervention journal**; the audit store enforces `UNIQUE(op_key, record_kind)` (an
 operation may carry an `INTENT` and a `COMPLETION` audit record — see XSC-RPH3 §2 cardinality).
 
-| Store | Migration | Tables | Owner (sole writer) |
+**Migration model — ordered per-domain migrations (operator-adopted 2026-07-30).** The security-spine store is
+one SQLite file whose tables are introduced by an **ordered set of SHA-256-pinned, single-transaction
+migrations**, one per authorized domain (each owned by that domain's sole writer). This replaces the earlier
+"single all-tables `0001`" wording: because a SHA-pinned, already-applied migration must never be edited
+(`NEVER edit_applied_migration`), a domain's tables land in the next version file rather than being retro-added
+to `0001`. The **cumulative end-state table inventory is unchanged** (the full set below); only the packaging is
+per-task, so no task pins another domain's schema before that domain is designed (RPH3-T2/T5/WIR boundary). The
+store boundary (ODI-RPH3-01), per-domain sole-writer discipline (§4A), read-only consumers, reconciliation, and
+fail-closed behavior are all preserved.
+
+| Store | Migration (ordered) | Tables | Owner (sole writer) |
 |---|---|---|---|
-| security-spine | `migrations/security/0001_security_spine.sql` | domain records: `permission_grants`, `approval_records`, `approval_queue`, `tool_registry`, `tool_declarations`, `tool_quarantine`; **operation-intent** tables: `permission_intents`, `approval_intents`, `tool_registry_intents`; **receiver journal**: `intervention_journal` | per-table single writer: CMP-PERM (`permission_*`), CMP-APPROVAL (`approval_*`), CMP-TOOLREG (`tool_*`), WIR (`intervention_journal`) |
-| audit | `migrations/audit/0001_audit_chain.sql` | `audit_records` (append-only, `sequence`, `predecessor_hash`, `record_hash`, optional `signature`, `op_key`, `record_kind` CHECK in (`INTENT`,`COMPLETION`)) + **`UNIQUE(op_key, record_kind)`** (≤1 INTENT + ≤1 COMPLETION per op) + `BEFORE UPDATE/DELETE` triggers `RAISE(ABORT)` | CMP-AUDITW |
+| security-spine | `migrations/security/0001_security_spine.sql` (**RPH3-T3**, present) | `approval_records`, `approval_queue`, `approval_intents` | CMP-APPROVAL (`approval_*`) |
+| security-spine | `migrations/security/0002_permission.sql` (**RPH3-T2**) | `permission_grants`, `permission_intents` | CMP-PERM (`permission_*`) |
+| security-spine | `migrations/security/0003_tools.sql` (**RPH3-T5**) | `tool_registry`, `tool_declarations`, `tool_quarantine`, `tool_registry_intents` | CMP-TOOLREG (`tool_*`) |
+| security-spine | `migrations/security/00NN_watchdog.sql` (**WIR**, future — not RPH3-T2/T3/T5) | `intervention_journal` | WIR (`intervention_journal`) |
+| audit | `migrations/audit/0001_audit_chain.sql` (**RPH3-T4**, present) | `audit_records` (append-only, `sequence`, `predecessor_hash`, `record_hash`, optional `signature`, `op_key`, `record_kind` CHECK in (`INTENT`,`COMPLETION`)) + **`UNIQUE(op_key, record_kind)`** (≤1 INTENT + ≤1 COMPLETION per op) + `BEFORE UPDATE/DELETE` triggers `RAISE(ABORT)` | CMP-AUDITW |
+
+The **cumulative security-spine end-state inventory** (all domain records + all `*_intents` + `intervention_journal`)
+is exactly as before; the four migrations above compose to it. `00NN_watchdog.sql` version number is assigned when
+the WIR is authorized (not in RPH3-T2/T3/T5). File names `0002_permission.sql` / `0003_tools.sql` are the planned
+slots for T2/T5 and may be finalized by those tasks.
 
 ### 3.1 Operation-intent / journal table shape (XSC-RPH3 · WIR-RPH3)
 
@@ -81,12 +99,13 @@ touches its audit record. `ABORTED` intents are retained for a bounded audit win
 intents are **held** (not pruned) until operator/approval-gated recovery clears them. **Audit records are
 never pruned** by this process (append-only; governed by `CTR-RETENTION-POLICY`, PH-7).
 
-**Crash-recovery & migration order.** Both migrations apply under the PH-1 SHA-256-pinned transactional runner
-(§ below), each in one transaction (no partial schema). At startup, the domain writers run XSC-RPH3 §5
+**Crash-recovery & migration order.** Every migration applies under the PH-1 SHA-256-pinned transactional
+runner (§ below), each in one transaction (no partial schema). At startup, the domain writers run XSC-RPH3 §5
 reconciliation over the intent tables **before serving any request**; the audit chain is verified
-(CMP-AUDITV) first. Migration order within the security-spine store: domain + intent + journal tables are
-created in the single `0001_security_spine.sql` transaction (no inter-table ordering hazard); the audit store
-migration is independent (no cross-store FK — the link is `op_key` by value).
+(CMP-AUDITV) first. Migration order within the security-spine store: the ordered per-domain migrations apply in
+ascending version order and each version's tables are created in that version's single transaction (no
+inter-table ordering hazard — there are no cross-domain FKs within the store; task references are by `task_id`
+value); the audit store migration is independent (no cross-store FK — the link is `op_key` by value).
 
 **JSON-Schema contract schemas** (Draft 2020-12, `additionalProperties:false` at authority objects), authored
 under `schemas/contracts/`:

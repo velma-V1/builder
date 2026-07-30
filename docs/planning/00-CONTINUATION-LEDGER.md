@@ -368,28 +368,25 @@ Delivered (authorized scope):
    `tests/approval/conftest.py`. **NOT yet written:** integration tests, a store-unit test,
    `scripts/verify_roadmap_ph3_t3.py`, and `docs/verification/roadmap-ph3-t3-approval-evidence.md`.
 
-#### RPH3-T3 status: `RPH3-T3_PARTIAL — NOT COMPLETE`
+#### RPH3-T3 status: `RPH3-T3_COMPLETE — READY_FOR_OPERATOR_REVIEW`
 
-Work stopped on operator instruction to checkpoint the partial state. **Not accepted, not complete, not
-promotion-ready.**
+Approval Engine (CMP-APPROVAL) complete against `approval-spec`, `XSC-RPH3` Class-1, and `DEP-RPH3`
+§2/§3/§4A. **Not yet operator-accepted; not `PROM-RPH3`.**
 
-- **Work completed:** approval migration (approval domain only, SHA-pinned), `errors`/`models`/`store`/
-  `writer`/`engine`/`__init__` modules, and three test files (unit / security / failure-path). The
-  non-normative note `RPH3-T3-IMPLEMENTATION-NOTE.md` and this ledger entry.
-- **Tests currently passing (exact):** `tests/approval` = **34 passed, 0 failed**. Full repo regression =
-  **542 passed, 1 skipped** (Windows-only skip; +34 vs the 508 recorded at T4, no regression).
-- **Branch coverage (exact):** `src/factory/approval` = **92.99% branch** — **below** the ≥95% obligation
-  (engine 91%, writer 86%, store 95%, errors 88%). Coverage was **not** raised because implementation is
-  paused; closing the gap needs the not-yet-written tests above. This is a gating item for completion.
-- **Static analysis (exact):** `ruff check src/factory/approval tests/approval` → **clean (exit 0)**;
-  `mypy --strict src/factory/approval tests/approval` → **clean, 10 files (exit 0)**.
-- **Unresolved migration-contract question (blocker):** `DEP-RPH3 §3/§3.1` (frozen) mandates a **single**
-  `0001_security_spine.sql` creating **all** security-spine tables in one transaction. RPH3-T3 shipped an
-  **approval-only** `0001` (permission/tool/watchdog schemas are T2/T5/WIR design work, outside the T3
-  boundary). The frozen doc is **unmodified** (reverted to `1cf7728`); the deviation is disclosed in
-  `RPH3-T3-IMPLEMENTATION-NOTE.md`. **Operator decision required:** either (a) accept the deviation and
-  formally amend `DEP-RPH3 §3/§3.1` when T2/T5/WIR land (per-task SHA-pinned migrations), or (b) require a
-  single all-tables `0001` (which pulls T2/T5 schema design into T3). **T3 cannot be certified until this is
-  resolved.**
-- **Boundaries held:** Lane A / Watchdog paused; RPH3-T2 / RPH3-T5 not started; PR #10 unmerged; `main`
-  untouched; the accepted T4 audit foundation unmodified.
+- **Delivered:** `migrations/security/0001_security_spine.sql` (approval domain; SHA-pinned
+  `099ae959d6f06c6b944925af151d8fa8dd2b65fdffd63660cf2a4355b7878a51`); `src/factory/approval/{errors,
+  models,store,writer,engine,__init__}.py`; tests (unit / store / security / failure-path / integration);
+  `scripts/verify_roadmap_ph3_t3.py`; `docs/verification/roadmap-ph3-t3-approval-evidence.md`;
+  `docs/planning/RPH3-T3-IMPLEMENTATION-NOTE.md`.
+- **Tests (exact):** `tests/approval` = **56 passed, 0 failed** (unit 27, security 9, failure-path 16,
+  integration 4). Full repo = **564 passed, 1 skipped** (Windows-only; +56 vs 508 at T4, no regression).
+- **Coverage (exact):** `src/factory/approval` = **100.00% branch** (obligation ≥95%).
+- **Static analysis (exact):** ruff `src/factory/approval tests/approval scripts/verify_roadmap_ph3_t3.py`
+  → **clean**; mypy --strict `src/factory/approval tests/approval` → **clean (14 files)**.
+- **Verifier:** `scripts/verify_roadmap_ph3_t3.py` → **9/9 PASS**.
+- **Migration-contract question RESOLVED:** operator adopted the **ordered per-domain migration model**
+  (single security-spine SQLite; one SHA-pinned migration per authorized domain; never edit an applied
+  migration). `DEP-RPH3 §3/§3.1` **amended** (operator-authorized 2026-07-30) to describe it; cumulative
+  end-state inventory unchanged; `0001_security_spine.sql` retained as the approval bootstrap.
+- **Boundaries held:** Lane A / Watchdog paused; RPH3-T5 not started; PR #10 unmerged; `main` untouched;
+  the accepted T4 audit foundation unmodified. (RPH3-T2 authorized next in this run.)
