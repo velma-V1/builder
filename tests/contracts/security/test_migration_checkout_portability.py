@@ -43,6 +43,10 @@ PINNED_MIGRATIONS = (
         "migrations/security/0003_tools.sql",
         "0050e74f80932fb58ea15d1f60f95661c7589d57dd623aad7691e26ea73a69b5",
     ),
+    (
+        "migrations/security/0004_watchdog.sql",
+        "21ad8fa85055e1e55b703a55865a442b4e1af907c39baf668f7fcf34a4488b80",
+    ),
 )
 
 

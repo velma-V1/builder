@@ -560,3 +560,32 @@ RPH3 promotion.
   one-shot connections in `tests/approval/failure_paths/test_writer_faults.py`; root-cause cleanup
   remains assigned to M3.
 - **Next authorized milestone:** M3 integrated RPH3 verification.
+
+### RPH3 M3 integrated security-spine verification - 2026-07-30
+
+#### Status: `RPH3_IMPLEMENTATION_COMPLETE — READY_FOR_OPERATOR_PROMOTION_REVIEW`
+
+- **Baseline:** committed/pushed/clean-tree M1 `0a1479b53e5de200a7c46a5022aac158d8241501`
+  and M2 `c95de2a0a9e400135184a67ec27376b43263c88f`.
+- **Integrated gate:** dedicated verifier **10/10**; complete RPH3 focused graph **309 passed** under
+  warning-as-error on CPython 3.12.13, 3.13.14, and 3.14.6.
+- **Component gates per version:** T1 **8/8**, T2 **10/10**, T3 **9/9**, T4 **9/9**, T5 **10/10**,
+  cross-lane **7/7**. Full repository **811 passed, 1 classified Windows skip** per version.
+- **Coverage:** Watchdog **95.86%**, cross-lane **100.00%**, permission **99.80%**, approval
+  **99.80%**, audit **99.03%**, tools **98.55%**, fileops **97.02%**, Safe Mode **98.91%**.
+  Every unchanged threshold remains at or above 95%.
+- **Static:** repository Ruff PASS; every component verifier and the integrated verifier strict-mypy
+  PASS on all required Python versions.
+- **Warning debt resolved:** removed two redundant leaked test-fixture SQLite connections; retained
+  the explicitly closed connection that constructs the same broken-store condition. No warning
+  suppression and no accepted behavior change. Focused and full suites pass with resource warnings
+  promoted to errors.
+- **Migrations/checkout:** all eight RPH3-related migration SHA-256 values exact; no SQL diff; fresh
+  `core.autocrlf=true` checkout produced LF-only migration bytes and exact hashes. The portability
+  regression now includes security `0004_watchdog.sql`.
+- **Skip:** one Windows symlink-creation case remains explicitly `NOT_TESTABLE`; alternate path
+  escape coverage remains active.
+- **Boundaries:** Lane A is CMP-WATCH, WIR is internal, Lane B is T2/T3/T4/T5. No PH-4/PH-5,
+  direct host execution, new execution/continuation component, main/PR #10 change, merge, or
+  `PROM-RPH3`.
+- **Next:** operator promotion review only. `PROM_RPH3 := NOT_AUTHORIZED`.

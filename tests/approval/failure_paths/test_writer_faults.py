@@ -28,8 +28,6 @@ def test_stage_transition_on_missing_record_raises(security_db_path: Path) -> No
 def test_stage_transition_on_broken_store_fails_closed(tmp_path: Path) -> None:
     db = tmp_path / "s.db"
     apply_security_migrations(db, SECURITY_MIGRATIONS_ROOT)
-    sqlite3.connect(str(db)).execute("DROP TABLE approval_records")  # break the store
-    sqlite3.connect(str(db)).commit()
     broken = sqlite3.connect(str(db))
     broken.execute("DROP TABLE IF EXISTS approval_records")
     broken.commit()
