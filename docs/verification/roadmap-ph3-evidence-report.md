@@ -7,8 +7,8 @@ Lane B T2/T3/T4/T5. **Platform:** Windows. **Date:** 2026-07-30.
 
 ## Verdict
 
-**PASS — implementation complete and ready for operator promotion review.** This report does not
-authorize `PROM-RPH3`, merge, PH-4, or PH-5.
+**PASS — implementation complete.** This technical verdict alone did not authorize promotion; the
+subsequent independent operator decision is recorded below. Merge, PH-4, and PH-5 remain unauthorized.
 
 ## Integrated evidence
 
@@ -51,3 +51,10 @@ Every component remains above the unchanged 95% requirement.
 
 See the accompanying requirement, failure, migration, Windows, warning/skip, risk, and readiness
 records. The M3 commit containing this report is the authoritative integrated-evidence commit.
+
+## Operator promotion decision
+
+After this implementation/evidence state was committed and clean-tree verified at
+`7a01b4bc4a35d9346bfb0a34e53113bf67a56c62`, the operator explicitly responded `AUTHORIZED` on
+2026-07-30. Therefore `PROM-RPH3 := PASS` and roadmap PH-3 is promoted. This decision does not authorize
+merge, `main` or PR #10 modification, Stage-2 cutover, PH-4, or PH-5.

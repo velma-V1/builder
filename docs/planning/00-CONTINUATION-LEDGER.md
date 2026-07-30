@@ -589,3 +589,24 @@ RPH3 promotion.
   direct host execution, new execution/continuation component, main/PR #10 change, merge, or
   `PROM-RPH3`.
 - **Next:** operator promotion review only. `PROM_RPH3 := NOT_AUTHORIZED`.
+
+### Operator roadmap PH-3 promotion authorization - 2026-07-30
+
+This section supersedes M3's `READY_FOR_OPERATOR_PROMOTION_REVIEW` status. The operator reviewed the
+committed, pushed, clean-tree-verified RPH3 implementation/evidence state at
+`7a01b4bc4a35d9346bfb0a34e53113bf67a56c62` and explicitly responded `AUTHORIZED`.
+
+- `RPH3_IMPLEMENTATION := ACCEPTED`
+- `PROM-RPH3 := PASS`
+- `ROADMAP_PH3 := PROMOTED`
+- `MERGE := NOT_AUTHORIZED`
+- `STAGE_2_CUTOVER := NOT_AUTHORIZED`
+- `PH4 := NOT_STARTED`
+- `PH5 := NOT_STARTED`
+
+The authorization accepts the recorded Windows CPython 3.12/3.13/3.14 matrix, integrated and component
+verifiers, 811-passed/1-classified-skip full repository runs, retained coverage thresholds, exact migration
+hashes, fresh `core.autocrlf=true` checkout, strict mypy, Ruff, and resolved SQLite warning debt. Promotion
+changes phase-gate status only: it does not merge or modify `main`/PR #10 and does not begin another phase.
+
+**Next allowed action:** await a separate operator decision for integration/merge or the next roadmap phase.

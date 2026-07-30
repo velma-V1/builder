@@ -1,9 +1,10 @@
 # Roadmap PH-3 Promotion Readiness Report
 
-**Current recommendation:** READY FOR OPERATOR PROMOTION REVIEW.
+**Current state:** `PROM-RPH3 := PASS` by explicit operator authorization on 2026-07-30.
 
-Implementation verification is not promotion. `PROM-RPH3` remains not authorized and requires the
-operator’s independent review and decision.
+Implementation verification did not promote itself. After the complete verified state was pushed at
+`7a01b4bc4a35d9346bfb0a34e53113bf67a56c62`, the operator independently responded `AUTHORIZED`,
+satisfying the final phase-exit approval condition.
 
 | Readiness condition | State |
 |---|---|
@@ -12,8 +13,9 @@ operator’s independent review and decision.
 | Integrated verifier and full Windows matrix | PASS on CPython 3.12.13/3.13.14/3.14.6 |
 | Migration hashes and fresh CRLF checkout | PASS |
 | Warning debt | RESOLVED without suppression or behavior change |
-| No blocking defect/scope drift | PASS at pre-commit realignment; post-push clean-tree proof required |
-| Main and PR #10 boundary | protected main unchanged; PR #10 draft/open at protected head |
+| No blocking defect/scope drift | PASS at pre-commit and post-push clean-tree realignment |
+| Main and PR #10 boundary | PASS; protected main unchanged; PR #10 draft/open at protected head |
 
-The M3 commit must still be pushed, fetched back, clean-tree verified, and finally realigned. That
-operational proof completes implementation readiness; only the operator may decide `PROM-RPH3`.
+The M3 commit was pushed, fetched back, clean-tree verified, and finally realigned before authorization.
+This promotion changes the roadmap phase gate only. Merge, `main`, PR #10, Stage-2 cutover, PH-4, and PH-5
+remain unchanged and require separate authority.
