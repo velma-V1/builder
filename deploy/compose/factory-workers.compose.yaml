@@ -1,0 +1,51 @@
+# Factory worker sandbox topology — UNAPPLIED TEMPLATE (Stage-3 live-gate preparation).
+#
+# DO NOT `docker compose up` this file during preparation. It is a structural template validated
+# statically by factory.livegate.compose_topology; it creates no network and starts no container
+# until the live gate is authorized. Every worker is single-homed on an INTERNAL-ONLY network with
+# no host egress; the broker (separate template) is the sole dual-homed service that mediates egress.
+#
+# The ten hardening invariants (mirrors factory.sandbox.policy.evaluate_spec):
+#   internal-only net · single-homed worker · no runtime socket · no host networking ·
+#   no published ports · read-only rootfs · non-root user · caps dropped · no-new-privileges ·
+#   bounded cpu/memory/pids.
+
+networks:
+  factory-internal:
+    driver: bridge
+    internal: true            # no route to the host / internet; egress only via the broker
+
+services:
+  worker-dispatcher:
+    image: factory/worker:__PINNED_DIGEST__
+    networks:
+      - factory-internal      # single-homed
+    read_only: true
+    user: "1000:1000"         # non-root
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 256
+    mem_limit: "2g"
+    cpus: 1.0
+    tmpfs:
+      - /tmp:size=64m         # writable scratch without a writable rootfs
+    restart: "no"
+
+  worker-coding:
+    image: factory/worker:__PINNED_DIGEST__
+    networks:
+      - factory-internal
+    read_only: true
+    user: "1000:1000"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 512
+    mem_limit: "6g"
+    cpus: 2.0
+    tmpfs:
+      - /tmp:size=128m
+    restart: "no"
