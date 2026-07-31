@@ -6,7 +6,7 @@ phase promotes until it is `PASS`.
 
 | # | Decision / action | Type | Blocks | Reference |
 |---|---|---|---|---|
-| 1 | **Resolve the SQLite blocker** — authorize Option A (upgrade to ≥ 3.51.3) **or** Option B (register an approved patched backport with exact version + security evidence). | Decision + host change | ALL durable stores; PH-4/PH-6 live | 05 |
+| 1 | **SQLite — Option A AUTHORIZED (upgrade to ≥ 3.51.3).** Decision made; Option B not selected. **Execution pending on the WSL2 target host** (this session cannot reach it). Run the runbook, then re-run the readiness probe until `sqlite-engine-floor` is `PASS`. | Host change (operator-executed) | ALL durable stores; PH-4/PH-6 live | 05, 10 |
 | 2 | Install / confirm **Docker Engine ≥ 24.0** on the WSL2 host and confirm cgroup v2. | Host change | PH-5, PH-6 live | 02 |
 | 3 | Confirm **WSL2 is the default** (`Default Version: 2`) and the distro is provisioned. | Host confirm | PH-5, PH-6 live | 02 |
 | 4 | Install / confirm **NVIDIA driver + CUDA ≥ 12.0** in WSL2, GPU passthrough, and the NVIDIA Container Toolkit. | Host change | PH-4 GPU-heavy, PH-6 | 03 |
@@ -18,8 +18,8 @@ phase promotes until it is `PASS`.
 
 ## Decisions needing your explicit choice
 
-- **SQLite path:** Option A (upgrade) or Option B (approved backport)? If B, supply the exact version
-  and the security evidence (CVEs/fixes + source). *(Recommended: Option A — upgrade to ≥ 3.51.3.)*
+- **SQLite path:** ✅ **DECIDED — Option A (upgrade to ≥ 3.51.3).** Option B (backport) not selected.
+  Remaining: execute on the target host (item #1) and re-run the readiness probe.
 - **Egress policy for hosted routes:** confirm which hosted providers (Groq / Cerebras / NVIDIA) are
   authorized through the broker, and how their credentials are provisioned to the secret broker.
 - **Sequencing:** confirm phases are integrated independently in order PH-4 → PH-5 → PH-6, each with

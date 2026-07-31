@@ -1,8 +1,17 @@
 # 05 — SQLite Compliance & Remediation (FIRST MANDATORY GATE)
 
-**Gate result on this environment: `FAIL` (blocking).** Durable-store activation is refused and
-remains refused. Remediation below is **`PREPARED_NOT_EXECUTED`** — do not run it until separately
-authorized.
+> **AUTHORIZATION (recorded):** the operator has **authorized Option A — upgrade SQLite to
+> ≥ 3.51.3** (preferred over a custom backport: simpler to verify, maintain, update, and package).
+> **Option B (approved backport) is NOT selected.**
+>
+> **Execution boundary:** the upgrade runs on the operator's **Windows 11 + WSL2 target host**. This
+> preparation session runs in a remote Linux builder container with no access to that host, so it
+> **cannot** perform the upgrade. State on the target host is therefore
+> `SQLITE_REMEDIATION := AUTHORIZED_OPTION_A — PENDING_EXECUTION_ON_TARGET_HOST`. Use the turnkey
+> runbook in `docs/live-gate/10-sqlite-upgrade-runbook-wsl2.md`.
+
+**Gate result in the builder container: `FAIL` (blocking).** Durable-store activation is refused and
+remains refused until the target host is upgraded and its readiness probe reports `PASS`.
 
 ## 1. Detected runtime
 
@@ -70,7 +79,10 @@ sudo rm -rf /opt/sqlite-3.51.3
 python3 -c "import sqlite3; print(sqlite3.sqlite_version)"      # back to 3.50.4
 ```
 
-### Option B — Register an approved patched backport
+### Option B — Register an approved patched backport (NOT SELECTED)
+
+> Recorded as **not chosen**. Retained for reference only; do not register a backport for this rollout.
+
 
 If a vendor/distro ships a **patched** SQLite that carries the required fixes under a version string
 below `3.51.3`, it may be accepted **only** with exact version + security evidence, by registering

@@ -182,6 +182,7 @@ def verify_evidence_present() -> VerificationResult:
         "docs/live-gate/07-rollback-and-cleanup.md",
         "docs/live-gate/08-OPERATOR-ACTIONS-REQUIRED.md",
         "docs/live-gate/09-evidence-record-templates.md",
+        "docs/live-gate/10-sqlite-upgrade-runbook-wsl2.md",
         "deploy/compose/README.md",
     )
     return VerificationResult("Stage-3 evidence package present", ok, detail)
@@ -217,7 +218,8 @@ def main() -> int:
 
     if passed == total:
         print(
-            "Stage-3 preparation gate: PASS. SQLITE_REMEDIATION=PREPARED_NOT_EXECUTED; "
+            "Stage-3 preparation gate: PASS. "
+            "SQLITE_REMEDIATION=AUTHORIZED_OPTION_A (pending execution on the WSL2 target host); "
             "PH-4/5/6 LIVE_*_PENDING; PROM NOT_AUTHORIZED; not a phase promotion.\n"
         )
         return 0

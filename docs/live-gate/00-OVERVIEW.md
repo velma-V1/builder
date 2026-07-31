@@ -10,7 +10,7 @@ GPU, or durable store was exercised. Phase promotion remains `NOT_AUTHORIZED`.
 
 | Marker | Value |
 |---|---|
-| `SQLITE_REMEDIATION` | `PREPARED_NOT_EXECUTED` |
+| `SQLITE_REMEDIATION` | `AUTHORIZED_OPTION_A` — pending execution on the WSL2 target host (this session cannot reach it) |
 | `PH4_LIVE_RUNTIME_INTEGRATION` | `PENDING` |
 | `PH5_LIVE_SANDBOX_INTEGRATION` | `PENDING` |
 | `PH6_LIVE_INTEGRATION` | `PENDING` |
@@ -29,6 +29,7 @@ GPU, or durable store was exercised. Phase promotion remains `NOT_AUTHORIZED`.
 | 07 | `07-rollback-and-cleanup.md` | Rollback and cleanup procedure for any future live step. |
 | 08 | `08-OPERATOR-ACTIONS-REQUIRED.md` | **One consolidated list** of operator decisions/actions. |
 | 09 | `09-evidence-record-templates.md` | Blank evidence records to fill during live acceptance. |
+| 10 | `10-sqlite-upgrade-runbook-wsl2.md` | Turnkey WSL2 runbook for the authorized Option-A SQLite upgrade. |
 
 ## Code artifacts (all read-only / unapplied)
 
