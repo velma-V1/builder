@@ -5,10 +5,10 @@
 > **Option B (approved backport) is NOT selected.**
 >
 > **Execution boundary:** the upgrade runs on the operator's **Windows 11 + WSL2 target host**. This
-> preparation session runs in a remote Linux builder container with no access to that host, so it
-> **cannot** perform the upgrade. State on the target host is therefore
-> `SQLITE_REMEDIATION := AUTHORIZED_OPTION_A — PENDING_EXECUTION_ON_TARGET_HOST`. Use the turnkey
-> runbook in `docs/live-gate/10-sqlite-upgrade-runbook-wsl2.md`.
+> preparation session runs in a remote Linux builder container with no access to that host (and no
+> egress to `sqlite.org`), so it **cannot** perform or verify the upgrade. State is therefore
+> `SQLITE_REMEDIATION := OPTION_A_SELECTED_EXECUTION_DEFERRED`. Use the turnkey runbook in
+> `docs/live-gate/10-sqlite-upgrade-runbook-wsl2.md` (SHA3-256 verification; per-interpreter paths).
 
 **Gate result in the builder container: `FAIL` (blocking).** Durable-store activation is refused and
 remains refused until the target host is upgraded and its readiness probe reports `PASS`.
@@ -33,51 +33,25 @@ store is or will be activated while this gate is `FAIL`.
 
 ## 3. Remediation options (choose one — PREPARED, NOT EXECUTED)
 
-### Option A — Upgrade the SQLite runtime to ≥ 3.51.3 (preferred)
+### Option A — Upgrade the Python-linked SQLite engine to ≥ 3.51.3 (SELECTED)
 
-Python's `sqlite3` links the system/Python `libsqlite3`. The exact commands depend on how Python is
-provided on the WSL2 target. **Run only after authorization; capture evidence at each step.**
+`SQLITE_REMEDIATION := OPTION_A_SELECTED_EXECUTION_DEFERRED`. The full, corrected, step-by-step
+procedure is **`docs/live-gate/10-sqlite-upgrade-runbook-wsl2.md`**. Key points (superseding any
+earlier draft):
 
-WSL2 Ubuntu, system Python (illustrative — pin the real fixed version when authorized):
-
-```bash
-# 0. Evidence BEFORE (record):
-python3 -c "import sqlite3; print(sqlite3.sqlite_version)"      # expect 3.50.4
-apt-cache policy libsqlite3-0
-
-# 1. Upgrade libsqlite3 to a build >= 3.51.3 from the approved apt source:
-sudo apt-get update
-sudo apt-get install --only-upgrade libsqlite3-0     # must land >= 3.51.3
-
-# 2. Evidence AFTER:
-python3 -c "import sqlite3; print(sqlite3.sqlite_version)"      # expect >= 3.51.3
-```
-
-If the distro does not yet ship ≥ 3.51.3, build the amalgamation and preload it (pinned version
-only, verified against the upstream SHA):
-
-```bash
-# Download the EXACT approved amalgamation, verify its SHA-256, build, and preload for Python:
-sqlite_ver=3510300                                   # 3.51.3 — pin the approved release
-curl -fsSLO "https://sqlite.org/2025/sqlite-autoconf-${sqlite_ver}.tar.gz"
-sha256sum "sqlite-autoconf-${sqlite_ver}.tar.gz"     # compare to the approved digest BEFORE use
-tar xf "sqlite-autoconf-${sqlite_ver}.tar.gz" && cd "sqlite-autoconf-${sqlite_ver}"
-./configure --prefix=/opt/sqlite-3.51.3 && make -j"$(nproc)" && sudo make install
-# Preload for the factory venv only (does not touch the system engine):
-export LD_PRELOAD=/opt/sqlite-3.51.3/lib/libsqlite3.so
-python3 -c "import sqlite3; print(sqlite3.sqlite_version)"      # expect 3.51.3
-```
-
-**Rollback for Option A:**
-
-```bash
-# apt path:
-sudo apt-get install --allow-downgrades libsqlite3-0=<previous_pinned_version>
-# amalgamation path — simply stop preloading and remove the prefix:
-unset LD_PRELOAD
-sudo rm -rf /opt/sqlite-3.51.3
-python3 -c "import sqlite3; print(sqlite3.sqlite_version)"      # back to 3.50.4
-```
+- **Floor ≠ pinned tarball.** The floor is `>= 3.51.3`; the *selected install version* is the current
+  official release with `SQLITE_VERSION >= 3.51.3`, read from official data at execution time.
+- **Official source + algorithm.** Read `PRODUCT,VERSION,RELATIVE-URL,SIZE,SHA3-256` from the
+  *"Download product data for scripts to read"* block on `https://sqlite.org/download.html`. Verify
+  the archive with **SHA3-256** (`openssl dgst -sha3-256`), **not** `sha256sum`. (The earlier draft's
+  guessed `sqlite.org/2025/...` URL and `sha256sum` step were incorrect and have been removed.)
+- **Path depends on the interpreter type** (`factory.preinstall.python_env.running_interpreter`):
+  `distro` → upgrade OS `libsqlite3`; `uv_managed` → an OS upgrade does not move it, so switch to an
+  interpreter linking ≥ 3.51.3 and **`uv sync`** (rebuild the venv); `custom` → rebuild if statically
+  linked. `LD_PRELOAD` is a last resort and cannot override a static link.
+- **Authoritative check** (never the CLI): `.venv/bin/python -c "import sqlite3; print(sqlite3.sqlite_version)"`.
+- **Rebuild the venv whenever the interpreter changes** (`uv sync`), then re-verify.
+- **Rollback** is captured *before* any change and restores the prior engine (gate returns to `FAIL`).
 
 ### Option B — Register an approved patched backport (NOT SELECTED)
 

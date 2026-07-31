@@ -6,7 +6,7 @@ phase promotes until it is `PASS`.
 
 | # | Decision / action | Type | Blocks | Reference |
 |---|---|---|---|---|
-| 1 | **SQLite — Option A AUTHORIZED (upgrade to ≥ 3.51.3).** Decision made; Option B not selected. **Execution pending on the WSL2 target host** (this session cannot reach it). Run the runbook, then re-run the readiness probe until `sqlite-engine-floor` is `PASS`. | Host change (operator-executed) | ALL durable stores; PH-4/PH-6 live | 05, 10 |
+| 1 | **SQLite — Option A SELECTED (upgrade Python-linked engine to ≥ 3.51.3), execution deferred.** Option B not selected. Read the exact version/URL/**SHA3-256** from official SQLite data; follow the per-interpreter runbook; re-run readiness until `sqlite-engine-floor` is `PASS`. If no official release ≥ 3.51.3 exists yet, STOP (do not lower the floor). | Host change (operator-executed) | ALL durable stores; PH-4/PH-6 live | 05, 10 |
 | 2 | Install / confirm **Docker Engine ≥ 24.0** on the WSL2 host and confirm cgroup v2. | Host change | PH-5, PH-6 live | 02 |
 | 3 | Confirm **WSL2 is the default** (`Default Version: 2`) and the distro is provisioned. | Host confirm | PH-5, PH-6 live | 02 |
 | 4 | Install / confirm **NVIDIA driver + CUDA ≥ 12.0** in WSL2, GPU passthrough, and the NVIDIA Container Toolkit. | Host change | PH-4 GPU-heavy, PH-6 | 03 |

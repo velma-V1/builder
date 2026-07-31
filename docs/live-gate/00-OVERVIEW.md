@@ -10,7 +10,7 @@ GPU, or durable store was exercised. Phase promotion remains `NOT_AUTHORIZED`.
 
 | Marker | Value |
 |---|---|
-| `SQLITE_REMEDIATION` | `AUTHORIZED_OPTION_A` — pending execution on the WSL2 target host (this session cannot reach it) |
+| `SQLITE_REMEDIATION` | `OPTION_A_SELECTED_EXECUTION_DEFERRED` — upgrade selected; runs on the WSL2 target host (this session cannot reach it) |
 | `PH4_LIVE_RUNTIME_INTEGRATION` | `PENDING` |
 | `PH5_LIVE_SANDBOX_INTEGRATION` | `PENDING` |
 | `PH6_LIVE_INTEGRATION` | `PENDING` |
