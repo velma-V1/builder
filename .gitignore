@@ -326,5 +326,9 @@ $RECYCLE.BIN/
 *.swo
 *~
 
+# Stage-3 live-gate readiness discovery output (redacted, host-specific, never committed).
+# The scripts under scripts/live_gate write here; only summarized evidence lands in docs/live-gate/.
+/.livegate-out/
+
 # Intentionally commit dependency locks, schemas, migrations,
 # Docker files, tests, permanent verification reports, and .env.example.

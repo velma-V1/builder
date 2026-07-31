@@ -1,0 +1,33 @@
+# Factory egress broker — UNAPPLIED TEMPLATE (Stage-3 live-gate preparation).
+#
+# DO NOT `docker compose up` this file during preparation. The broker is the ONLY dual-homed
+# service: it bridges the internal worker network and a separate egress network, mediating every
+# outbound request under the default-deny network policy (factory.network). It still satisfies every
+# non-network hardening invariant (read-only rootfs, non-root, caps dropped, no-new-privileges,
+# bounded resources) and publishes NO host ports.
+
+networks:
+  factory-internal:
+    driver: bridge
+    internal: true            # workers' internal-only leg
+  factory-egress:
+    driver: bridge            # broker-only egress leg (not internal)
+
+services:
+  broker:
+    image: factory/broker:__PINNED_DIGEST__
+    networks:
+      - factory-internal      # dual-homed: internal leg ...
+      - factory-egress        # ... and egress leg (broker is the sole exception)
+    read_only: true
+    user: "1000:1000"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 256
+    mem_limit: "1g"
+    cpus: 1.0
+    tmpfs:
+      - /tmp:size=32m
+    restart: "no"
