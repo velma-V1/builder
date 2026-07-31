@@ -40,6 +40,11 @@ class Provider(StrEnum):
     GROQ = "GROQ"
     CEREBRAS = "CEREBRAS"
     NVIDIA = "NVIDIA"
+    # Hosted OpenAI-compatible / prediction providers (additive; adapters built, not activated).
+    OPENROUTER = "OPENROUTER"
+    HUGGING_FACE = "HUGGING_FACE"
+    TOGETHER = "TOGETHER"
+    REPLICATE = "REPLICATE"
 
 
 class ModelRole(StrEnum):
