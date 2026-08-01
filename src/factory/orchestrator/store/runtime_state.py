@@ -42,6 +42,9 @@ _EXPECTED_MIGRATION_HASHES: Mapping[str, str] = {
     "0001_state.sql": "2fd4ecda34c05265be99de9c8aa36518cc9ac540c4038286c5da9cfb1fbd5f4c",
     "0002_leases.sql": "a3a143e4b225655b68aadb5bc677acae7a99cf99b8c047e6c3113deb34b32ba6",
     "0003_memory.sql": "65e0a4d16b84a49b205b1f2e48c91e11ae6dc48e9c179e318da3026283e10587",
+    "0004_workstream_membership.sql": (
+        "0274e9f2933b543277a4c50e556f8cc87762a69291e6b882d173c89811c4dc5f"
+    ),
 }
 
 
@@ -113,6 +116,18 @@ def _connect_readonly(database_path: Path) -> sqlite3.Connection:
     return connection
 
 
+def _row_to_task(row: sqlite3.Row) -> TaskRuntimeRecord:
+    return TaskRuntimeRecord(
+        task_id=row["task_id"],
+        project_id=row["project_id"],
+        contract_version=int(row["contract_version"]),
+        current_state=TaskState(row["current_state"]),
+        sequence=int(row["sequence"]),
+        updated_at=row["updated_at"],
+        workstream_id=row["workstream_id"],
+    )
+
+
 def _row_to_event(row: sqlite3.Row) -> StateTransitionEvent:
     prev = row["prev_state"]
     return StateTransitionEvent(
@@ -131,6 +146,14 @@ def _row_to_event(row: sqlite3.Row) -> StateTransitionEvent:
 
 # Fully-literal SQL (no interpolation) so the read-only/append-only guarantees are the only trust
 # surface and static analysis needs no exceptions.
+_SELECT_TASK_BY_ID_SQL = (
+    "SELECT task_id, project_id, contract_version, current_state, sequence, updated_at, "
+    "workstream_id FROM tasks WHERE task_id = ?"
+)
+_SELECT_TASKS_BY_WORKSTREAM_SQL = (
+    "SELECT task_id, project_id, contract_version, current_state, sequence, updated_at, "
+    "workstream_id FROM tasks WHERE workstream_id = ? ORDER BY updated_at ASC, task_id ASC"
+)
 _SELECT_EVENTS_BY_TASK_SQL = (
     "SELECT task_id, sequence, prev_state, new_state, cause, actor, accepted, "
     "occurred_at, linked_reference, idempotency_key FROM task_state_events "
@@ -151,6 +174,7 @@ _INSERT_EVENT_SQL = (
 class OrchestratorStateReader(Protocol):
     def get_task(self, task_id: str) -> TaskRuntimeRecord | None: ...
     def get_events(self, task_id: str) -> tuple[StateTransitionEvent, ...]: ...
+    def list_tasks_by_workstream(self, workstream_id: str) -> tuple[TaskRuntimeRecord, ...]: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -162,23 +186,12 @@ class SQLiteOrchestratorStateReader:
     def get_task(self, task_id: str) -> TaskRuntimeRecord | None:
         connection = _connect_readonly(self.database_path)
         try:
-            row = connection.execute(
-                "SELECT task_id, project_id, contract_version, current_state, sequence, updated_at "
-                "FROM tasks WHERE task_id = ?",
-                (task_id,),
-            ).fetchone()
+            row = connection.execute(_SELECT_TASK_BY_ID_SQL, (task_id,)).fetchone()
         finally:
             connection.close()
         if row is None:
             return None
-        return TaskRuntimeRecord(
-            task_id=row["task_id"],
-            project_id=row["project_id"],
-            contract_version=int(row["contract_version"]),
-            current_state=TaskState(row["current_state"]),
-            sequence=int(row["sequence"]),
-            updated_at=row["updated_at"],
-        )
+        return _row_to_task(row)
 
     def get_events(self, task_id: str) -> tuple[StateTransitionEvent, ...]:
         connection = _connect_readonly(self.database_path)
@@ -187,6 +200,21 @@ class SQLiteOrchestratorStateReader:
         finally:
             connection.close()
         return tuple(_row_to_event(row) for row in rows)
+
+    def list_tasks_by_workstream(self, workstream_id: str) -> tuple[TaskRuntimeRecord, ...]:
+        """Tasks explicitly assigned to ``workstream_id``, ordered by (updated_at, task_id).
+
+        Unassigned tasks (``workstream_id IS NULL``) and tasks assigned to a different
+        workstream are excluded — membership is never inferred from ``project_id``.
+        """
+        connection = _connect_readonly(self.database_path)
+        try:
+            rows = connection.execute(
+                _SELECT_TASKS_BY_WORKSTREAM_SQL, (workstream_id,)
+            ).fetchall()
+        finally:
+            connection.close()
+        return tuple(_row_to_task(row) for row in rows)
 
 
 @dataclass(frozen=True, slots=True)
@@ -203,9 +231,19 @@ class _OrchestratorStateWriter:
         return connection
 
     def create_task(
-        self, *, task_id: str, project_id: str, contract_version: int
+        self,
+        *,
+        task_id: str,
+        project_id: str,
+        contract_version: int,
+        workstream_id: str | None = None,
     ) -> StateTransitionEvent:
-        """Seed a task at QUEUED (genesis) with a matching accepted genesis event at sequence 0."""
+        """Seed a task at QUEUED (genesis) with a matching accepted genesis event at sequence 0.
+
+        ``workstream_id`` is an explicit, optional identity distinct from ``project_id`` (01L) —
+        it is never fabricated or inferred here. Omitting it (the default) leaves the task
+        unassigned, which is the correct state for existing/legacy callers.
+        """
         connection = self._connect()
         now = _utcnow()
         try:
@@ -218,9 +256,9 @@ class _OrchestratorStateWriter:
                 raise OrchestratorError("TASK_EXISTS", f"task {task_id} already exists")
             connection.execute(
                 "INSERT INTO tasks "
-                "(task_id, project_id, contract_version, current_state, sequence, updated_at) "
-                "VALUES (?, ?, ?, ?, 0, ?)",
-                (task_id, project_id, contract_version, TaskState.QUEUED.value, now),
+                "(task_id, project_id, contract_version, current_state, sequence, updated_at, "
+                "workstream_id) VALUES (?, ?, ?, ?, 0, ?, ?)",
+                (task_id, project_id, contract_version, TaskState.QUEUED.value, now, workstream_id),
             )
             connection.execute(
                 _INSERT_EVENT_SQL,

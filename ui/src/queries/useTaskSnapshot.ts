@@ -8,6 +8,8 @@ import { fetchTaskSnapshot } from "@/api/snapshot";
 export interface TaskSnapshot {
   task_id: string;
   state: string;
+  /** UTC Unix epoch in MILLISECONDS (integer). Mirrors factory.api.mapping.to_task_snapshot on
+   *  the backend — do not treat this as seconds. */
   updated_at: number;
 }
 

@@ -51,6 +51,10 @@ def validate_data_contract(contract: DataContract) -> None:
 
 
 def builder_task_snapshot_contract() -> DataContract:
+    # Served by GET /api/tasks/snapshot?workstream=<id> (factory.api.app, Phase 2B); mapped from
+    # TaskRuntimeRecord by factory.api.mapping.to_task_snapshot. "updated_at" ("number" here) is a
+    # UTC Unix epoch in MILLISECONDS (integer) on the wire — matches
+    # ui/src/queries/useTaskSnapshot.ts.
     return DataContract(
         name="task_snapshot",
         owner=StateOwner.TANSTACK_QUERY_SNAPSHOT,

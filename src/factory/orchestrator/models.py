@@ -87,6 +87,9 @@ class TaskRuntimeRecord:
     current_state: TaskState
     sequence: int
     updated_at: str
+    # Distinct from project_id (01L): the workstream a task belongs to, if assigned. Never
+    # inferred/aliased from project_id — only ever set explicitly via the writer (PH-2A).
+    workstream_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

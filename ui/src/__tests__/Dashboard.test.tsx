@@ -52,3 +52,58 @@ describe("App/Dashboard render", () => {
     await waitFor(() => expect(toggle).toBeInTheDocument());
   });
 });
+
+describe("App/Dashboard stale/error truthfulness (API unavailable or invalid)", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    cleanup();
+  });
+
+  it("shows the stale-reconciling message, never fabricated data, when the network call rejects", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new Error("network error");
+      }),
+    );
+    renderApp();
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Snapshot may be stale — reconciling…",
+    );
+    expect(screen.queryByText("t-1: running")).not.toBeInTheDocument();
+  });
+
+  it("shows the stale-reconciling message, never fabricated data, on a non-OK HTTP response", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({ ok: false, status: 503, json: async () => ({}) }) as Response),
+    );
+    renderApp();
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Snapshot may be stale — reconciling…",
+    );
+    expect(screen.queryByText("t-1: running")).not.toBeInTheDocument();
+  });
+
+  it("shows the stale-reconciling message, never fabricated data, when the body isn't valid JSON", async () => {
+    // Mirrors today's real failure mode: Vite's SPA fallback returns index.html (200, text/html)
+    // for an unproxied /api/* request, and response.json() throws parsing it.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          ({
+            ok: true,
+            json: async () => {
+              throw new SyntaxError("Unexpected token '<'");
+            },
+          }) as unknown as Response,
+      ),
+    );
+    renderApp();
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Snapshot may be stale — reconciling…",
+    );
+    expect(screen.queryByText("t-1: running")).not.toBeInTheDocument();
+  });
+});

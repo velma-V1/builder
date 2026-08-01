@@ -10,6 +10,16 @@ export default defineConfig({
   server: {
     port: 1420,
     strictPort: true,
+    // Phase 2B: proxy /api/* to the local read-only snapshot API (scripts/run_api.py) so
+    // the frontend's unchanged fetch("/api/tasks/snapshot?...") reaches a real backend
+    // instead of Vite's own SPA fallback. Loopback default only; override for local setups
+    // where the API runs on a different port via VITE_API_PROXY_TARGET.
+    proxy: {
+      "/api": {
+        target: process.env.VITE_API_PROXY_TARGET ?? "http://127.0.0.1:8000",
+        changeOrigin: true,
+      },
+    },
   },
   resolve: {
     alias: {

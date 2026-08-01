@@ -1,11 +1,12 @@
 # Builder UI Studio — frontend
 
-**Status: PHASE_1_DASHBOARD_RUNNABLE_LOCALLY.** Real dependencies are installed and pinned to exact,
+**Status: PHASE_2B_READONLY_SNAPSHOT_API.** Real dependencies are installed and pinned to exact,
 registry-resolved versions (`package.manifest.json` + `package.json` + `package-lock.json` — never
 guessed; see the PR description on `claude/ui-activation-phase-1` for how each major version was
-selected). The dashboard builds, type-checks, lints, and renders. No live backend connection is
-opened: Agent Zero is not activated, no model or Ollama connection exists, and no real WebSocket/SSE
-transport is opened — the real-time client, task snapshot, and dev fixture data are all local/mocked.
+selected). The dashboard builds, type-checks, lints, and renders. Agent Zero is not activated, no
+model or Ollama connection exists, and no real WebSocket/SSE transport is opened. As of Phase 2B,
+`GET /api/tasks/snapshot?workstream=<id>` is served by a real, read-only backend (see
+`../scripts/run_api.py`) instead of dev-fixture data — see "Phase 2 — read-only backend" below.
 
 ## Install and run
 
@@ -14,6 +15,26 @@ cd ui
 npm ci              # clean install from package-lock.json
 npm run dev         # http://localhost:1420
 ```
+
+## Phase 2 — read-only backend
+
+The dashboard's task snapshot now comes from a real (but read-only) backend. Two processes,
+started separately:
+
+```bash
+# 1. Read-only snapshot API (from the repo root)
+cd /home/xxthatguyxx/builder
+uv run python scripts/run_api.py            # http://127.0.0.1:8000
+
+# 2. Vite dev server (from ui/), proxies /api/* to the API above
+cd ui
+npm run dev                                  # http://localhost:1420
+```
+
+`vite.config.ts` proxies `/api/*` to `http://127.0.0.1:8000` by default (override with the
+`VITE_API_PROXY_TARGET` env var for a non-default local port). The frontend's fetch path is
+unchanged: `GET /api/tasks/snapshot?workstream=<id>`. With no tasks yet assigned to a given
+workstream, the endpoint correctly returns `[]` — that's expected, not an error.
 
 Other scripts:
 
@@ -100,6 +121,7 @@ ui/
 
 ## Not done in this phase
 
-Agent Zero activation, model/Ollama connections, voice/wake word, Tauri bundling, and any live
-WebSocket/SSE/backend connection are all explicitly out of scope for `claude/ui-activation-phase-1`
-and are untouched.
+Agent Zero activation, model/Ollama connections, voice/wake word, Tauri bundling, any live
+WebSocket/SSE connection, and any write/mutation API remain explicitly out of scope through
+Phase 2B and are untouched. The read-only snapshot endpoint added in Phase 2B is HTTP polling
+only — no realtime transport exists on the backend.
