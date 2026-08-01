@@ -85,6 +85,80 @@ describe("Dashboard Phase 3A: cancel visibility", () => {
   });
 });
 
+describe("Dashboard Phase 3A: per-row cancel state", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    cleanup();
+  });
+
+  it("disables only the row being cancelled, leaving other cancellable rows enabled", async () => {
+    let resolveCancel: (() => void) | undefined;
+    const cancelPending = new Promise<void>((resolve) => {
+      resolveCancel = resolve;
+    });
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/orchestrator/health")) {
+          return {
+            ok: true,
+            json: async () => ({ status: "ok", database: "reachable" }),
+          } as Response;
+        }
+        if (url.includes("/api/orchestrator/tasks/t-8/cancel")) {
+          await cancelPending;
+          return {
+            ok: true,
+            json: async () => ({
+              task_id: "t-8",
+              project_id: "p",
+              workstream_id: "ws-1",
+              state: "CANCELLED",
+              updated_at: "2026-08-01T00:00:00Z",
+            }),
+          } as Response;
+        }
+        if (url.includes("/api/tasks/snapshot")) {
+          return {
+            ok: true,
+            json: async () => [
+              { task_id: "t-8", state: "running", updated_at: 1000 },
+              { task_id: "t-9", state: "running", updated_at: 1000 },
+            ],
+          } as Response;
+        }
+        return { ok: true, json: async () => ({}) } as Response;
+      }),
+    );
+
+    renderApp();
+    expect(await screen.findByText("t-8: running")).toBeInTheDocument();
+    expect(await screen.findByText("t-9: running")).toBeInTheDocument();
+
+    const initialButtons = screen.getAllByRole("button", { name: "Cancel" });
+    expect(initialButtons).toHaveLength(2);
+    const [t8ButtonToClick] = initialButtons;
+    if (!t8ButtonToClick) throw new Error("expected a Cancel button for t-8");
+    fireEvent.click(t8ButtonToClick);
+
+    await waitFor(() => {
+      const [t8Button] = screen.getAllByRole("button", { name: "Cancel" });
+      expect(t8Button).toBeDisabled();
+    });
+    const [, t9ButtonWhilePending] = screen.getAllByRole("button", { name: "Cancel" });
+    expect(t9ButtonWhilePending).not.toBeDisabled();
+
+    resolveCancel?.();
+
+    await waitFor(() => {
+      const [t8Button] = screen.getAllByRole("button", { name: "Cancel" });
+      expect(t8Button).not.toBeDisabled();
+    });
+  });
+});
+
 describe("Dashboard Phase 3A: orchestrator health badge", () => {
   afterEach(() => {
     vi.unstubAllGlobals();

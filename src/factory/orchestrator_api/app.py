@@ -55,9 +55,13 @@ async def _submit_task(request: Request) -> JSONResponse:
         return _bad_request("request body must be valid JSON")
 
     required = ("project_ref", "workstream_id", "description", "idempotency_key")
-    missing = [field for field in required if not str(body.get(field, "")).strip()]
-    if missing:
-        return _bad_request(f"missing required field(s): {', '.join(missing)}")
+    invalid = [
+        field
+        for field in required
+        if not isinstance(body.get(field), str) or not body[field].strip()
+    ]
+    if invalid:
+        return _bad_request(f"missing or invalid required field(s): {', '.join(invalid)}")
 
     service: TaskOperatorService = request.app.state.service
     try:

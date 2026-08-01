@@ -8,13 +8,15 @@
 # once we're already inside WSL, so that logic is never duplicated across the two sides.
 #
 # Reads config/builder.yaml (the single central configuration source used everywhere else in
-# Phase 3A) for the WSL distribution name and the repository path, via a small, deliberately
-# minimal regex extraction -- not a full YAML parser -- since this file's structure is simple
-# and controlled. Comment-only lines are stripped first so a "key:\n  value" match can't
-# accidentally skip past the real value to a later section's same-named key (verified against
-# a real config/builder.yaml containing inline comments -- an earlier, comment-unaware version
-# of this regex matched the wrong "path:" entirely). If config/builder.yaml's structure changes
-# beyond simple "key:\n  value" pairs, update the two regexes below.
+# Phase 3A) for the WSL distribution name and the repository path, via Get-BuilderConfigValue
+# below -- a small, section-aware scalar-value parser, not a full YAML parser, since this file's
+# structure is simple and controlled (top-level "key:" sections, one level of indented
+# "key: value" pairs, optional comment lines). It is section-scoped (only lines between a
+# section's header and the next top-level line are considered) so a same-named key in an
+# unrelated section (e.g. "database: path:") is never matched, and it preserves the full scalar
+# value -- including spaces -- for both quoted and unquoted forms, unlike an earlier version of
+# this file that used a `\S+` regex and silently truncated any value containing a space (e.g. a
+# WSL-mounted Windows path such as /mnt/c/Users/John Doe/builder).
 
 $ErrorActionPreference = "Stop"
 
@@ -29,26 +31,92 @@ function Write-BuilderError {
     Write-Host ""
 }
 
+function Get-BuilderConfigValue {
+    <#
+    Extracts the scalar value for $Key nested one level under a top-level "$Section:" block in
+    $ConfigTextNoComments (comment lines already stripped by the caller). Returns $null if the
+    section, the key, or a non-blank value cannot be found -- never throws, so the caller can
+    produce one consistent, clear error message regardless of which part of parsing failed.
+
+    Section-aware: only lines between the "$Section:" header and the next top-level
+    (non-indented) line are considered, so a same-named key in an unrelated section is never
+    matched. Supports single- or double-quoted scalar values (surrounding quotes stripped,
+    interior spaces preserved) and bare unquoted values that may themselves contain spaces (a
+    repository path under a Windows user directory with a space in the username, or a WSL
+    distribution name with a space).
+    #>
+    param(
+        [Parameter(Mandatory)][string]$ConfigTextNoComments,
+        [Parameter(Mandatory)][string]$Section,
+        [Parameter(Mandatory)][string]$Key
+    )
+
+    $lines = $ConfigTextNoComments -split "`r?`n"
+    $sectionHeaderPattern = "^$([regex]::Escape($Section)):\s*$"
+    $keyLinePattern = "^\s+$([regex]::Escape($Key)):\s*(.*)$"
+
+    $inSection = $false
+    $rawValue = $null
+
+    foreach ($line in $lines) {
+        if (-not $inSection) {
+            if ($line -match $sectionHeaderPattern) {
+                $inSection = $true
+            }
+            continue
+        }
+
+        if ($line -match '^\S') {
+            # A new top-level (non-indented) line ends this section -- stop before we wander
+            # into an unrelated section's same-named key.
+            break
+        }
+
+        if ($line -match $keyLinePattern) {
+            $rawValue = $Matches[1]
+            break
+        }
+    }
+
+    if ($null -eq $rawValue) {
+        return $null
+    }
+
+    $trimmed = $rawValue.Trim()
+    if ($trimmed.Length -ge 2) {
+        $firstChar = $trimmed.Substring(0, 1)
+        $lastChar = $trimmed.Substring($trimmed.Length - 1, 1)
+        $isQuoted = ($firstChar -eq '"' -and $lastChar -eq '"') -or ($firstChar -eq "'" -and $lastChar -eq "'")
+        if ($isQuoted) {
+            $trimmed = $trimmed.Substring(1, $trimmed.Length - 2).Trim()
+        }
+    }
+
+    if ($trimmed -eq "") {
+        # Missing or blank value -- same "could not read config" outcome as a missing key.
+        return $null
+    }
+
+    return $trimmed
+}
+
 if (-not (Test-Path $configPath)) {
     Write-BuilderError "Configuration file not found: $configPath"
     exit 1
 }
 
 $configText = Get-Content -Raw -Path $configPath
-# Strip comment-only lines before matching, so a "key:\n  value" pattern can't skip past a
-# comment line and accidentally land on a different section's same-named key.
+# Strip comment-only lines before matching, so a comment between a section header and its first
+# key can't shift which line Get-BuilderConfigValue treats as the key line.
 $configTextNoComments = [regex]::Replace($configText, '(?m)^\s*#.*$\r?\n?', '')
 
-$distroMatch = [regex]::Match($configTextNoComments, '(?ms)^wsl:\s*\r?\n\s*distribution:\s*(\S+)')
-$pathMatch = [regex]::Match($configTextNoComments, '(?ms)^repository:\s*\r?\n\s*path:\s*(\S+)')
+$wslDistro = Get-BuilderConfigValue -ConfigTextNoComments $configTextNoComments -Section "wsl" -Key "distribution"
+$repoPathLinux = Get-BuilderConfigValue -ConfigTextNoComments $configTextNoComments -Section "repository" -Key "path"
 
-if (-not $distroMatch.Success -or -not $pathMatch.Success) {
+if (-not $wslDistro -or -not $repoPathLinux) {
     Write-BuilderError "Could not read wsl.distribution / repository.path from $configPath"
     exit 1
 }
-
-$wslDistro = $distroMatch.Groups[1].Value
-$repoPathLinux = $pathMatch.Groups[1].Value
 
 # 1. WSL2 itself.
 $wslCommand = Get-Command wsl -ErrorAction SilentlyContinue
@@ -71,8 +139,9 @@ if (-not $distroFound) {
 Write-Host "[Builder] Starting via WSL distribution '$wslDistro'..."
 
 # Everything else (repo path, Python/uv, Node/npm, ports, database setup, service health,
-# opening the dashboard) is handled inside WSL by scripts/start_all.py.
-& wsl -d $wslDistro -- bash -lc "cd '$repoPathLinux' && uv run python scripts/start_all.py"
+# opening the dashboard) is handled inside WSL by scripts/start_all.py. Both $wslDistro and
+# $repoPathLinux are quoted here since either may legitimately contain spaces.
+& wsl -d "$wslDistro" -- bash -lc "cd '$repoPathLinux' && uv run python scripts/start_all.py"
 $exitCode = $LASTEXITCODE
 
 if ($exitCode -ne 0) {

@@ -61,6 +61,53 @@ def test_submit_missing_required_field_returns_400(
     assert "error" in response.json()
 
 
+_INVALID_REQUIRED_VALUES = (
+    pytest.param(None, id="null"),
+    pytest.param({}, id="object"),
+    pytest.param([], id="array"),
+    pytest.param(12345, id="number"),
+    pytest.param(True, id="boolean"),
+    pytest.param("", id="empty_string"),
+    pytest.param("   ", id="whitespace_only"),
+)
+
+
+@pytest.mark.parametrize("invalid_value", _INVALID_REQUIRED_VALUES)
+@pytest.mark.parametrize(
+    "required_field", ["project_ref", "workstream_id", "description", "idempotency_key"]
+)
+def test_submit_invalid_required_field_value_returns_400(
+    client: TestClient, required_field: str, invalid_value: object
+) -> None:
+    """Every required field must reject null/object/array/number/boolean/blank values with a
+    400 -- none of these may be silently stringified past validation and reach the write layer
+    (regression: an explicit JSON ``null`` or ``{}`` used to pass the old ``str(...).strip()``
+    check and surface as a misleading 503 instead)."""
+    body = _submit_body()
+    body[required_field] = invalid_value
+    response = client.post(_SUBMIT_ROUTE, json=body)
+    assert response.status_code == 400
+    assert "error" in response.json()
+
+
+def test_submit_null_idempotency_key_returns_400_not_503(client: TestClient) -> None:
+    response = client.post(_SUBMIT_ROUTE, json=_submit_body(idempotency_key=None))
+    assert response.status_code == 400
+    assert response.json()["error"]
+
+
+def test_submit_object_idempotency_key_returns_400_not_503(client: TestClient) -> None:
+    response = client.post(_SUBMIT_ROUTE, json=_submit_body(idempotency_key={}))
+    assert response.status_code == 400
+    assert response.json()["error"]
+
+
+def test_submit_valid_non_empty_strings_still_accepted(client: TestClient) -> None:
+    response = client.post(_SUBMIT_ROUTE, json=_submit_body(idempotency_key="still-valid-key"))
+    assert response.status_code == 201
+    assert response.json()["created"] is True
+
+
 def test_submit_malformed_json_body_returns_400(client: TestClient) -> None:
     response = client.post(
         _SUBMIT_ROUTE, content=b"not json", headers={"content-type": "application/json"}

@@ -10,7 +10,7 @@ import { useState, type JSX } from "react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useSidebarStore } from "@/stores/sidebarStore";
-import { useTaskSnapshot } from "@/queries/useTaskSnapshot";
+import { useTaskSnapshot, type TaskSnapshot } from "@/queries/useTaskSnapshot";
 import { useCancelTask } from "@/queries/useCancelTask";
 import { useTaskDetail } from "@/queries/useTaskDetail";
 import { useOrchestratorHealth } from "@/queries/useOrchestratorHealth";
@@ -46,6 +46,38 @@ function OrchestratorHealthBadge(): JSX.Element {
   );
 }
 
+// A cancel mutation is scoped to a single row, not shared across the list -- calling
+// useCancelTask() here (rather than once in Dashboard) gives each row its own independent
+// isPending state, so cancelling one task never disables another task's Cancel button, and a
+// row's own button disabling itself while its mutation is in flight prevents a second
+// cancellation request for the same task before the first resolves.
+function TaskRow({
+  task,
+  onSelect,
+}: {
+  task: TaskSnapshot;
+  onSelect: (taskId: string) => void;
+}): JSX.Element {
+  const cancelTask = useCancelTask();
+  return (
+    <li>
+      <button type="button" onClick={() => onSelect(task.task_id)}>
+        {task.task_id}: {task.state}
+      </button>
+      {isCancellable(task.state) && (
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={cancelTask.isPending}
+          onClick={() => cancelTask.mutate({ taskId: task.task_id })}
+        >
+          Cancel
+        </Button>
+      )}
+    </li>
+  );
+}
+
 function TaskDetailsPanel({ taskId }: { taskId: string }): JSX.Element {
   const { data, isLoading } = useTaskDetail(taskId);
   if (isLoading) return <p>Loading task details…</p>;
@@ -65,7 +97,6 @@ function TaskDetailsPanel({ taskId }: { taskId: string }): JSX.Element {
 export function Dashboard(): JSX.Element {
   const { collapsed, toggleCollapsed } = useSidebarStore();
   const { data: tasks, isLoading, isStale } = useTaskSnapshot("ws-1");
-  const cancelTask = useCancelTask();
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
   return (
@@ -83,21 +114,7 @@ export function Dashboard(): JSX.Element {
           {isStale && <p role="status">Snapshot may be stale — reconciling…</p>}
           <ul>
             {(tasks ?? []).map((task) => (
-              <li key={task.task_id}>
-                <button type="button" onClick={() => setSelectedTaskId(task.task_id)}>
-                  {task.task_id}: {task.state}
-                </button>
-                {isCancellable(task.state) && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={cancelTask.isPending}
-                    onClick={() => cancelTask.mutate({ taskId: task.task_id })}
-                  >
-                    Cancel
-                  </Button>
-                )}
-              </li>
+              <TaskRow key={task.task_id} task={task} onSelect={setSelectedTaskId} />
             ))}
           </ul>
         </Card>
