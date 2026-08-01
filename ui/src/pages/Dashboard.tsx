@@ -1,7 +1,7 @@
-// Structure-only placeholder — not installed, not run in this repository state.
 // The Builder Command Center page — one representative composition of the state boundaries:
 // TanStack Query for the task snapshot, Zustand for presentation-only sidebar state, and (in a
 // live build) the taskLifecycle XState machine driven by validated real-time events.
+import type { JSX } from "react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useSidebarStore } from "@/stores/sidebarStore";

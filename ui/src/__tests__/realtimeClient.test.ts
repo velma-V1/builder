@@ -1,4 +1,3 @@
-// Structure-only placeholder — not installed, not run in this repository state.
 // Client-side mirror of tests/ui_studio/test_realtime_contracts.py — same guarantees, same shape.
 import { describe, expect, it } from "vitest";
 import { RealtimeChannelClient } from "@/realtime/client";
@@ -28,6 +27,23 @@ describe("RealtimeChannelClient", () => {
     client.applyEvent(event(0));
     client.applyEvent(event(2));
     expect(() => client.applyEvent(event(1))).toThrow(/arrived after/);
+  });
+
+  it("detects a missing-sequence gap that never gets filled", () => {
+    const client = new RealtimeChannelClient("workstream:t1");
+    client.applyEvent(event(0));
+    client.applyEvent(event(2));
+    expect(client.detectMissingSequence()).toBe(1);
+    expect(() => client.assertNoMissingSequence()).toThrow(/never received/);
+  });
+
+  it("reports no gap once every sequence below the highest has arrived", () => {
+    const client = new RealtimeChannelClient("workstream:t1");
+    client.applyEvent(event(0));
+    client.applyEvent(event(1));
+    client.applyEvent(event(2));
+    expect(client.detectMissingSequence()).toBeNull();
+    expect(() => client.assertNoMissingSequence()).not.toThrow();
   });
 
   it("rejects a client-invented authoritative state claim", () => {

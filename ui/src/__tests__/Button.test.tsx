@@ -1,4 +1,3 @@
-// Structure-only placeholder — not installed, not run in this repository state.
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { Button } from "@/components/ui/Button";

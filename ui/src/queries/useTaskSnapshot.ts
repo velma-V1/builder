@@ -1,5 +1,3 @@
-// Structure-only placeholder — not installed, not run in this repository state.
-//
 // TanStack Query owns backend snapshots and records — the client never invents this shape or
 // caches it past its declared staleness window. Mirrors
 // factory.ui_studio.data_contracts.builder_task_snapshot_contract().

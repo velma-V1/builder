@@ -1,0 +1,5 @@
+/* Tailwind CSS v4 entry point. @config loads the existing tailwind.config.ts theme extension
+   (color/spacing/radius/motion utility names bound to the CSS custom properties that
+   src/tokens/index.ts applies to :root at runtime) into the v4 CSS-first pipeline. */
+@config "../tailwind.config.ts";
+@import "tailwindcss";

@@ -1,6 +1,5 @@
-// Structure-only placeholder — not installed, not run in this repository state.
 // shadcn/ui-style primitive: composition over configuration, class-variance-authority for variants.
-import type { ButtonHTMLAttributes } from "react";
+import type { ButtonHTMLAttributes, JSX } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 

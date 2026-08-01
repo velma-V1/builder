@@ -1,4 +1,3 @@
-// Structure-only placeholder — not installed, not run in this repository state.
 import type { Meta, StoryObj } from "@storybook/react";
 import { Button } from "@/components/ui/Button";
 

@@ -1,5 +1,5 @@
-// Structure-only placeholder — not installed, not run in this repository state.
 // React Flow wrapper for the System Architecture Canvas / Repository Intelligence templates.
+import type { JSX } from "react";
 import ReactFlow, { Background, Controls, type Edge, type Node } from "reactflow";
 import "reactflow/dist/style.css";
 

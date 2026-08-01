@@ -1,5 +1,5 @@
-// Structure-only placeholder — not installed, not run in this repository state.
 // Apache ECharts wrapper. `series`/`xAxis` are backend-sourced (TanStack Query) — never invented here.
+import type { JSX } from "react";
 import ReactECharts from "echarts-for-react";
 
 export interface EChartLineProps {
