@@ -1,7 +1,6 @@
-// Structure-only placeholder — not installed, not run in this repository state.
 // A 3D ambient status orb (3D Orb Interface template). `state` is backend-sourced — the orb's
 // visual reflects it, it never decides system state on its own.
-import { useRef } from "react";
+import { useRef, type JSX } from "react";
 import { useFrame } from "@react-three/fiber";
 import type { Mesh } from "three";
 

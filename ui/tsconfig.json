@@ -1,5 +1,5 @@
 {
-  "$comment": "Structure-only placeholder. Not installed, not compiled in this repository state.",
+  "$comment": "Phase 1 activation: compiled by `npm run typecheck` / `npm run build`.",
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
@@ -13,9 +13,9 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "resolveJsonModule": true,
-    "baseUrl": ".",
+    "types": ["vite/client"],
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     }
   },
   "include": ["src", "e2e", "stories"]

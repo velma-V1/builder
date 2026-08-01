@@ -1,5 +1,3 @@
-// Structure-only placeholder — not installed, not run in this repository state.
-//
 // XState v5 owns workflows and legal transitions — never authoritative truth. This machine's
 // states/events/transitions are the exact contract described by
 // factory.ui_studio.state_contracts.builder_command_center_workflow(); keep both in sync by hand
@@ -24,14 +22,19 @@ interface TaskLifecycleContext {
   lastReason?: string;
 }
 
+interface TaskLifecycleInput {
+  taskId: string;
+}
+
 export const taskLifecycleMachine = setup({
   types: {
     context: {} as TaskLifecycleContext,
     events: {} as TaskLifecycleEvent,
+    input: {} as TaskLifecycleInput,
   },
 }).createMachine({
   id: "task_lifecycle",
-  context: ({ input }: { input: { taskId: string } }) => ({ taskId: input.taskId }),
+  context: ({ input }) => ({ taskId: input.taskId }),
   initial: "queued",
   states: {
     queued: {

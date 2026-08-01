@@ -1,9 +1,31 @@
-# Builder UI Studio — frontend scaffold
+# Builder UI Studio — frontend
 
-**Status: STRUCTURE_COMPLETE_NOT_INSTALLED.** Nothing under this directory has been installed, built,
-or run. There is no lockfile, no `node_modules/`, and no dependency version has been guessed —
-`package.manifest.json` lists every technology by name with `pinned_version` set to the sentinel
-`UNVERIFIED_PENDING_OPERATOR_PIN` until an operator confirms and pins an exact version.
+**Status: PHASE_1_DASHBOARD_RUNNABLE_LOCALLY.** Real dependencies are installed and pinned to exact,
+registry-resolved versions (`package.manifest.json` + `package.json` + `package-lock.json` — never
+guessed; see the PR description on `claude/ui-activation-phase-1` for how each major version was
+selected). The dashboard builds, type-checks, lints, and renders. No live backend connection is
+opened: Agent Zero is not activated, no model or Ollama connection exists, and no real WebSocket/SSE
+transport is opened — the real-time client, task snapshot, and dev fixture data are all local/mocked.
+
+## Install and run
+
+```bash
+cd ui
+npm ci              # clean install from package-lock.json
+npm run dev         # http://localhost:1420
+```
+
+Other scripts:
+
+```bash
+npm run build        # production build -> ui/dist/
+npm run typecheck    # tsc --noEmit
+npm run test         # vitest run
+npm run test:watch   # vitest, watch mode
+npm run lint         # eslint .
+npm run test:e2e     # playwright test (needs `npx playwright install chromium` once)
+npm run storybook    # Storybook dev server
+```
 
 ## Why this exists
 
@@ -12,7 +34,11 @@ into a generation plan and renders it through a deterministic fake renderer; thi
 representative, hand-written instance of what that plan looks like as real source — one composition
 per architectural concern, not 16 duplicated applications. The 16 UI Studio templates are backend
 descriptors (`factory.ui_studio.template_registry`) whose artifacts are asserted complete by
-`scripts/verify_ui_studio_structure.py`, not by shipping 16 copies of this scaffold.
+`scripts/verify_ui_studio_structure.py`, not by shipping 16 copies of this scaffold. Only the
+Builder Command Center dashboard (`src/pages/Dashboard.tsx`) is wired into the rendered app in this
+phase; the chart/diagram/map/3D/editor components exist, type-check, and bundle correctly (verified
+by temporarily importing all of them together during Phase 1 activation) but aren't yet routed to a
+page of their own.
 
 ## State boundaries (enforced on the backend, mirrored here)
 
@@ -25,14 +51,18 @@ descriptors (`factory.ui_studio.template_registry`) whose artifacts are asserted
 
 `factory.ui_studio.state_contracts` / `data_contracts` enforce this boundary on the backend side
 (a `ZUSTAND_PRESENTATION` contract may not declare a `query_key` or a backend-shaped field; an
-`XSTATE_WORKFLOW`/`TANSTACK_QUERY_SNAPSHOT` contract may never claim to be authoritative).
+`XSTATE_WORKFLOW`/`TANSTACK_QUERY_SNAPSHOT` contract may never claim to be authoritative). Phase 1
+does not change this boundary: `useTaskSnapshot` still only ever reads what `fetchTaskSnapshot`
+returns (mocked with deterministic fixtures in tests, and empty/backend-shaped in the dev app since
+no backend is running), and the sidebar store still only ever holds presentation state.
 
 ## Real-time layer
 
 `src/realtime/client.ts` is the client-side mirror of `factory.ui_studio.realtime_contracts` — same
 guarantees, same shape: monotonic sequence numbers, idempotent duplicate events, out-of-order
-rejection, gap detection, bounded replay, reconnect cursors, snapshot reconciliation, stale-state
-indicators, pending optimistic commands until backend confirmation, restart reconstruction, and no
+rejection, gap detection (`detectMissingSequence()`/`assertNoMissingSequence()`, mirroring the
+backend's end-of-batch judgment rather than rejecting every out-of-sequence arrival immediately),
+bounded replay, reconnect cursors, snapshot reconciliation, stale-state indicators, and no
 client-invented authoritative state. No WebSocket/SSE connection is opened anywhere in this
 repository state — `openTransport()` only selects a transport class.
 
@@ -40,17 +70,20 @@ repository state — `openTransport()` only selects a transport class.
 
 ```
 ui/
-  package.manifest.json   technology profile — no lockfile, no guessed exact version
-  tsconfig.json, vite.config.ts, tailwind.config.ts   build config (not run)
-  vitest.config.ts, playwright.config.ts, .storybook/main.ts   test/docs config (not run)
-  src-tauri/tauri.conf.json   desktop shell config (not built; bundle.active = false)
+  package.json, package-lock.json   real, installed dependency set — exact pinned versions
+  package.manifest.json    approved technology profile, cross-checked against package.json by
+                            scripts/verify_ui_studio_structure.py
+  tsconfig.json, vite.config.ts, tailwind.config.ts, eslint.config.ts   build/lint config
+  vitest.config.ts, playwright.config.ts, .storybook/main.ts   test/docs config
+  src-tauri/tauri.conf.json   desktop shell config (not built; bundle.active = false — untouched)
   src/
     main.tsx, App.tsx        entry
+    index.css                Tailwind v4 entry point (@config + @import "tailwindcss")
     tokens/                  design tokens (mirrors factory.ui_studio.design_tokens)
     state/                   XState machines
     queries/                 TanStack Query hooks
     stores/                  Zustand stores
-    realtime/                real-time client (WebSocket + SSE fallback)
+    realtime/                real-time client (WebSocket + SSE fallback, neither opened)
     api/                     snapshot fetch (recovery path for reconciliation)
     components/ui/           shadcn/ui-style primitives
     components/charts/       Apache ECharts
@@ -60,13 +93,13 @@ ui/
     components/motion/       Motion
     components/editor/       Monaco
     pages/                   template pages
-    __tests__/               Vitest + Testing Library
+    __tests__/               Vitest + Testing Library (includes a full App/Dashboard render test)
   e2e/                       Playwright + axe-core
   stories/                   Storybook
 ```
 
-## Activation (not performed here)
+## Not done in this phase
 
-Installing dependencies, pinning exact versions, running a build, starting a preview server, or
-opening a live WebSocket/SSE connection are all explicitly out of scope for this branch. An operator
-performs those steps after reviewing `package.manifest.json` and pinning real versions.
+Agent Zero activation, model/Ollama connections, voice/wake word, Tauri bundling, and any live
+WebSocket/SSE/backend connection are all explicitly out of scope for `claude/ui-activation-phase-1`
+and are untouched.

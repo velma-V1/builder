@@ -1,5 +1,3 @@
-// Structure-only placeholder — not installed, not run in this repository state.
-//
 // Mirrors factory.ui_studio.realtime_contracts.RealtimeEvent / ValidatedRealtimeStream exactly —
 // keep both in sync by hand until the compiler emits this file from the backend contract.
 

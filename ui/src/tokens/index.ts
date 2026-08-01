@@ -1,5 +1,3 @@
-// Structure-only placeholder — not installed, not run in this repository state.
-//
 // Mirrors factory.ui_studio.design_tokens.default_token_set() exactly. When UI Studio renders a
 // project, generated `ui/src/tokens/<template-id>.tokens.json` files (see fake_renderer.py) are the
 // source of truth; this file is the shared default applied before any project-specific override.

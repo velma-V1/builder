@@ -1,4 +1,3 @@
-// Structure-only placeholder — not installed, not run in this repository state.
 import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({

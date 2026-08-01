@@ -1,11 +1,11 @@
-// Structure-only placeholder — not installed, not run in this repository state.
-// Once dependencies are pinned (see package.manifest.json) and installed by an operator, this
-// config wires the React plugin and the `@/*` path alias used throughout src/.
+// Phase 1 activation: dependencies pinned in package.json and installed. This config wires the
+// React plugin, the Tailwind v4 Vite plugin, and the `@/*` path alias used throughout src/.
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   // Tauri expects a fixed, predictable dev server port and strict port binding.
   server: {
     port: 1420,

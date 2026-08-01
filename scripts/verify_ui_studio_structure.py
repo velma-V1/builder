@@ -10,6 +10,7 @@ phase-promotion gate.
 
 from __future__ import annotations
 
+import shutil
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -74,32 +75,65 @@ def verify_no_source_copied() -> VerificationResult:
     )
 
 
-def verify_no_lockfile_or_node_modules_in_frontend_scaffold() -> VerificationResult:
-    forbidden_names = (
-        "package-lock.json", "pnpm-lock.yaml", "yarn.lock", "node_modules", "bun.lockb",
-    )
-    hits = [
-        str(p.relative_to(ROOT)) for name in forbidden_names for p in _UI_FRONTEND.rglob(name)
-    ]
-    return VerificationResult(
-        "no lockfile / node_modules committed under ui/", not hits, f"hits={hits}"
-    )
-
-
-def verify_no_guessed_exact_dependency_versions() -> VerificationResult:
-    manifest_path = _UI_FRONTEND / "package.manifest.json"
-    if not manifest_path.is_file():
+def verify_npm_lockfile_present_and_node_modules_not_committed() -> VerificationResult:
+    """Phase 1 (claude/ui-activation-phase-1) intentionally activates the frontend: a real
+    package-lock.json is now required and git-tracked. node_modules and any non-npm lockfile must
+    still never be *committed* — checked against git's tracked-file list, not the filesystem,
+    since node_modules legitimately exists on disk after `npm install` during local development."""
+    git = shutil.which("git")
+    if git is None:
         return VerificationResult(
-            "ui/package.manifest.json present with no guessed exact versions", False, "missing"
+            "ui/package-lock.json is git-tracked; node_modules/other lockfiles are not",
+            False, "git executable not found on PATH",
         )
+    result = subprocess.run(  # noqa: S603 - fixed args, resolved absolute git
+        [git, "ls-files", "ui"], capture_output=True, text=True, cwd=ROOT, timeout=30,
+    )
+    tracked = result.stdout.splitlines()
+    forbidden_names = ("node_modules", "pnpm-lock.yaml", "yarn.lock", "bun.lockb")
+    hits = [p for p in tracked if any(f"/{name}" in f"/{p}" for name in forbidden_names)]
+    lockfile_tracked = "ui/package-lock.json" in tracked
+    ok = result.returncode == 0 and lockfile_tracked and not hits
+    return VerificationResult(
+        "ui/package-lock.json is git-tracked; node_modules/other lockfiles are not",
+        ok, f"lockfile_tracked={lockfile_tracked}; forbidden_hits={hits}",
+    )
+
+
+def verify_dependency_versions_pinned_and_consistent() -> VerificationResult:
+    """Phase 1 intentionally flips the old assumption (every pinned_version is the
+    UNVERIFIED_PENDING_OPERATOR_PIN sentinel) to: every installed dependency's pinned_version must
+    match the real version actually resolved in ui/package.json exactly, and any entry not
+    installed must be explicitly marked NOT_INSTALLED_PHASE_1 (never the old guessing sentinel,
+    and never silently absent from package.json without that marker)."""
     import json
 
-    data = json.loads(manifest_path.read_text(encoding="utf-8"))
-    deps = data.get("dependencies", []) + data.get("devDependencies", [])
-    bad = [d["name"] for d in deps if d.get("pinned_version") != "UNVERIFIED_PENDING_OPERATOR_PIN"]
-    ok = bool(deps) and not bad
+    manifest_path = _UI_FRONTEND / "package.manifest.json"
+    package_json_path = _UI_FRONTEND / "package.json"
+    if not manifest_path.is_file() or not package_json_path.is_file():
+        return VerificationResult(
+            "ui/package.manifest.json pinned versions match ui/package.json", False,
+            f"missing: manifest={not manifest_path.is_file()} package.json={not package_json_path.is_file()}",
+        )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    package_json = json.loads(package_json_path.read_text(encoding="utf-8"))
+    installed = {**package_json.get("dependencies", {}), **package_json.get("devDependencies", {})}
+
+    deps = manifest.get("dependencies", []) + manifest.get("devDependencies", [])
+    mismatches: list[str] = []
+    for d in deps:
+        name, pinned = d["name"], d.get("pinned_version")
+        if pinned == "UNVERIFIED_PENDING_OPERATOR_PIN":
+            mismatches.append(f"{name}: still has the unpinned sentinel")
+        elif name in installed:
+            if pinned != installed[name]:
+                mismatches.append(f"{name}: manifest={pinned} package.json={installed[name]}")
+        elif pinned != "NOT_INSTALLED_PHASE_1":
+            mismatches.append(f"{name}: not installed but not marked NOT_INSTALLED_PHASE_1")
+    ok = bool(deps) and not mismatches
     return VerificationResult(
-        "ui/package.manifest.json present with no guessed exact versions", ok, f"unpinned_ok_bad={bad}"
+        "ui/package.manifest.json pinned versions match ui/package.json", ok,
+        f"mismatches={mismatches}",
     )
 
 
@@ -184,8 +218,8 @@ def verify_mypy() -> VerificationResult:
 def main() -> int:
     checks = [
         verify_layout, verify_no_direct_http_process_or_secret, verify_no_source_copied,
-        verify_no_lockfile_or_node_modules_in_frontend_scaffold,
-        verify_no_guessed_exact_dependency_versions, verify_all_templates_render_complete_artifacts,
+        verify_npm_lockfile_present_and_node_modules_not_committed,
+        verify_dependency_versions_pinned_and_consistent, verify_all_templates_render_complete_artifacts,
         verify_preview_lifecycle_dry_run, verify_tests, verify_ruff, verify_mypy,
     ]
     results = [c() for c in checks]
@@ -200,8 +234,9 @@ def main() -> int:
     print(f"TOTAL: {passed}/{total} checks passed")
     print("=" * 80 + "\n")
     if passed == total:
-        print("UI Studio structure gate: PASS. STRUCTURE_COMPLETE_NOT_INSTALLED; "
-              "fake renderer only; no frontend package installed.\n")
+        print("UI Studio structure gate: PASS. PHASE_1_DASHBOARD_RUNNABLE_LOCALLY; "
+              "fake renderer backend contract unchanged; frontend installed, not Tauri-bundled, "
+              "no live backend connection opened.\n")
         return 0
     print("UI Studio structure gate: INCOMPLETE — fix failures above.\n")
     return 1

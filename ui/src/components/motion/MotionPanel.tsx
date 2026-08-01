@@ -1,7 +1,6 @@
-// Structure-only placeholder — not installed, not run in this repository state.
 // Motion (formerly Framer Motion) wrapper honoring the shared duration/easing tokens.
 import { motion } from "motion/react";
-import type { ReactNode } from "react";
+import type { JSX, ReactNode } from "react";
 
 export interface MotionPanelProps {
   children: ReactNode;

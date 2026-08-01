@@ -1,5 +1,3 @@
-// Structure-only placeholder — not installed, not run in this repository state.
-//
 // A snapshot fetch is the recovery path when the real-time client needs a full resync (see
 // realtime/client.ts's reconcileSnapshot). It is never invoked to invent state the backend hasn't
 // actually sent — it only ever asks the backend directly.

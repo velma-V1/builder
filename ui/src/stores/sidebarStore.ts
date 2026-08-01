@@ -1,5 +1,3 @@
-// Structure-only placeholder — not installed, not run in this repository state.
-//
 // Zustand owns presentation-only state — nothing here is backend-sourced or authoritative.
 // Mirrors factory.ui_studio.data_contracts.sidebar_presentation_contract(). If a future field here
 // ever starts looking backend-shaped (e.g. "serverState", "record"), it belongs in a TanStack
