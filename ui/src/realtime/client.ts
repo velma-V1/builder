@@ -7,10 +7,12 @@
 // Guarantees implemented here, each traceable to the backend module of the same name:
 //   - monotonic sequence numbers + idempotent duplicates + out-of-order rejection -> applyEvent()
 //   - gap detection -> detectMissingSequence()/assertNoMissingSequence(), mirroring the backend's
-//     end-of-batch judgment rather than rejecting every out-of-sequence arrival on the spot
+//     end-of-batch judgment rather than rejecting every out-of-sequence arrival on the spot; also
+//     folded into reconcileIfNeeded() directly, so a known gap can never read as up_to_date
 //   - bounded replay -> ReplayBuffer
 //   - reconnect cursors -> connect()'s persisted-cursor branch, ReplayBuffer.eventsSince()
-//   - snapshot reconciliation -> reconcileIfNeeded()
+//   - snapshot reconciliation -> reconcileIfNeeded(), which checks for an internal gap before ever
+//     trusting the backend-reported sequence
 //   - stale-state indicators -> the staleness getter
 //   - pending optimistic commands until backend confirmation -> OptimisticCommand (types.ts);
 //     wiring a command queue through this client is not needed by anything in this repository
@@ -149,6 +151,23 @@ export class RealtimeChannelClient {
   }
 
   reconcileIfNeeded(backendSnapshotSequence: number): "up_to_date" | "replayable" | "full_snapshot_required" {
+    // A known internal gap is never up_to_date, no matter what the backend reports: highestSeen
+    // only tracks the highest sequence ever accepted, not whether everything below it actually
+    // arrived (applyEvent() accepts a forward jump before the gap is judged — see above). This
+    // never fabricates or marks the missing event as applied; it only classifies the existing gap
+    // as recoverable via the retained replay window or not.
+    const missing = this.detectMissingSequence();
+    if (missing !== null) {
+      try {
+        this.replay.eventsSince(missing - 1);
+        return "replayable";
+      } catch (err) {
+        if (err instanceof ReplayWindowExceededError) {
+          return "full_snapshot_required";
+        }
+        throw err;
+      }
+    }
     if (backendSnapshotSequence <= this.highestSeen) {
       return "up_to_date";
     }
