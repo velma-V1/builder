@@ -31,6 +31,7 @@ pytestmark = pytest.mark.security
         "CREATE TABLE evil (x)",
         "DROP TABLE tasks",
         "ALTER TABLE tasks ADD COLUMN evil TEXT",
+        "UPDATE tasks SET workstream_id = 'ws-evil' WHERE task_id = 'TASK-001'",
     ],
 )
 def test_read_only_reader_denies_mutation(
