@@ -22,56 +22,21 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import sqlite3
 import sys
 from pathlib import Path
 
 import uvicorn
 
 from factory.api import create_app
-from factory.orchestrator.errors import OrchestratorError
-from factory.orchestrator.store.runtime_state import (
-    SQLiteOrchestratorStateReader,
-    applied_migration_versions,
-    expected_migration_versions,
-)
+from factory.orchestrator.store.runtime_state import SQLiteOrchestratorStateReader
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _schema_check import require_current_schema_or_exit
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 _DEFAULT_MIGRATIONS_ROOT = _REPO_ROOT / "migrations" / "runtime"
 _DEFAULT_DATABASE_PATH = _REPO_ROOT / "runtime.db"
 _SETUP_COMMAND = "uv run python scripts/setup_api_database.py"
-
-
-def _format_versions(versions: tuple[int, ...]) -> str:
-    return ",".join(str(v) for v in versions) if versions else "(none)"
-
-
-def _require_current_schema(database_path: Path, migrations_root: Path) -> None:
-    try:
-        expected_versions = expected_migration_versions(migrations_root)
-    except OrchestratorError as exc:
-        sys.exit(
-            f"Runtime migrations directory is invalid ({exc}).\n"
-            f"Check {migrations_root} for a malformed, duplicate, or missing migration file."
-        )
-
-    try:
-        actual_versions = applied_migration_versions(database_path)
-    except sqlite3.OperationalError:
-        sys.exit(
-            f"Database not found or unreadable at {database_path}.\n"
-            f"Run the setup command first:\n"
-            f"  {_SETUP_COMMAND} --database-path {database_path}"
-        )
-
-    if actual_versions != expected_versions:
-        sys.exit(
-            "Database migration history does not match the expected runtime schema.\n"
-            f"Applied: {_format_versions(actual_versions)}\n"
-            f"Expected: {_format_versions(expected_versions)}\n"
-            "Run the setup command or restore a valid database.\n"
-            f"  {_SETUP_COMMAND} --database-path {database_path}"
-        )
 
 
 def main() -> None:
@@ -82,7 +47,7 @@ def main() -> None:
     parser.add_argument("--port", type=int, default=8000)
     args = parser.parse_args()
 
-    _require_current_schema(args.database_path, args.migrations_root)
+    require_current_schema_or_exit(args.database_path, args.migrations_root, _SETUP_COMMAND)
 
     reader = SQLiteOrchestratorStateReader(database_path=args.database_path)
     app = create_app(task_reader=reader)

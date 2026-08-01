@@ -15,7 +15,9 @@ export type TaskLifecycleEvent =
   | { type: "request_approval" }
   | { type: "approve" }
   | { type: "reject" }
-  | { type: "fail"; reason?: string };
+  | { type: "fail"; reason?: string }
+  | { type: "cancel"; reason?: string }
+  | { type: "cancelled" };
 
 interface TaskLifecycleContext {
   taskId: string;
@@ -38,27 +40,37 @@ export const taskLifecycleMachine = setup({
   initial: "queued",
   states: {
     queued: {
-      on: { start: "running" },
+      on: {
+        start: "running",
+        cancel: { target: "stopping", actions: assign({ lastReason: ({ event }) => event.reason }) },
+      },
     },
     running: {
       on: {
         finish: "verifying",
         fail: { target: "failed", actions: assign({ lastReason: ({ event }) => event.reason }) },
+        cancel: { target: "stopping", actions: assign({ lastReason: ({ event }) => event.reason }) },
       },
     },
     verifying: {
       on: {
         request_approval: "awaiting_approval",
         fail: { target: "failed", actions: assign({ lastReason: ({ event }) => event.reason }) },
+        cancel: { target: "stopping", actions: assign({ lastReason: ({ event }) => event.reason }) },
       },
     },
     awaiting_approval: {
       on: {
         approve: "complete",
         reject: "failed",
+        cancel: { target: "stopping", actions: assign({ lastReason: ({ event }) => event.reason }) },
       },
+    },
+    stopping: {
+      on: { cancelled: "cancelled" },
     },
     complete: { type: "final" },
     failed: { type: "final" },
+    cancelled: { type: "final" },
   },
 });

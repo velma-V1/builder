@@ -14,8 +14,10 @@ from factory.orchestrator.models import (
     ProcessEpoch,
     ReconciliationOutcome,
     StateTransitionEvent,
+    TaskRequestRecord,
     TaskRuntimeRecord,
     TaskState,
+    TaskSubmissionResult,
 )
 from factory.orchestrator.state.transitions import ALLOWED_TRANSITIONS, TransitionPolicy
 
@@ -30,7 +32,9 @@ __all__ = [
     "ProcessEpoch",
     "ReconciliationOutcome",
     "StateTransitionEvent",
+    "TaskRequestRecord",
     "TaskRuntimeRecord",
     "TaskState",
+    "TaskSubmissionResult",
     "TransitionPolicy",
 ]
