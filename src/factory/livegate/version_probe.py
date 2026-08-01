@@ -24,6 +24,16 @@ _CUDA_RE = re.compile(r"CUDA Version:\s*(\d+)\.(\d+)")
 _DRIVER_RE = re.compile(r"Driver Version:\s*([\d.]+)")
 
 
+#: U+FEFF (ZERO WIDTH NO-BREAK SPACE / BOM), built via chr() to avoid any ambiguity from escape
+#: sequences in string literals.
+_BOM = chr(0xFEFF)
+
+
+def _clean_probe_text(text: str) -> str:
+    """Remove a leading Unicode BOM and embedded NUL characters."""
+    return text.removeprefix(_BOM).replace("\x00", "")
+
+
 def parse_docker_version(stdout: str) -> tuple[int, int, int] | None:
     match = _DOCKER_RE.search(stdout)
     if match is None:
@@ -53,14 +63,22 @@ def evaluate_docker(
 
 
 def evaluate_wsl(stdout: str, *, required: int = REQUIRED_WSL_DEFAULT_VERSION) -> ReadinessCheck:
-    """Confirm the WSL default version is 2. ``stdout`` is ``wsl --status`` / ``wsl -l -v`` text."""
-    if not stdout.strip():
+    """Confirm the WSL default version is 2. ``stdout`` is ``wsl --status`` / ``wsl -l -v`` text.
+
+    ``wsl.exe`` writes its console output as UTF-16LE; a caller that decodes it with a mismatched
+    codec leaves the text interleaved with NUL characters (and sometimes a leading BOM), so the
+    literal marker ``"Default Version:"`` never appears contiguously and the regex below would
+    otherwise never match. ``stdout`` is cleaned defensively here so this parser is correct
+    regardless of how the caller captured/decoded the raw bytes.
+    """
+    cleaned = _clean_probe_text(stdout)
+    if not cleaned.strip():
         return ReadinessCheck(
             "wsl2-default", "WSL2 is the default distro version", CheckStatus.UNAVAILABLE,
             "wsl not found; this is expected off the Windows target host",
             mandatory=True,
         )
-    match = re.search(r"Default Version:\s*(\d+)", stdout)
+    match = re.search(r"Default Version:\s*(\d+)", cleaned)
     version = int(match.group(1)) if match else None
     ok = version == required
     return ReadinessCheck(
@@ -72,9 +90,15 @@ def evaluate_wsl(stdout: str, *, required: int = REQUIRED_WSL_DEFAULT_VERSION) -
 
 
 def parse_nvidia_smi(stdout: str) -> tuple[tuple[int, int] | None, str | None]:
-    """Return ``(cuda_version, driver_version)`` parsed from ``nvidia-smi`` header text."""
-    cuda_match = _CUDA_RE.search(stdout)
-    driver_match = _DRIVER_RE.search(stdout)
+    """Return ``(cuda_version, driver_version)`` parsed from ``nvidia-smi`` header text.
+
+    ``cuda_version`` is ``None`` both when no NVIDIA hardware/driver is present at all *and* when a
+    driver-only install reports ``CUDA Version: N/A`` (no CUDA runtime component). Callers must
+    consult ``driver_version`` to tell these two cases apart — see :func:`evaluate_nvidia`.
+    """
+    cleaned = _clean_probe_text(stdout)
+    cuda_match = _CUDA_RE.search(cleaned)
+    driver_match = _DRIVER_RE.search(cleaned)
     cuda = (int(cuda_match.group(1)), int(cuda_match.group(2))) if cuda_match else None
     driver = driver_match.group(1) if driver_match else None
     return (cuda, driver)
@@ -84,15 +108,28 @@ def evaluate_nvidia(
     stdout: str, *, minimum_cuda: tuple[int, int] = MIN_CUDA_VERSION
 ) -> ReadinessCheck:
     cuda, driver = parse_nvidia_smi(stdout)
-    if cuda is None:
+    floor = ".".join(str(p) for p in minimum_cuda)
+    if cuda is None and driver is None:
         return ReadinessCheck(
             "nvidia-cuda", "NVIDIA driver + CUDA support GPU-heavy roles", CheckStatus.UNAVAILABLE,
             "nvidia-smi not found / unparseable; install the NVIDIA driver + CUDA on the host",
             mandatory=True,
         )
+    if cuda is None:
+        # Driver detected but the CUDA runtime component is absent/unparseable — e.g. a driver-only
+        # install reporting "CUDA Version: N/A". GPU hardware IS present, so the floor is a FAILURE
+        # (not an absence): collapsing this into UNAVAILABLE would lose the driver-version fact and
+        # misreport a real, non-compliant host identically to "no NVIDIA hardware at all".
+        return ReadinessCheck(
+            "nvidia-cuda", "NVIDIA driver + CUDA support GPU-heavy roles", CheckStatus.FAIL,
+            f"NVIDIA driver {driver} detected but CUDA Version is unavailable (e.g. driver-only "
+            f"install, no CUDA toolkit); floor {floor} requires the CUDA runtime component",
+            mandatory=True,
+            facts=(("driver_version", driver or "unknown"), ("cuda_version", "unavailable"),
+                   ("floor", floor)),
+        )
     ok = cuda >= minimum_cuda
     cuda_s = ".".join(str(p) for p in cuda)
-    floor = ".".join(str(p) for p in minimum_cuda)
     return ReadinessCheck(
         "nvidia-cuda", "NVIDIA driver + CUDA support GPU-heavy roles",
         CheckStatus.PASS if ok else CheckStatus.FAIL,
