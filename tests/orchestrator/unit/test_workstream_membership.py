@@ -7,6 +7,7 @@ explicitly through the single writer; it is never fabricated or inferred from pr
 from __future__ import annotations
 
 import hashlib
+import sqlite3
 from pathlib import Path
 
 from factory.orchestrator.store import runtime_state
@@ -33,6 +34,42 @@ def test_frozen_migrations_0001_through_0003_are_byte_for_byte_unchanged(
         )
 
 
+def _query_one_column(db: Path, sql: str) -> set[object]:
+    """Run a single-column, read-only query with the connection deterministically closed.
+
+    Never relies on CPython reference counting to release the SQLite file handle — matters
+    for reliability on Windows/WSL, where a lingering open handle can contend with the next
+    connection or with tmp_path cleanup.
+    """
+    connection = sqlite3.connect(str(db))
+    try:
+        return {row[0] for row in connection.execute(sql)}
+    finally:
+        connection.close()
+
+
+def _tasks_table_column_names(db: Path) -> set[str]:
+    """``PRAGMA table_info(tasks)`` column names, connection deterministically closed."""
+    connection = sqlite3.connect(str(db))
+    try:
+        return {row[1] for row in connection.execute("PRAGMA table_info(tasks)")}
+    finally:
+        connection.close()
+
+
+def _insert_pre_existing_v3_row(db: Path) -> None:
+    connection = sqlite3.connect(str(db))
+    try:
+        connection.execute(
+            "INSERT INTO tasks (task_id, project_id, contract_version, current_state, "
+            "sequence, updated_at) VALUES "
+            "('PRE-EXISTING', 'PROJ-OLD', 1, 'QUEUED', 0, '2026-01-01T00:00:00Z')"
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+
 def test_migration_0004_upgrades_a_genuine_v3_database_with_pre_existing_data(
     migrations_root: Path, tmp_path: Path
 ) -> None:
@@ -41,8 +78,6 @@ def test_migration_0004_upgrades_a_genuine_v3_database_with_pre_existing_data(
     0001-0004 applied together. Uses ``apply_migrations`` itself for both stages (production
     semantics), never a reimplementation of the migration algorithm.
     """
-    import sqlite3
-
     # Genuine v3-only migrations dir: the same three frozen files, none of 0004.
     v3_migrations = tmp_path / "migrations_v3"
     v3_migrations.mkdir()
@@ -52,28 +87,19 @@ def test_migration_0004_upgrades_a_genuine_v3_database_with_pre_existing_data(
     db = tmp_path / "runtime.db"
     apply_migrations(db, v3_migrations)
 
-    versions_before = {
-        row[0] for row in sqlite3.connect(str(db)).execute("SELECT version FROM schema_migrations")
-    }
+    versions_before = _query_one_column(db, "SELECT version FROM schema_migrations")
     assert versions_before == {1, 2, 3}
     assert 4 not in versions_before
 
     # A real pre-existing row, inserted using the version-3 schema shape (task creation
     # predates workstream_id — the column does not exist in this database yet).
-    connection = sqlite3.connect(str(db))
-    connection.execute(
-        "INSERT INTO tasks (task_id, project_id, contract_version, current_state, sequence, "
-        "updated_at) VALUES ('PRE-EXISTING', 'PROJ-OLD', 1, 'QUEUED', 0, '2026-01-01T00:00:00Z')"
-    )
-    connection.commit()
-    connection.close()
+    _insert_pre_existing_v3_row(db)
 
     # The real in-place upgrade, through the real migration manager, using the real (full)
     # migrations directory — 0001-0003 are already recorded and skipped; only 0004 applies.
     apply_migrations(db, migrations_root)
 
-    columns = {row[1] for row in sqlite3.connect(str(db)).execute("PRAGMA table_info(tasks)")}
-    assert "workstream_id" in columns
+    assert "workstream_id" in _tasks_table_column_names(db)
 
     reader = SQLiteOrchestratorStateReader(database_path=db)
     record = reader.get_task("PRE-EXISTING")
@@ -81,16 +107,12 @@ def test_migration_0004_upgrades_a_genuine_v3_database_with_pre_existing_data(
     assert record.workstream_id is None  # never backfilled from project_id
     assert record.project_id == "PROJ-OLD"
 
-    versions_after = {
-        row[0] for row in sqlite3.connect(str(db)).execute("SELECT version FROM schema_migrations")
-    }
+    versions_after = _query_one_column(db, "SELECT version FROM schema_migrations")
     assert versions_after == {1, 2, 3, 4}
 
     # Rerunning the real migration manager against the now-v4 database is a safe no-op.
     apply_migrations(db, migrations_root)
-    versions_rerun = {
-        row[0] for row in sqlite3.connect(str(db)).execute("SELECT version FROM schema_migrations")
-    }
+    versions_rerun = _query_one_column(db, "SELECT version FROM schema_migrations")
     assert versions_rerun == {1, 2, 3, 4}
 
     # Frozen migration hashes are still exactly what's pinned.

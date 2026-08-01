@@ -52,6 +52,21 @@ def _utcnow() -> str:
     return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def _parse_migration_filename(path: Path) -> int:
+    """The numeric version prefix of a migration filename — fails closed on a bad name.
+
+    The single filename-validation rule shared by ``apply_migrations`` (the writable path)
+    and ``expected_migration_versions`` (the read-only discovery path), so the two can never
+    silently diverge on what counts as a valid migration filename.
+    """
+    match = _MIGRATION_FILENAME.match(path.name)
+    if not match:
+        raise OrchestratorError(
+            "MIGRATION_MALFORMED", f"malformed migration filename: {path.name}"
+        )
+    return int(match.group(1))
+
+
 def apply_migrations(database_path: Path, migrations_root: Path) -> None:
     """Apply pending runtime migrations transactionally; record the version only on success.
 
@@ -75,12 +90,7 @@ def apply_migrations(database_path: Path, migrations_root: Path) -> None:
             }
 
         for path in files:
-            match = _MIGRATION_FILENAME.match(path.name)
-            if not match:
-                raise OrchestratorError(
-                    "MIGRATION_MALFORMED", f"malformed migration filename: {path.name}"
-                )
-            version = int(match.group(1))
+            version = _parse_migration_filename(path)
             if version in applied_versions:
                 continue
 
@@ -109,41 +119,57 @@ def apply_migrations(database_path: Path, migrations_root: Path) -> None:
         connection.close()
 
 
-def latest_migration_version(migrations_root: Path) -> int:
-    """The highest version number among migration files on disk.
+def expected_migration_versions(migrations_root: Path) -> tuple[int, ...]:
+    """The complete, ascending set of migration versions expected on disk.
 
     Parses filenames only — never opens or executes anything — so it is safe to call from a
-    process that must remain read-only (see ``applied_schema_version`` and
-    ``scripts/run_api.py``, which uses both to fail closed rather than self-migrating).
+    process that must remain read-only (see ``applied_migration_versions`` and
+    ``scripts/run_api.py``, which compares the two full sets to fail closed rather than
+    self-migrating). A version count or maximum alone cannot detect a gap — e.g. ``{1, 2, 4}``
+    has the same maximum as ``{1, 2, 3, 4}`` — so callers must compare the full sets, not just
+    a count or a maximum, for a correct "is this schema current" decision.
+
+    Every ``*.sql`` file must have a valid migration filename (shares ``apply_migrations``'s
+    own parser, so the two can never silently disagree on what's malformed) and every version
+    number must be unique; either violation fails closed with ``OrchestratorError``.
     """
-    versions = []
+    versions: list[int] = []
+    seen: set[int] = set()
     for path in sorted(migrations_root.glob("*.sql")):
-        match = _MIGRATION_FILENAME.match(path.name)
-        if match:
-            versions.append(int(match.group(1)))
+        version = _parse_migration_filename(path)
+        if version in seen:
+            raise OrchestratorError(
+                "MIGRATION_MALFORMED",
+                f"duplicate migration version {version} in {migrations_root}",
+            )
+        seen.add(version)
+        versions.append(version)
     if not versions:
         raise OrchestratorError(
             "MIGRATION_MISSING", f"no runtime migrations found under {migrations_root}"
         )
-    return max(versions)
+    return tuple(sorted(versions))
 
 
-def applied_schema_version(database_path: Path) -> int:
-    """The highest migration version recorded in an existing database — read-only.
+def applied_migration_versions(database_path: Path) -> tuple[int, ...]:
+    """The complete, ascending set of migration versions recorded in an existing database.
 
-    Returns 0 for an existing-but-unmigrated database (no ``schema_migrations`` table yet).
-    Raises ``sqlite3.OperationalError`` if ``database_path`` does not exist at all (a
-    ``mode=ro`` connection cannot create one) — callers that want a clear "run setup first"
-    message should catch that themselves rather than have this function paper over it.
+    Read-only (``mode=ro``). Returns an empty tuple for an existing-but-unmigrated database
+    (no ``schema_migrations`` table yet). Raises ``sqlite3.OperationalError`` if
+    ``database_path`` does not exist at all (a ``mode=ro`` connection cannot create one) —
+    callers that want a clear "run setup first" message should catch that themselves rather
+    than have this function paper over it.
     """
     connection = _connect_readonly(database_path)
     try:
         if not _table_exists(connection, "schema_migrations"):
-            return 0
-        row = connection.execute("SELECT MAX(version) FROM schema_migrations").fetchone()
+            return ()
+        rows = connection.execute(
+            "SELECT version FROM schema_migrations ORDER BY version ASC"
+        ).fetchall()
     finally:
         connection.close()
-    return int(row[0]) if row is not None and row[0] is not None else 0
+    return tuple(int(row[0]) for row in rows)
 
 
 def _connect_readonly(database_path: Path) -> sqlite3.Connection:
@@ -415,7 +441,7 @@ class _OrchestratorStateWriter:
 __all__ = [
     "OrchestratorStateReader",
     "SQLiteOrchestratorStateReader",
-    "applied_schema_version",
+    "applied_migration_versions",
     "apply_migrations",
-    "latest_migration_version",
+    "expected_migration_versions",
 ]
