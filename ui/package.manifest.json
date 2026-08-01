@@ -1,0 +1,43 @@
+{
+  "$comment": "This is NOT a package.json and MUST NOT be installed from. It describes the approved technology profile for UI Studio's frontend without guessing any exact dependency version. Every pinned_version is the sentinel below until an operator confirms and pins an exact version during activation. No lockfile exists anywhere under ui/.",
+  "sentinel": "UNVERIFIED_PENDING_OPERATOR_PIN",
+  "status": "STRUCTURE_COMPLETE_NOT_INSTALLED",
+  "dependencies": [
+    { "name": "react", "category": "framework", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "react-dom", "category": "framework", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "typescript", "category": "language", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "@tauri-apps/api", "category": "shell", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "tailwindcss", "category": "styling", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "xstate", "category": "state:workflow", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "@xstate/react", "category": "state:workflow", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "@tanstack/react-query", "category": "state:snapshot", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "zustand", "category": "state:presentation", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "echarts", "category": "visualization:chart", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "echarts-for-react", "category": "visualization:chart", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "reactflow", "category": "visualization:diagram", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "maplibre-gl", "category": "visualization:map", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "deck.gl", "category": "visualization:map", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "three", "category": "visualization:3d", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "@react-three/fiber", "category": "visualization:3d", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "@react-three/drei", "category": "visualization:3d", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "motion", "category": "animation", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "@monaco-editor/react", "category": "editor", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "class-variance-authority", "category": "styling:shadcn-dep", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "tailwind-merge", "category": "styling:shadcn-dep", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "clsx", "category": "styling:shadcn-dep", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" }
+  ],
+  "devDependencies": [
+    { "name": "vite", "category": "build", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "@vitejs/plugin-react", "category": "build", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "@tauri-apps/cli", "category": "shell", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "vitest", "category": "test:unit", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "@testing-library/react", "category": "test:unit", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "@testing-library/jest-dom", "category": "test:unit", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "@playwright/test", "category": "test:e2e", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "axe-core", "category": "test:a11y", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "@axe-core/playwright", "category": "test:a11y", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "storybook", "category": "docs:components", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "@storybook/react-vite", "category": "docs:components", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" },
+    { "name": "eslint", "category": "lint", "pinned_version": "UNVERIFIED_PENDING_OPERATOR_PIN" }
+  ]
+}

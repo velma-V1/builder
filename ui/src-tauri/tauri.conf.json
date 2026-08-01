@@ -1,0 +1,28 @@
+{
+  "$comment": "Structure-only placeholder — the Tauri shell is not built, packaged, or run in this repository state. No native capability is enabled beyond the default deny-by-default posture below.",
+  "productName": "builder-ui-studio",
+  "version": "0.1.0",
+  "identifier": "com.builder.uistudio.NOT_ACTIVATED",
+  "build": {
+    "beforeDevCommand": "echo 'dev command intentionally not wired in this repository state'",
+    "beforeBuildCommand": "echo 'build command intentionally not wired in this repository state'",
+    "devUrl": "http://localhost:1420",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Builder UI Studio",
+        "width": 1280,
+        "height": 800
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'"
+    }
+  },
+  "bundle": {
+    "active": false,
+    "targets": []
+  }
+}

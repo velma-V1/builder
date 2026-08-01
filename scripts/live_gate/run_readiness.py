@@ -43,6 +43,27 @@ OUT_DIR = ROOT / ".livegate-out"
 _TIMEOUT_S = 10
 
 
+def _decode_console_bytes(raw: bytes) -> str:
+    """Decode subprocess output that may be UTF-16LE (Windows console tools, e.g. ``wsl.exe``).
+
+    ``wsl.exe`` writes its console output as UTF-16LE. Capturing it with ``text=True`` lets Python
+    pick the platform-default codec, which on Windows is a legacy single-byte codepage rather than
+    UTF-16 — every other byte decodes as a spurious character and the real ASCII content (e.g.
+    ``"Default Version: 2"``) is destroyed. Decoding the raw bytes explicitly, with a UTF-16LE BOM
+    check and a NUL-density heuristic for BOM-less UTF-16LE, recovers the intended text.
+    """
+    if raw.startswith(b"\xff\xfe"):
+        return raw[2:].decode("utf-16-le", errors="replace")
+    if raw.startswith(b"\xef\xbb\xbf"):
+        return raw[3:].decode("utf-8", errors="replace")
+    if raw and raw.count(b"\x00") > len(raw) // 4:
+        try:
+            return raw.decode("utf-16-le", errors="strict")
+        except UnicodeDecodeError:
+            pass
+    return raw.decode("utf-8", errors="replace")
+
+
 def _read_only_command(argv: list[str]) -> str | None:
     """Run a read-only command by absolute path; return stdout, or None if unavailable/failed."""
     exe = shutil.which(argv[0])
@@ -52,12 +73,11 @@ def _read_only_command(argv: list[str]) -> str | None:
         result = subprocess.run(  # noqa: S603 - fixed, read-only args; resolved absolute exe
             [exe, *argv[1:]],
             capture_output=True,
-            text=True,
             timeout=_TIMEOUT_S,
         )
     except (subprocess.TimeoutExpired, OSError):
         return None
-    return (result.stdout or "") + (result.stderr or "")
+    return _decode_console_bytes(result.stdout) + _decode_console_bytes(result.stderr)
 
 
 def _host_inventory() -> ReadinessCheck:
