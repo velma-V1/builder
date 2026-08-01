@@ -109,6 +109,43 @@ def apply_migrations(database_path: Path, migrations_root: Path) -> None:
         connection.close()
 
 
+def latest_migration_version(migrations_root: Path) -> int:
+    """The highest version number among migration files on disk.
+
+    Parses filenames only — never opens or executes anything — so it is safe to call from a
+    process that must remain read-only (see ``applied_schema_version`` and
+    ``scripts/run_api.py``, which uses both to fail closed rather than self-migrating).
+    """
+    versions = []
+    for path in sorted(migrations_root.glob("*.sql")):
+        match = _MIGRATION_FILENAME.match(path.name)
+        if match:
+            versions.append(int(match.group(1)))
+    if not versions:
+        raise OrchestratorError(
+            "MIGRATION_MISSING", f"no runtime migrations found under {migrations_root}"
+        )
+    return max(versions)
+
+
+def applied_schema_version(database_path: Path) -> int:
+    """The highest migration version recorded in an existing database — read-only.
+
+    Returns 0 for an existing-but-unmigrated database (no ``schema_migrations`` table yet).
+    Raises ``sqlite3.OperationalError`` if ``database_path`` does not exist at all (a
+    ``mode=ro`` connection cannot create one) — callers that want a clear "run setup first"
+    message should catch that themselves rather than have this function paper over it.
+    """
+    connection = _connect_readonly(database_path)
+    try:
+        if not _table_exists(connection, "schema_migrations"):
+            return 0
+        row = connection.execute("SELECT MAX(version) FROM schema_migrations").fetchone()
+    finally:
+        connection.close()
+    return int(row[0]) if row is not None and row[0] is not None else 0
+
+
 def _connect_readonly(database_path: Path) -> sqlite3.Connection:
     connection = sqlite3.connect(f"file:{database_path}?mode=ro", uri=True)
     connection.row_factory = sqlite3.Row
@@ -378,5 +415,7 @@ class _OrchestratorStateWriter:
 __all__ = [
     "OrchestratorStateReader",
     "SQLiteOrchestratorStateReader",
+    "applied_schema_version",
     "apply_migrations",
+    "latest_migration_version",
 ]

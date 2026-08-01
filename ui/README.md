@@ -18,17 +18,23 @@ npm run dev         # http://localhost:1420
 
 ## Phase 2 — read-only backend
 
-The dashboard's task snapshot now comes from a real (but read-only) backend. Two processes,
-started separately:
+The dashboard's task snapshot now comes from a real (but read-only) backend. Schema setup is a
+separate, explicit step from serving: `scripts/run_api.py` never migrates the database itself —
+it only ever opens a read-only connection, and fails clearly (pointing at the setup command
+below) if the schema is missing or out of date. Three steps, from the repo root:
 
 ```bash
-# 1. Read-only snapshot API (from the repo root)
 cd /home/xxthatguyxx/builder
-uv run python scripts/run_api.py            # http://127.0.0.1:8000
 
-# 2. Vite dev server (from ui/), proxies /api/* to the API above
+# 1. Explicit database setup (once, or again after a new migration is added)
+uv run python scripts/setup_api_database.py     # applies pending migrations to runtime.db
+
+# 2. Read-only snapshot API — read-only end to end, never touches migrations
+uv run python scripts/run_api.py                # http://127.0.0.1:8000
+
+# 3. Vite dev server (from ui/), proxies /api/* to the API above
 cd ui
-npm run dev                                  # http://localhost:1420
+npm run dev                                      # http://localhost:1420
 ```
 
 `vite.config.ts` proxies `/api/*` to `http://127.0.0.1:8000` by default (override with the

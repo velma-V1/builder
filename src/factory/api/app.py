@@ -6,13 +6,18 @@ path from this process to a state mutation (R1 remains intact: the Orchestrator'
 writer is never imported here). No connection is opened at import time; the caller
 supplies an already-constructed reader (see ``scripts/run_api.py`` for local dev).
 
-Errors never leak internals (file paths, SQL text, stack traces) to the client — a
-database-layer failure becomes a small, fixed JSON body with a generic message.
+Errors never leak internals (file paths, SQL text, stack traces) to the client. Request
+validation (missing/blank ``workstream``) stays a distinct 400 outside the failure
+boundary below. Everything from "ask the reader for rows" through "map each row to the
+wire contract" is one bounded step: any failure there — a SQLite error, a row whose
+``current_state`` isn't a known ``TaskState``, an ``updated_at`` that doesn't parse, or
+any other authoritative-data/mapping failure — becomes the same fixed 503 JSON body.
+Catching ``Exception`` here does not risk swallowing process-control signals:
+``KeyboardInterrupt``/``SystemExit``/``GeneratorExit`` all derive from ``BaseException``,
+not ``Exception``, so they always propagate.
 """
 
 from __future__ import annotations
-
-import sqlite3
 
 from starlette.applications import Starlette
 from starlette.requests import Request
@@ -33,10 +38,11 @@ async def _get_tasks_snapshot(request: Request) -> JSONResponse:
     reader: OrchestratorStateReader = request.app.state.task_reader
     try:
         records = reader.list_tasks_by_workstream(workstream_id)
-    except sqlite3.Error:
+        snapshot = [to_task_snapshot(record) for record in records]
+    except Exception:
         return JSONResponse({"error": "snapshot temporarily unavailable"}, status_code=503)
 
-    return JSONResponse([to_task_snapshot(record) for record in records])
+    return JSONResponse(snapshot)
 
 
 def create_app(*, task_reader: OrchestratorStateReader) -> Starlette:
