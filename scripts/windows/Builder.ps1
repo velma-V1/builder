@@ -139,9 +139,20 @@ if (-not $distroFound) {
 Write-Host "[Builder] Starting via WSL distribution '$wslDistro'..."
 
 # Everything else (repo path, Python/uv, Node/npm, ports, database setup, service health,
-# opening the dashboard) is handled inside WSL by scripts/start_all.py. Both $wslDistro and
-# $repoPathLinux are quoted here since either may legitimately contain spaces.
-& wsl -d "$wslDistro" -- bash -lc "cd '$repoPathLinux' && uv run python scripts/start_all.py"
+# opening the dashboard) is handled inside WSL by scripts/start_all.py.
+#
+# The repository path is passed via wsl.exe's own `--cd` argument -- never concatenated into a
+# bash string -- so it is never re-parsed as shell syntax. An earlier version built this as
+# `bash -lc "cd '$repoPathLinux' && ..."`, which let a repository path containing a single quote
+# break out of that quoting and inject arbitrary shell commands (confirmed exploitable with a
+# path like `/tmp/x'; echo INJECTED #`). $wslDistro and $repoPathLinux are each passed as their
+# own command element (not string-interpolated into one combined argument), so PowerShell's own
+# native-argument marshaling -- the same CRT-compatible escaping every well-behaved Windows
+# process launcher relies on -- carries each value through intact regardless of embedded spaces,
+# apostrophes, `$`, `;`, `&`, backticks, parentheses, `#`, or `"`. `uv run python
+# scripts/start_all.py` is a fixed, hardcoded command with no configuration-derived content in
+# it at all, so it needs no escaping of its own.
+& wsl -d "$wslDistro" --cd "$repoPathLinux" -- uv run python scripts/start_all.py
 $exitCode = $LASTEXITCODE
 
 if ($exitCode -ne 0) {
