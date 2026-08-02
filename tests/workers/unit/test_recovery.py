@@ -17,7 +17,7 @@ from factory.workers.pool import WorkerPool
 from factory.workers.quarantine import QuarantineRegistry
 from factory.workers.recovery import RetryPolicy, StartupRecovery, WorkerRecovery
 from factory.workers.state_integration import StateIntegration
-from tests.workers.conftest import FakeSpawner
+from tests.workers.support import FakeSpawner
 
 
 def _integration(

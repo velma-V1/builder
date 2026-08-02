@@ -11,7 +11,7 @@ from factory.workers.dispatcher import Dispatcher
 from factory.workers.lease_coordinator import LeaseCoordinator
 from factory.workers.models import WorkerState
 from factory.workers.pool import WorkerPool
-from tests.workers.conftest import FakeSpawner
+from tests.workers.support import FakeSpawner
 
 
 @pytest.fixture

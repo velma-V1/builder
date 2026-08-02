@@ -118,17 +118,29 @@ def _classify_worker_outcome(result: AgentZeroResult) -> tuple[WorkerRunOutcome,
 def _to_execution_result(task_id: str, outcome: WorkerRunOutcome, reason: str) -> ExecutionResult:
     if outcome is WorkerRunOutcome.SUCCESS:
         return ExecutionResult(
-            task_id=task_id, exit_code=0, output_hash=reason, events_captured=0,
-            truncated=False, failure_cause=None,
+            task_id=task_id,
+            exit_code=0,
+            output_hash=reason,
+            events_captured=0,
+            truncated=False,
+            failure_cause=None,
         )
     if outcome is WorkerRunOutcome.CANCELLED:
         return ExecutionResult(
-            task_id=task_id, exit_code=None, output_hash="", events_captured=0,
-            truncated=False, failure_cause="cancelled",
+            task_id=task_id,
+            exit_code=None,
+            output_hash="",
+            events_captured=0,
+            truncated=False,
+            failure_cause="cancelled",
         )
     return ExecutionResult(
-        task_id=task_id, exit_code=1, output_hash="", events_captured=0,
-        truncated=False, failure_cause=outcome.value.lower(),
+        task_id=task_id,
+        exit_code=1,
+        output_hash="",
+        events_captured=0,
+        truncated=False,
+        failure_cause=outcome.value.lower(),
     )
 
 
@@ -205,8 +217,11 @@ class WorkerEngineService:
             if not self._is_retry_pending(record.task_id):
                 continue
             self.orchestrator_writer.apply_transition(
-                task_id=record.task_id, expected_current_state=TaskState.BLOCKED,
-                new_state=TaskState.PLANNING, cause="retry_resume", actor=self.actor,
+                task_id=record.task_id,
+                expected_current_state=TaskState.BLOCKED,
+                new_state=TaskState.PLANNING,
+                cause="retry_resume",
+                actor=self.actor,
             )
             self._integration.start_execution(record.task_id, actor=self.actor)
             summaries.append(self._run_claimed_task(record.task_id))
@@ -275,6 +290,11 @@ class WorkerEngineService:
             staging_id = f"staging-{uuid.uuid4().hex}"
             staging_dir = Path(tempfile.mkdtemp(prefix=f"{staging_id}-"))
             workspace_path = staging_dir
+            # Reuses the same "output_path" column SANDBOXED_EXECUTION uses for its worktree --
+            # exactly one of the two ever applies for a given run -- so the Verification Engine
+            # always has a single field to look at for "where does this run's output live on
+            # disk, if anywhere".
+            sandbox_path = str(staging_dir)
 
         allowed_path_globs: tuple[str, ...] = (
             () if decision.selected_mode is ExecutionMode.DIRECT_READ_ONLY else ("**",)
@@ -330,13 +350,22 @@ class WorkerEngineService:
             run_ref = adapter.submit(work_order)
         except AgentZeroError as exc:
             return self._finalize_run(
-                task_id=task_id, run_id=run_id, attempt=attempt,
-                transport_source=transport_source, selected_mode=decision.selected_mode,
-                workspace=workspace, staging_dir=staging_dir,
-                outcome=WorkerRunOutcome.FAILED, reason=f"submit failed: {exc.detail}",
+                task_id=task_id,
+                run_id=run_id,
+                attempt=attempt,
+                transport_source=transport_source,
+                selected_mode=decision.selected_mode,
+                workspace=workspace,
+                staging_dir=staging_dir,
+                outcome=WorkerRunOutcome.FAILED,
+                reason=f"submit failed: {exc.detail}",
                 exec_result=ExecutionResult(
-                    task_id=task_id, exit_code=1, output_hash="", events_captured=0,
-                    truncated=False, failure_cause=exc.code.value,
+                    task_id=task_id,
+                    exit_code=1,
+                    output_hash="",
+                    events_captured=0,
+                    truncated=False,
+                    failure_cause=exc.code.value,
                 ),
             )
 
@@ -345,13 +374,17 @@ class WorkerEngineService:
 
         for index, event in enumerate(transport.poll_events(run_ref, after_sequence=-1)):
             self.run_writer.append_event(
-                run_id=run_id, sequence=index, event_type=event.event_type.value,
+                run_id=run_id,
+                sequence=index,
+                event_type=event.event_type.value,
                 payload_json=json.dumps(dict(event.payload)),
             )
         for artifact in result.artifacts:
             self.run_writer.add_artifact(
-                run_id=run_id, artifact_path=artifact.artifact_path,
-                content_digest=artifact.content_digest, media_type=artifact.media_type,
+                run_id=run_id,
+                artifact_path=artifact.artifact_path,
+                content_digest=artifact.content_digest,
+                media_type=artifact.media_type,
             )
 
         # First-pass sanity gate for any write-capable mode: stage the actually-written files and
@@ -377,10 +410,16 @@ class WorkerEngineService:
 
         exec_result = _to_execution_result(task_id, outcome, reason)
         return self._finalize_run(
-            task_id=task_id, run_id=run_id, attempt=attempt,
-            transport_source=transport_source, selected_mode=decision.selected_mode,
-            workspace=workspace, staging_dir=staging_dir,
-            outcome=outcome, reason=reason, exec_result=exec_result,
+            task_id=task_id,
+            run_id=run_id,
+            attempt=attempt,
+            transport_source=transport_source,
+            selected_mode=decision.selected_mode,
+            workspace=workspace,
+            staging_dir=staging_dir,
+            outcome=outcome,
+            reason=reason,
+            exec_result=exec_result,
         )
 
     def _finalize_run(
@@ -410,8 +449,11 @@ class WorkerEngineService:
             record = self.orchestrator_reader.get_task(task_id)
             current = record.current_state if record is not None else TaskState.RUNNING
             event = self.orchestrator_writer.apply_transition(
-                task_id=task_id, expected_current_state=current, new_state=TaskState.BLOCKED,
-                cause=_RETRY_PENDING_CAUSE, actor=self.actor,
+                task_id=task_id,
+                expected_current_state=current,
+                new_state=TaskState.BLOCKED,
+                cause=_RETRY_PENDING_CAUSE,
+                actor=self.actor,
             )
             retry_scheduled = event.accepted
             if not retry_scheduled:
@@ -431,7 +473,11 @@ class WorkerEngineService:
                 shutil.rmtree(staging_dir, ignore_errors=True)
 
         return RunSummary(
-            task_id=task_id, run_id=run_id, transport_source=transport_source,
-            selected_mode=selected_mode, outcome=outcome, reason=reason,
+            task_id=task_id,
+            run_id=run_id,
+            transport_source=transport_source,
+            selected_mode=selected_mode,
+            outcome=outcome,
+            reason=reason,
             retry_scheduled=retry_scheduled,
         )

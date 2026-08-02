@@ -5,9 +5,12 @@ Mirrors the shape of ``migrations/runtime/0006_worker_runs.sql``. Distinct from
 ``factory.orchestrator.models`` (authoritative task state) -- this is Builder's own record of
 what a worker run did, for evidence and audit, never itself authoritative task state.
 
-``sandbox_path``/``branch_ref``/``base_sha`` are ``None`` for every ``DIRECT_READ_ONLY`` run (no
-workspace is ever created for one) and for a pure ``STAGED_WRITE`` run (which uses only
-``staging_id``, never a worktree); they are populated only for ``SANDBOXED_EXECUTION``.
+``branch_ref``/``base_sha`` are ``None`` for every run except ``SANDBOXED_EXECUTION`` (only a
+real git worktree has a branch/base commit). ``sandbox_path`` is the one field that means "where
+this run's output lives on disk, if anywhere": populated for ``SANDBOXED_EXECUTION`` (the
+worktree path) *and* for ``STAGED_WRITE`` (the temp staging directory path, since exactly one of
+the two ever applies to a given run) -- ``None`` only for ``DIRECT_READ_ONLY``, which never
+creates any workspace at all. ``staging_id`` is populated only for ``STAGED_WRITE``.
 """
 
 from __future__ import annotations

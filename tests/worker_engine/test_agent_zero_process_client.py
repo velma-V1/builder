@@ -28,16 +28,31 @@ from factory.worker_engine.agent_zero_process_client import (
     AgentZeroDeploymentUnavailable,
     AgentZeroProcessClient,
 )
+from tests.worker_engine.support import loopback_unavailable_reason
 
 _RESOURCES = ResourceEnvelope(cpu_millis=1000, memory_mb=512, disk_mb=512, wall_clock_s=60)
 
 
+@pytest.fixture(autouse=True)
+def _require_loopback_capability(request: pytest.FixtureRequest) -> None:
+    if request.node.get_closest_marker("loopback") is None:
+        return
+    reason = loopback_unavailable_reason()
+    if reason is not None:
+        pytest.skip(reason)
+
+
 def _work_order() -> WorkOrder:
     return build_work_order(
-        work_order_id="wo-1", task_id="t-1", workstream_id="ws-1",
-        branch_ref="factory/worker/t-1", instructions="do the thing",
-        granted_tools=frozenset({"read_file"}), allowed_path_globs=("**",),
-        resources=_RESOURCES, timeout_s=60,
+        work_order_id="wo-1",
+        task_id="t-1",
+        workstream_id="ws-1",
+        branch_ref="factory/worker/t-1",
+        instructions="do the thing",
+        granted_tools=frozenset({"read_file"}),
+        allowed_path_globs=("**",),
+        resources=_RESOURCES,
+        timeout_s=60,
     )
 
 
@@ -125,45 +140,57 @@ def test_submit_and_cancel_never_fabricate_a_response_and_never_silently_substit
         client.cancel("run-1")
 
 
+@pytest.mark.loopback
 def test_probe_succeeds_against_a_real_reachable_health_endpoint() -> None:
     responses = {"health": {"status": "ok"}}
     with _FakeAgentZeroServer(lambda: _make_handler(responses)) as base_url:
         client = AgentZeroProcessClient(
-            base_url=base_url, ollama_base_url="http://127.0.0.1:11434",
-            model_tag="devstral-small-2:24b", timeout_s=5,
+            base_url=base_url,
+            ollama_base_url="http://127.0.0.1:11434",
+            model_tag="devstral-small-2:24b",
+            timeout_s=5,
         )
         client.probe()  # must not raise
 
 
+@pytest.mark.loopback
 def test_submit_parses_a_real_http_response_into_a_run_id() -> None:
     responses = {"submit": {"run_id": "az-run-123"}}
     with _FakeAgentZeroServer(lambda: _make_handler(responses)) as base_url:
         client = AgentZeroProcessClient(
-            base_url=base_url, ollama_base_url="http://127.0.0.1:11434",
-            model_tag="devstral-small-2:24b", timeout_s=5,
+            base_url=base_url,
+            ollama_base_url="http://127.0.0.1:11434",
+            model_tag="devstral-small-2:24b",
+            timeout_s=5,
         )
         run_id = client.submit(_work_order())
         assert run_id == "az-run-123"
 
 
+@pytest.mark.loopback
 def test_submit_rejects_a_malformed_response() -> None:
     responses = {"submit": {"unexpected": "shape"}}
     with _FakeAgentZeroServer(lambda: _make_handler(responses)) as base_url:
         client = AgentZeroProcessClient(
-            base_url=base_url, ollama_base_url="http://127.0.0.1:11434",
-            model_tag="devstral-small-2:24b", timeout_s=5,
+            base_url=base_url,
+            ollama_base_url="http://127.0.0.1:11434",
+            model_tag="devstral-small-2:24b",
+            timeout_s=5,
         )
         with pytest.raises(TransportFailure):
             client.submit(_work_order())
 
 
+@pytest.mark.loopback
 def test_poll_events_parses_real_events_and_maps_unrecognized_types_to_log() -> None:
     responses = {
         "events": {
             "events": [
                 {"sequence": 0, "event_type": "STARTED", "occurred_at": 1000, "payload": {}},
                 {
-                    "sequence": 1, "event_type": "SOME_FUTURE_TYPE", "occurred_at": 1001,
+                    "sequence": 1,
+                    "event_type": "SOME_FUTURE_TYPE",
+                    "occurred_at": 1001,
                     "payload": {"detail": "unknown"},
                 },
             ]
@@ -171,8 +198,10 @@ def test_poll_events_parses_real_events_and_maps_unrecognized_types_to_log() -> 
     }
     with _FakeAgentZeroServer(lambda: _make_handler(responses)) as base_url:
         client = AgentZeroProcessClient(
-            base_url=base_url, ollama_base_url="http://127.0.0.1:11434",
-            model_tag="devstral-small-2:24b", timeout_s=5,
+            base_url=base_url,
+            ollama_base_url="http://127.0.0.1:11434",
+            model_tag="devstral-small-2:24b",
+            timeout_s=5,
         )
         events = client.poll_events("run-1", after_sequence=-1)
         assert len(events) == 2
@@ -180,27 +209,34 @@ def test_poll_events_parses_real_events_and_maps_unrecognized_types_to_log() -> 
         assert events[1].event_type is AgentZeroEventType.LOG
 
 
+@pytest.mark.loopback
 def test_poll_events_rejects_a_malformed_event() -> None:
     responses = {"events": {"events": [{"sequence": "not-a-number"}]}}
     with _FakeAgentZeroServer(lambda: _make_handler(responses)) as base_url:
         client = AgentZeroProcessClient(
-            base_url=base_url, ollama_base_url="http://127.0.0.1:11434",
-            model_tag="devstral-small-2:24b", timeout_s=5,
+            base_url=base_url,
+            ollama_base_url="http://127.0.0.1:11434",
+            model_tag="devstral-small-2:24b",
+            timeout_s=5,
         )
         with pytest.raises(TransportFailure):
             client.poll_events("run-1", after_sequence=-1)
 
 
+@pytest.mark.loopback
 def test_cancel_parses_a_real_http_response() -> None:
     responses = {"cancel": {"cancelled": True}}
     with _FakeAgentZeroServer(lambda: _make_handler(responses)) as base_url:
         client = AgentZeroProcessClient(
-            base_url=base_url, ollama_base_url="http://127.0.0.1:11434",
-            model_tag="devstral-small-2:24b", timeout_s=5,
+            base_url=base_url,
+            ollama_base_url="http://127.0.0.1:11434",
+            model_tag="devstral-small-2:24b",
+            timeout_s=5,
         )
         assert client.cancel("run-1") is True
 
 
+@pytest.mark.loopback
 def test_timeout_is_distinguished_from_unreachable() -> None:
     """A request that connects but never responds within the bound must raise TransportTimeout,
     not TransportFailure -- callers (AgentZeroAdapter) map the two to different error codes."""
@@ -218,8 +254,10 @@ def test_timeout_is_distinguished_from_unreachable() -> None:
 
     with _FakeAgentZeroServer(lambda: _HangingHandler) as base_url:
         client = AgentZeroProcessClient(
-            base_url=base_url, ollama_base_url="http://127.0.0.1:11434",
-            model_tag="devstral-small-2:24b", timeout_s=1,
+            base_url=base_url,
+            ollama_base_url="http://127.0.0.1:11434",
+            model_tag="devstral-small-2:24b",
+            timeout_s=1,
         )
         with pytest.raises(TransportTimeout):
             client.poll_events("run-1", after_sequence=-1)
