@@ -217,3 +217,6 @@ def test_forced_unexpected_failure_returns_controlled_503(
     body_text = response.text
     for leak in ("Traceback", "RuntimeError", ".py", "/home/"):
         assert leak not in body_text
+
+
+pytestmark = pytest.mark.loopback

@@ -20,6 +20,8 @@ from typing import Any
 
 import pytest
 
+from tests.worker_engine.support import loopback_unavailable_reason
+
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -58,6 +60,7 @@ def config(start_all: ModuleType, tmp_path: Path) -> Any:
 # ---- required vs. optional dependency checks -------------------------------------------
 
 
+@pytest.mark.loopback
 def test_check_required_dependencies_passes_when_everything_present(
     start_all: ModuleType, config: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -65,6 +68,7 @@ def test_check_required_dependencies_passes_when_everything_present(
     assert start_all.check_required_dependencies(config) == []
 
 
+@pytest.mark.loopback
 def test_check_required_dependencies_reports_missing_repository_path(
     start_all: ModuleType, config: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -74,6 +78,7 @@ def test_check_required_dependencies_reports_missing_repository_path(
     assert any("repository path not found" in p for p in problems)
 
 
+@pytest.mark.loopback
 def test_check_required_dependencies_reports_missing_executable(
     start_all: ModuleType, config: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -82,6 +87,7 @@ def test_check_required_dependencies_reports_missing_executable(
     assert any("npm" in p for p in problems)
 
 
+@pytest.mark.loopback
 def test_check_required_dependencies_reports_port_already_in_use(
     start_all: ModuleType, config: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -97,6 +103,7 @@ def test_check_required_dependencies_reports_port_already_in_use(
         server.close()
 
 
+@pytest.mark.loopback
 def test_port_in_use_detects_a_free_port_as_free(start_all: ModuleType) -> None:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("127.0.0.1", 0))
@@ -104,6 +111,7 @@ def test_port_in_use_detects_a_free_port_as_free(start_all: ModuleType) -> None:
     assert start_all.port_in_use(free_port) is False
 
 
+@pytest.mark.loopback
 def test_docker_ollama_are_reported_but_never_required(
     start_all: ModuleType, config: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -249,3 +257,12 @@ def test_wait_healthy_returns_once_the_check_reports_true(start_all: ModuleType)
 
     start_all.wait_healthy("eventually-healthy", _check, timeout_s=5)
     assert calls["count"] == 3
+
+
+@pytest.fixture(autouse=True)
+def _require_loopback_capability(request: pytest.FixtureRequest) -> None:
+    if request.node.get_closest_marker("loopback") is None:
+        return
+    reason = loopback_unavailable_reason()
+    if reason is not None:
+        pytest.skip(reason)

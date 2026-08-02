@@ -71,12 +71,15 @@ def verify_git_policy_on_real_repo() -> VerificationResult:
             checks.append(exc.code == "FORCE_PUSH_DENIED")
         (repo / "outside.py").write_text("y = 2\n", encoding="utf-8")
         try:
-            gm.checkpoint(repo, task_id="T1", owned_paths=("src/**",), subject="x", trailers=trailers)
+            gm.checkpoint(
+                repo, task_id="T1", owned_paths=("src/**",), subject="x", trailers=trailers
+            )
         except GitError as exc:
             checks.append(exc.code == "CHECKPOINT_SCOPE" and exc.security)
     ok = len(checks) == 3 and all(checks)
     return VerificationResult(
-        "Git: protected-ref + force-push + owned-path checkpoint enforced (real repo)", ok,
+        "Git: protected-ref + force-push + owned-path checkpoint enforced (real repo)",
+        ok,
         f"guards={checks}",
     )
 
@@ -92,14 +95,19 @@ def verify_sandbox_isolation_policy() -> VerificationResult:
 
     limits = ResourceLimits(1000, 2048, 4096, 128, 600)
     backend = FakeWslDockerBackend()
-    clean = backend.provision(
-        SandboxSpec("T1", "W1", "img", "v1", resources=limits)
-    )
+    base = SandboxSpec("T1", "W1", "img", "v1", resources=limits)
+    clean = backend.provision(base)
     non_root = clean.identity is not None and clean.identity.uid != 0
     denied = []
-    for flag in ("windows_native", "privileged", "host_docker_socket", "run_as_root"):
+    prohibited = (
+        SandboxSpec("T1", "W1", "img", "v1", resources=limits, windows_native=True),
+        SandboxSpec("T1", "W1", "img", "v1", resources=limits, privileged=True),
+        SandboxSpec("T1", "W1", "img", "v1", resources=limits, host_docker_socket=True),
+        SandboxSpec("T1", "W1", "img", "v1", resources=limits, run_as_root=True),
+    )
+    for unsafe_spec in prohibited:
         try:
-            backend.provision(SandboxSpec("T1", "W1", "img", "v1", resources=limits, **{flag: True}))
+            backend.provision(unsafe_spec)
         except SandboxError as exc:
             denied.append(exc.code == "SANDBOX_POLICY_DENIED")
     unavailable = FakeWslDockerBackend(available=False).provision(
@@ -113,7 +121,8 @@ def verify_sandbox_isolation_policy() -> VerificationResult:
         and unavailable.status is SandboxStatus.RUNTIME_UNAVAILABLE
     )
     return VerificationResult(
-        "Sandbox: non-root default, prohibited privileges denied, explicit unavailable", ok,
+        "Sandbox: non-root default, prohibited privileges denied, explicit unavailable",
+        ok,
         f"non_root={non_root}; denied={denied}; unavailable={unavailable.status.value}",
     )
 
@@ -133,7 +142,8 @@ def verify_secret_lifecycle() -> VerificationResult:
         blocked = exc.code == "SECRET_IN_EXPORT"
     ok = redacted and forgotten and blocked
     return VerificationResult(
-        "Secret: redaction + revoke-and-forget + export scan", ok,
+        "Secret: redaction + revoke-and-forget + export scan",
+        ok,
         f"redacted={redacted}; forgotten={forgotten}; export_blocked={blocked}",
     )
 
@@ -145,7 +155,9 @@ def verify_network_default_deny() -> VerificationResult:
     approval = NetworkApproval(
         "A1", "T1", frozenset({"example.com"}), frozenset({"https"}), frozenset({"GET"}), 100, 1000
     )
-    default_deny = not b.evaluate(None, NetworkRequest("example.com", "https", "GET"), now=0).allowed
+    default_deny = not b.evaluate(
+        None, NetworkRequest("example.com", "https", "GET"), now=0
+    ).allowed
     allowed = b.evaluate(approval, NetworkRequest("example.com", "https", "GET"), now=0).allowed
     redirect_contained = not b.evaluate_redirect(approval, "evil.com", now=0).allowed
     inbound = not b.evaluate(
@@ -153,7 +165,8 @@ def verify_network_default_deny() -> VerificationResult:
     ).allowed
     ok = default_deny and allowed and redirect_contained and inbound
     return VerificationResult(
-        "Network: default-deny, allowlist, redirect containment, no inbound", ok,
+        "Network: default-deny, allowlist, redirect containment, no inbound",
+        ok,
         f"deny={default_deny}; allow={allowed}; redirect={redirect_contained}; inbound_denied={inbound}",
     )
 
@@ -183,7 +196,8 @@ def verify_cache_and_staging() -> VerificationResult:
         promoted = stg.promote(authorized=True).promoted
     ok = scoped and cred_blocked and unauth_blocked and promoted
     return VerificationResult(
-        "Cache scoping/credential-free + staging inspection/authorization gate", ok,
+        "Cache scoping/credential-free + staging inspection/authorization gate",
+        ok,
         f"scoped={scoped}; cred_blocked={cred_blocked}; unauth={unauth_blocked}; promoted={promoted}",
     )
 
@@ -191,18 +205,34 @@ def verify_cache_and_staging() -> VerificationResult:
 def verify_tests_pass_with_coverage() -> VerificationResult:
     result = subprocess.run(
         [
-            sys.executable, "-m", "pytest",
-            "tests/git", "tests/sandbox", "tests/secret",
-            "tests/network", "tests/cache", "tests/staging", "-q",
-            "--cov=src/factory/git", "--cov=src/factory/sandbox", "--cov=src/factory/secret",
-            "--cov=src/factory/network", "--cov=src/factory/cache", "--cov=src/factory/staging",
-            "--cov-branch", "--cov-fail-under=95",
+            sys.executable,
+            "-m",
+            "pytest",
+            "tests/git",
+            "tests/sandbox",
+            "tests/secret",
+            "tests/network",
+            "tests/cache",
+            "tests/staging",
+            "-q",
+            "--cov=src/factory/git",
+            "--cov=src/factory/sandbox",
+            "--cov=src/factory/secret",
+            "--cov=src/factory/network",
+            "--cov=src/factory/cache",
+            "--cov=src/factory/staging",
+            "--cov-branch",
+            "--cov-fail-under=95",
         ],
-        capture_output=True, text=True, cwd=ROOT, timeout=900,
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        timeout=900,
     )
     summary = (result.stdout.strip().split("\n") or ["?"])[-1]
     return VerificationResult(
-        "PH-5 tests pass with >=95% branch coverage", result.returncode == 0,
+        "PH-5 tests pass with >=95% branch coverage",
+        result.returncode == 0,
         f"exit {result.returncode}; {summary}",
     )
 
@@ -210,29 +240,61 @@ def verify_tests_pass_with_coverage() -> VerificationResult:
 def verify_ruff() -> VerificationResult:
     result = subprocess.run(
         [
-            sys.executable, "-m", "ruff", "check",
-            "src/factory/git", "src/factory/sandbox", "src/factory/secret",
-            "src/factory/network", "src/factory/cache", "src/factory/staging",
-            "tests/git", "tests/sandbox", "tests/secret",
-            "tests/network", "tests/cache", "tests/staging",
+            sys.executable,
+            "-m",
+            "ruff",
+            "check",
+            "src/factory/git",
+            "src/factory/sandbox",
+            "src/factory/secret",
+            "src/factory/network",
+            "src/factory/cache",
+            "src/factory/staging",
+            "tests/git",
+            "tests/sandbox",
+            "tests/secret",
+            "tests/network",
+            "tests/cache",
+            "tests/staging",
         ],
-        capture_output=True, text=True, cwd=ROOT, timeout=900,
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        timeout=900,
     )
-    return VerificationResult("Ruff clean (PH-5 src + tests)", result.returncode == 0, f"exit {result.returncode}")
+    return VerificationResult(
+        "Ruff clean (PH-5 src + tests)", result.returncode == 0, f"exit {result.returncode}"
+    )
 
 
 def verify_mypy() -> VerificationResult:
     result = subprocess.run(
         [
-            sys.executable, "-m", "mypy",
-            "src/factory/git", "src/factory/sandbox", "src/factory/secret",
-            "src/factory/network", "src/factory/cache", "src/factory/staging",
-            "tests/git", "tests/sandbox", "tests/secret",
-            "tests/network", "tests/cache", "tests/staging", "--strict",
+            sys.executable,
+            "-m",
+            "mypy",
+            "src/factory/git",
+            "src/factory/sandbox",
+            "src/factory/secret",
+            "src/factory/network",
+            "src/factory/cache",
+            "src/factory/staging",
+            "tests/git",
+            "tests/sandbox",
+            "tests/secret",
+            "tests/network",
+            "tests/cache",
+            "tests/staging",
+            "--strict",
         ],
-        capture_output=True, text=True, cwd=ROOT, timeout=900,
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        timeout=900,
     )
-    return VerificationResult("mypy --strict clean (PH-5)", result.returncode == 0, f"exit {result.returncode}")
+    return VerificationResult(
+        "mypy --strict clean (PH-5)", result.returncode == 0, f"exit {result.returncode}"
+    )
 
 
 def verify_evidence_present() -> VerificationResult:
