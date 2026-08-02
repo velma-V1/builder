@@ -719,15 +719,15 @@ the PH-6 simulated workstream core, demonstrated end-to-end against the PH-4/PH-
 
 ### Phase 3B worker verify/promote implementation - 2026-08-02
 
-#### Status: `IMPLEMENTED — VERIFICATION GATE INCOMPLETE`
+#### Status: `IMPLEMENTED — VERIFICATION COMPLETE`
 
-- **Implementation commit:** `c25bb4c` after milestone commits `0c65b21`, `3ebdedd`, `41056d6`,
-  `9eca3db`, `f91bace`, and `6f1392e`.
+- **Verified implementation commit:** `48e0dd8` after milestone commits `0c65b21`, `3ebdedd`,
+  `41056d6`, `9eca3db`, `f91bace`, `6f1392e`, and validation repair `c25bb4c`.
 - **Delivered:** independent verification; append-only evidence/manifests; explicit approval binding;
   serialized promotion and rollback; restart reconciliation; lifecycle API; Phase 3B dashboard.
-- **Passing evidence:** collection 1729; suite 1644 passed/85 classified skips; socket rerun 83
-  passed; Ruff; mypy 305 files; lockfile; frontend typecheck/lint/43 tests/build; Section 2 18/18;
-  RPH3 10/10; PH-4 10/10; focused lifecycle and failure paths.
-- **Not PASS:** two Windows junction checks require Windows semantics; Section 1 sync remains
-  network/cache blocked while resolving pinned hatchling.
+- **Passing evidence:** native Windows collection 1730; suite 1730 passed; two real junction cases;
+  network-enabled Section 1 (325 tests, 96.86% branch coverage); Ruff format/lint; mypy 305 files;
+  lockfile; frontend typecheck/lint/43 tests/build; Section 2 18/18; RPH3 10/10; PH-4 10/10;
+  focused lifecycle and failure paths.
+- **Environment blockers:** none remain for the Phase 3B verification gate.
 - **Boundary:** no push, merge, deploy, release, or protected-ref promotion was performed.

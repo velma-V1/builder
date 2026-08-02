@@ -1,8 +1,8 @@
 # Phase 3B Handoff
 
-**Status:** `IMPLEMENTED — VERIFICATION GATE INCOMPLETE`
+**Status:** `IMPLEMENTED — VERIFICATION COMPLETE`
 
-Implementation under test: `c25bb4c` on `claude/phase-3b-worker-verify-promote`. No push, merge,
+Verified implementation: `48e0dd8` on `claude/phase-3b-worker-verify-promote`. No push, merge,
 deployment, release, or protected-ref promotion was performed.
 
 ## Delivered
@@ -13,10 +13,10 @@ deployment, release, or protected-ref promotion was performed.
 - Durable worker → verify → approval → promote/reject lifecycle and restart reconciliation.
 - Backend-authoritative API and dashboard review/control surface.
 
-## Required before release
+## Verification closure
 
-Clear every `FAIL` and rerun every `ENVIRONMENT-BLOCKED` command in the environment specified by
-the Phase 3B verification report. Then rerun all repository and frontend gates at one exact commit.
+The two native Windows junction cases, network-enabled Section 1 pipeline, repository-wide Python
+gates, and 1,730-test full suite pass at `48e0dd8`. No Phase 3B verification blocker remains.
 
 ## Operator-only decisions
 

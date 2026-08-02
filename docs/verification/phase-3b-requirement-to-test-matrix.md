@@ -1,6 +1,6 @@
 # Phase 3B Requirement-to-Test Matrix
 
-Implementation commit: `c25bb4c`.
+Verified implementation commit: `48e0dd8`.
 
 | Requirement | Evidence | Status |
 |---|---|---|
@@ -11,6 +11,8 @@ Implementation commit: `c25bb4c`.
 | Lifecycle and restart reconciliation | worker, replay, lifecycle tests | PASS |
 | API HTTP behavior | socket-capable rerun: 83 loopback tests | PASS |
 | UI controls and reconnect | `Phase3BControls.test.tsx` | PASS |
-| Full Python collection/suite | 1729 collected; 1644 passed, 85 classified skips | PASS |
+| Native Windows junction escape denial | two real `mklink /J` cases | PASS |
+| Section 1 bootstrap and contract gate | network-enabled verifier; 325 tests; 96.86% branch coverage | PASS |
+| Full Python collection/suite | 1730 collected; 1730 passed | PASS |
 | Repository section/roadmap scripts | Section 2 18/18; RPH3 10/10; PH-4 10/10 | PASS |
 | Frontend type/lint/test/build | npm gates; 43 tests | PASS |

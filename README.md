@@ -7,10 +7,10 @@ Factory is a standalone, local-first AI software-production system designed to b
 ## Status
 
 **Phase 3B worker verification, explicit approval, promotion/rollback, lifecycle/API integration,
-and required dashboard controls are implemented on the Phase 3B branch. The implementation suite
-passes, and the three legacy section/roadmap blockers are cleared. The repository release gate
-remains `INCOMPLETE` only for the Windows junction rerun and the network/cache-dependent Section 1
-bootstrap check. No merge, deployment, or protected-ref promotion occurred.**
+and required dashboard controls are implemented and verified on the Phase 3B branch. Native
+Windows junction coverage and the network-enabled Section 1 bootstrap gate pass at `48e0dd8`; the
+full suite passes 1,730/1,730. No push, merge, deployment, release, or protected-ref promotion
+occurred.**
 
 Continue to the next phase:
 
