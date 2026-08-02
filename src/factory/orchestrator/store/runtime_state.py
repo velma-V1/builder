@@ -52,7 +52,7 @@ _EXPECTED_MIGRATION_HASHES: Mapping[str, str] = {
         "a68ca07b5c48d494fc42e714828e6c54c3e13f9415b247db1965690b7aa65bc8"
     ),
     "0006_worker_runs.sql": (
-        "4774be3979ca36ffdb29920662386ed8e62fa123c51851deaa7a58f0aa284d61"
+        "38d36efe4cdbb2397da486271dce79d40fc88a737cca9fc6c8883f6134e0ba71"
     ),
     "0007_verification_promotion.sql": (
         "f0f8441120ae50e2732ccb7e3d74899a897b70db33ded820e36ed26697458556"

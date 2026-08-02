@@ -130,6 +130,13 @@ class GitManager:
         self._run(repo, "checkout", "-q", "-b", branch, baseline_commit)
         return branch
 
+    def create_branch_at(self, repo: Path, branch: str, commit: str) -> str:
+        """Create a branch ref pointing at ``commit`` without checking it out or touching the
+        live repo's working directory/HEAD at all (Phase 3B: worktree-only worker branches)."""
+        self.guard_protected_ref(branch)
+        self._run(repo, "branch", branch, commit)
+        return branch
+
     def add_worktree(self, repo: Path, branch: str, worktree_path: Path) -> WorktreeHandle:
         self.guard_protected_ref(branch)
         self._run(repo, "worktree", "add", "-q", str(worktree_path), branch)
@@ -137,6 +144,16 @@ class GitManager:
 
     def remove_worktree(self, repo: Path, worktree_path: Path) -> None:
         self._run(repo, "worktree", "remove", "--force", str(worktree_path))
+
+    def delete_branch(self, repo: Path, branch: str, *, force: bool = True) -> None:
+        """Delete a local branch (Phase 3B: disposable per-task worker branches)."""
+        self.guard_protected_ref(branch)
+        flag = "-D" if force else "-d"
+        self._run(repo, "branch", flag, branch)
+
+    def prune_worktrees(self, repo: Path) -> None:
+        """Clean up worktree administrative files for worktrees removed on disk out-of-band."""
+        self._run(repo, "worktree", "prune")
 
     # -- change tracking -------------------------------------------------------------------
     def working_changes(self, repo: Path) -> tuple[str, ...]:

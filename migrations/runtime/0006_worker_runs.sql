@@ -2,9 +2,24 @@ CREATE TABLE worker_runs (
     run_id TEXT PRIMARY KEY,
     task_id TEXT NOT NULL REFERENCES tasks(task_id),
     attempt INTEGER NOT NULL CHECK (attempt >= 1),
-    sandbox_path TEXT NOT NULL,
-    branch_ref TEXT NOT NULL,
-    base_sha TEXT NOT NULL,
+    -- Execution-policy decision (persisted for every run, regardless of mode): what the worker
+    -- requested, what policy actually selected, why, and which deterministic rule decided it.
+    -- Policy can only escalate a requested mode, never let the worker downgrade a required one.
+    requested_mode TEXT NOT NULL CHECK (
+        requested_mode IN ('DIRECT_READ_ONLY', 'STAGED_WRITE', 'SANDBOXED_EXECUTION')
+    ),
+    selected_mode TEXT NOT NULL CHECK (
+        selected_mode IN ('DIRECT_READ_ONLY', 'STAGED_WRITE', 'SANDBOXED_EXECUTION')
+    ),
+    mode_reason TEXT NOT NULL,
+    policy_rule TEXT NOT NULL,
+    -- NULL for DIRECT_READ_ONLY (no workspace is ever created for a read-only run). STAGED_WRITE
+    -- uses only staging_id (no worktree); SANDBOXED_EXECUTION uses sandbox_path/branch_ref/
+    -- base_sha (a real worktree) and may also carry a staging_id for its output inspection gate.
+    sandbox_path TEXT,
+    branch_ref TEXT,
+    base_sha TEXT,
+    staging_id TEXT,
     work_order_json TEXT NOT NULL,
     model_route_token TEXT NOT NULL DEFAULT '',
     started_at TEXT NOT NULL,
