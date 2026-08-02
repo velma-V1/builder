@@ -2,7 +2,7 @@
 
 **Status:** `IMPLEMENTED — VERIFICATION GATE INCOMPLETE`
 
-Implementation under test: `017b2f4` on `claude/phase-3b-worker-verify-promote`. No push, merge,
+Implementation under test: `c25bb4c` on `claude/phase-3b-worker-verify-promote`. No push, merge,
 deployment, release, or protected-ref promotion was performed.
 
 ## Delivered

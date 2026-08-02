@@ -8,9 +8,9 @@ Factory is a standalone, local-first AI software-production system designed to b
 
 **Phase 3B worker verification, explicit approval, promotion/rollback, lifecycle/API integration,
 and required dashboard controls are implemented on the Phase 3B branch. The implementation suite
-passes, but the repository release gate remains `INCOMPLETE`: socket-dependent checks require a
-loopback-capable rerun environment and three legacy section/roadmap gates still report failures.
-No merge, deployment, or protected-ref promotion occurred.**
+passes, and the three legacy section/roadmap blockers are cleared. The repository release gate
+remains `INCOMPLETE` only for the Windows junction rerun and the network/cache-dependent Section 1
+bootstrap check. No merge, deployment, or protected-ref promotion occurred.**
 
 Continue to the next phase:
 
