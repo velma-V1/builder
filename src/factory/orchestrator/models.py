@@ -12,13 +12,21 @@ from enum import StrEnum
 
 
 class TaskState(StrEnum):
-    """Authoritative task/workstream state set (01L §3.1)."""
+    """Authoritative task/workstream state set (01L §3.1).
+
+    Phase 3B additive extension: ``PROMOTING`` and ``REJECTED`` were added to carry the
+    explicitly-specified Phase 3B lifecycle (``AWAITING_APPROVAL -> PROMOTING -> COMPLETE``, with
+    ``REJECTED`` as an explicit approval-denied terminal state) through this same authoritative
+    state field, rather than introducing a parallel side-channel status. See
+    ``state/transitions.py`` for the corresponding ``ALLOWED_TRANSITIONS`` additions.
+    """
 
     QUEUED = "QUEUED"
     PLANNING = "PLANNING"
     RUNNING = "RUNNING"
     AWAITING_APPROVAL = "AWAITING_APPROVAL"
     VERIFYING = "VERIFYING"
+    PROMOTING = "PROMOTING"
     BLOCKED = "BLOCKED"
     PAUSED = "PAUSED"
     FAILED = "FAILED"
@@ -27,10 +35,11 @@ class TaskState(StrEnum):
     CANCELLED = "CANCELLED"
     COMPLETE = "COMPLETE"
     ROLLED_BACK = "ROLLED_BACK"
+    REJECTED = "REJECTED"
 
 
 TERMINAL_STATES: frozenset[TaskState] = frozenset(
-    {TaskState.CANCELLED, TaskState.COMPLETE, TaskState.ROLLED_BACK}
+    {TaskState.CANCELLED, TaskState.COMPLETE, TaskState.ROLLED_BACK, TaskState.REJECTED}
 )
 
 
