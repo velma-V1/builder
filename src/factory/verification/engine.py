@@ -92,6 +92,40 @@ class VerificationEngine:
     actor: str = _VERIFICATION_ACTOR
 
     def verify(self, task_id: str, run: WorkerRunRecord) -> VerificationOutcome:
+        existing = SQLiteVerificationReader(
+            self.verification_writer.database_path
+        ).get_latest_evidence(task_id)
+        if existing is not None and existing.run_id == run.run_id:
+            existing_manifest = SQLiteVerificationReader(
+                self.verification_writer.database_path
+            ).get_latest_manifest(task_id)
+            if existing_manifest is not None and run.sandbox_path is not None:
+                output_root = Path(run.sandbox_path)
+                changed = [
+                    item.path
+                    for item in existing_manifest.files
+                    if not (output_root / item.path).is_file()
+                    or _sha256_file(output_root / item.path) != item.content_digest
+                ]
+                if changed:
+                    raise VerificationStoreError(
+                        "VERIFICATION_REPLAY_CONFLICT",
+                        f"verified artifacts changed after persistence: {sorted(changed)}",
+                    )
+            task = self.orchestrator_reader.get_task(task_id)
+            if task is not None and task.current_state is TaskState.VERIFYING:
+                self.orchestrator_writer.apply_transition(
+                    task_id=task_id,
+                    expected_current_state=TaskState.VERIFYING,
+                    new_state=(
+                        TaskState.AWAITING_APPROVAL if existing.passed else TaskState.FAILED
+                    ),
+                    cause="verification_reconciled_from_durable_evidence",
+                    actor=self.actor,
+                )
+            return VerificationOutcome(
+                passed=existing.passed, evidence=existing, manifest=existing_manifest
+            )
         items: list[EvidenceItem] = []
         manifest: PromotionManifest | None = None
         allowed_path_globs = self._allowed_path_globs(run)

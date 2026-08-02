@@ -28,6 +28,7 @@ import uuid
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Protocol
 
 from factory.git.manager import GitManager
 from factory.integrations.agent_zero.adapter import AgentZeroAdapter
@@ -53,7 +54,7 @@ from factory.worker_engine.agent_zero_process_client import (
 )
 from factory.worker_engine.builder_worker_transport import BuilderWorkerTransport
 from factory.worker_engine.execution_policy import ExecutionMode, ExecutionPolicy
-from factory.worker_engine.models import WorkerRunOutcome
+from factory.worker_engine.models import WorkerRunOutcome, WorkerRunRecord
 from factory.worker_engine.store import WorkerRunReader, _WorkerRunWriter
 from factory.worker_engine.task_classifier import classify_task_description
 from factory.worker_engine.workspace import Workspace, WorkspaceManager
@@ -85,6 +86,12 @@ class RunSummary:
     outcome: WorkerRunOutcome
     reason: str
     retry_scheduled: bool = False
+
+
+class VerificationPort(Protocol):
+    """Independent post-worker verification boundary."""
+
+    def verify(self, task_id: str, run: WorkerRunRecord) -> object: ...
 
 
 def _staged_files_from_workspace(
@@ -154,6 +161,7 @@ class WorkerEngineService:
     workspace_manager: WorkspaceManager
     repo_root: Path
     model_router: ModelRouterPort
+    verifier: VerificationPort | None = None
     #: ``None`` means no real Agent Zero deployment is configured at all -- every run uses the
     #: Builder-native fallback, explicitly and honestly (never silently).
     agent_zero_client: AgentZeroProcessClient | None = None
@@ -463,6 +471,16 @@ class WorkerEngineService:
 
         self.run_writer.finish_run(run_id=run_id, outcome=outcome, reason=reason)
 
+        if outcome is WorkerRunOutcome.SUCCESS and self.verifier is not None:
+            run = self.run_reader.get_run(run_id)
+            if run is None:
+                self._fail_verification(task_id, "finished worker run is unavailable")
+            else:
+                try:
+                    self.verifier.verify(task_id, run)
+                except Exception as exc:
+                    self._fail_verification(task_id, f"independent verification failed: {exc}")
+
         # A failed/cancelled/crashed run's workspace is disposed of immediately -- nothing from
         # it will ever be verified or promoted. A successful run's workspace/staging dir is kept
         # on disk (frozen, not deleted) for the Verification Engine to inspect.
@@ -480,4 +498,16 @@ class WorkerEngineService:
             outcome=outcome,
             reason=reason,
             retry_scheduled=retry_scheduled,
+        )
+
+    def _fail_verification(self, task_id: str, reason: str) -> None:
+        record = self.orchestrator_reader.get_task(task_id)
+        if record is None or record.current_state is not TaskState.VERIFYING:
+            return
+        self.orchestrator_writer.apply_transition(
+            task_id=task_id,
+            expected_current_state=TaskState.VERIFYING,
+            new_state=TaskState.FAILED,
+            cause=reason,
+            actor=self.actor,
         )

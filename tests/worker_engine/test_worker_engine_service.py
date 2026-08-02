@@ -16,7 +16,7 @@ from factory.orchestrator.store.runtime_state import (
 )
 from factory.worker_engine.execution_policy import ExecutionMode
 from factory.worker_engine.model_router import FakeModelRouter
-from factory.worker_engine.models import WorkerRunOutcome
+from factory.worker_engine.models import WorkerRunOutcome, WorkerRunRecord
 from factory.worker_engine.service import (
     TRANSPORT_AGENT_ZERO_REAL,
     TRANSPORT_BUILDER_NATIVE,
@@ -25,6 +25,18 @@ from factory.worker_engine.service import (
 from factory.worker_engine.store import SQLiteWorkerRunReader, _WorkerRunWriter
 from factory.worker_engine.workspace import WorkspaceManager
 from factory.workers.recovery import RetryPolicy
+
+
+class RecordingVerifier:
+    def __init__(self, *, failure: Exception | None = None) -> None:
+        self.calls: list[tuple[str, str]] = []
+        self.failure = failure
+
+    def verify(self, task_id: str, run: WorkerRunRecord) -> object:
+        self.calls.append((task_id, run.run_id))
+        if self.failure is not None:
+            raise self.failure
+        return object()
 
 
 def current_state(reader: SQLiteOrchestratorStateReader, task_id: str) -> TaskState:
@@ -68,6 +80,40 @@ def test_direct_read_only_task_completes_with_no_sandbox_or_staging(
     assert run.sandbox_path is None
     assert run.staging_id is None
     assert current_state(orchestrator_reader, task_id) is TaskState.VERIFYING
+
+
+def test_successful_worker_run_invokes_independent_verifier_after_persistence(
+    service: WorkerEngineService,
+    orchestrator_writer: _OrchestratorStateWriter,
+    orchestrator_reader: SQLiteOrchestratorStateReader,
+) -> None:
+    verifier = RecordingVerifier()
+    service.verifier = verifier
+    task_id = submit_task(orchestrator_writer, description="Explain this repository.")
+
+    summary = service.claim_and_run(task_id)
+
+    assert summary is not None
+    assert verifier.calls == [(task_id, summary.run_id)]
+    run = service.run_reader.get_run(summary.run_id)
+    assert run is not None and run.finished_at is not None
+    assert current_state(orchestrator_reader, task_id) is TaskState.VERIFYING
+
+
+def test_verifier_exception_fails_closed_in_durable_task_state(
+    service: WorkerEngineService,
+    orchestrator_writer: _OrchestratorStateWriter,
+    orchestrator_reader: SQLiteOrchestratorStateReader,
+) -> None:
+    service.verifier = RecordingVerifier(failure=RuntimeError("verifier unavailable"))
+    task_id = submit_task(orchestrator_writer, description="Explain this repository.")
+
+    summary = service.claim_and_run(task_id)
+
+    assert summary is not None
+    assert current_state(orchestrator_reader, task_id) is TaskState.FAILED
+    events = orchestrator_reader.get_events(task_id)
+    assert events[-1].cause == "independent verification failed: verifier unavailable"
 
 
 def test_staged_write_task_uses_a_temp_staging_dir_not_a_git_worktree(

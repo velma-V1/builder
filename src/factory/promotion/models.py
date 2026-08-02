@@ -34,6 +34,23 @@ class PromotionBinding:
             separators=(",", ":"),
         )
 
+    @classmethod
+    def from_scope(cls, scope: str) -> PromotionBinding:
+        payload = json.loads(scope)
+        required = {
+            "evidence_digest",
+            "manifest_digest",
+            "run_id",
+            "target_ref",
+            "target_revision",
+            "task_id",
+        }
+        if not isinstance(payload, dict) or set(payload) != required:
+            raise ValueError("invalid promotion approval scope")
+        if not all(isinstance(payload[key], str) and payload[key] for key in required):
+            raise ValueError("promotion approval scope fields must be non-empty strings")
+        return cls(**payload)
+
 
 @dataclass(frozen=True, slots=True)
 class PromotionRecord:

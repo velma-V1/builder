@@ -14,7 +14,7 @@ exception text, SQL, paths, or stack traces are ever returned to the client.
 from __future__ import annotations
 
 import contextlib
-from typing import Any
+from typing import Any, cast
 
 from starlette.applications import Starlette
 from starlette.requests import Request
@@ -23,6 +23,7 @@ from starlette.routing import Route
 
 from factory.orchestrator.models import TaskRuntimeRecord
 from factory.orchestrator_api.errors import OrchestratorApiError
+from factory.orchestrator_api.lifecycle import Phase3BLifecycleService
 from factory.orchestrator_api.service import TaskDetail, TaskOperatorService
 
 _DEFAULT_SUBMITTED_BY = "operator"
@@ -163,6 +164,137 @@ async def _health(request: Request) -> JSONResponse:
     return JSONResponse({"status": "ok", "database": "reachable"})
 
 
+def _phase3b_service(request: Request) -> Phase3BLifecycleService:
+    service: TaskOperatorService = request.app.state.service
+    if service.phase3b is None:
+        raise OrchestratorApiError("ORCHESTRATOR_UNAVAILABLE", "Phase 3B is not configured")
+    return service.phase3b
+
+
+async def _phase3b_detail(request: Request) -> JSONResponse:
+    try:
+        detail = _phase3b_service(request).detail(request.path_params["task_id"])
+    except OrchestratorApiError as exc:
+        return _error_response(exc)
+    except Exception:
+        return JSONResponse({"error": "orchestrator temporarily unavailable"}, status_code=503)
+    evidence = detail.evidence
+    manifest = detail.manifest
+    promotion = detail.promotion
+    return JSONResponse(
+        {
+            "evidence": None
+            if evidence is None
+            else {
+                "run_id": evidence.run_id,
+                "digest": evidence.digest(),
+                "passed": evidence.passed,
+                "created_at": evidence.created_at,
+                "items": [
+                    {"kind": item.kind, "detail": item.detail, "passed": item.passed}
+                    for item in evidence.items
+                ],
+            },
+            "manifest": None
+            if manifest is None
+            else {
+                "run_id": manifest.run_id,
+                "digest": manifest.digest(),
+                "branch_ref": manifest.branch_ref,
+                "base_sha": manifest.base_sha,
+                "created_at": manifest.created_at,
+                "files": [
+                    {"path": item.path, "content_digest": item.content_digest}
+                    for item in manifest.files
+                ],
+            },
+            "promotion": None
+            if promotion is None
+            else {
+                "outcome": promotion.outcome.value,
+                "reason": promotion.reason,
+                "target_ref": promotion.promoted_branch,
+                "commit": promotion.promoted_commit_sha,
+                "created_at": promotion.created_at,
+            },
+        }
+    )
+
+
+async def _request_approval(request: Request) -> JSONResponse:
+    try:
+        body = await request.json()
+    except Exception:
+        return _bad_request("request body must be valid JSON")
+    target_ref = body.get("target_ref") if isinstance(body, dict) else None
+    if not isinstance(target_ref, str) or not target_ref.strip():
+        return _bad_request("target_ref is required")
+    actor = str(body.get("actor") or _DEFAULT_SUBMITTED_BY)
+    try:
+        card = _phase3b_service(request).request_approval(
+            request.path_params["task_id"], target_ref=target_ref, actor=actor
+        )
+    except OrchestratorApiError as exc:
+        return _error_response(exc)
+    except Exception:
+        return JSONResponse({"error": "orchestrator temporarily unavailable"}, status_code=503)
+    return JSONResponse(
+        {
+            "approval_id": card.approval_id,
+            "task_id": card.task_id,
+            "target_ref": card.resource,
+            "expires_at": card.expires_at,
+            "requires_confirmation": card.requires_separate_confirmation,
+        },
+        status_code=201,
+    )
+
+
+async def _approve(request: Request) -> JSONResponse:
+    try:
+        body = await request.json()
+    except Exception:
+        return _bad_request("request body must be valid JSON")
+    approval_id = body.get("approval_id") if isinstance(body, dict) else None
+    operator = body.get("operator") if isinstance(body, dict) else None
+    confirmed = body.get("confirmed_destructive") if isinstance(body, dict) else None
+    if not isinstance(approval_id, str) or not isinstance(operator, str) or confirmed is not True:
+        return _bad_request("approval_id, operator, and explicit confirmation are required")
+    try:
+        result = _phase3b_service(request).approve(
+            approval_id, operator=operator, confirmed_destructive=True
+        )
+    except OrchestratorApiError as exc:
+        return _error_response(exc)
+    except Exception:
+        return JSONResponse({"error": "orchestrator temporarily unavailable"}, status_code=503)
+    return JSONResponse({"outcome": result.outcome.value, "state": "COMPLETE"})
+
+
+async def _reject(request: Request) -> JSONResponse:
+    try:
+        body = await request.json()
+    except Exception:
+        return _bad_request("request body must be valid JSON")
+    approval_id = body.get("approval_id") if isinstance(body, dict) else None
+    operator = body.get("operator") if isinstance(body, dict) else None
+    reason = body.get("reason") if isinstance(body, dict) else None
+    valid = all(
+        isinstance(value, str) and value.strip() for value in (approval_id, operator, reason)
+    )
+    if not valid:
+        return _bad_request("approval_id, operator, and reason are required")
+    try:
+        result = _phase3b_service(request).reject(
+            cast(str, approval_id), operator=cast(str, operator), reason=cast(str, reason)
+        )
+    except OrchestratorApiError as exc:
+        return _error_response(exc)
+    except Exception:
+        return JSONResponse({"error": "orchestrator temporarily unavailable"}, status_code=503)
+    return JSONResponse({"outcome": result.outcome.value, "state": "REJECTED"})
+
+
 def create_app(*, service: TaskOperatorService) -> Starlette:
     """Narrow application factory: the operator service (which holds the writer) is the only
     dependency, passed explicitly. No connection is opened at import time."""
@@ -171,6 +303,14 @@ def create_app(*, service: TaskOperatorService) -> Starlette:
             Route("/api/orchestrator/tasks", _submit_task, methods=["POST"]),
             Route("/api/orchestrator/tasks/{task_id}", _get_task_detail, methods=["GET"]),
             Route("/api/orchestrator/tasks/{task_id}/cancel", _cancel_task, methods=["POST"]),
+            Route("/api/orchestrator/tasks/{task_id}/phase3b", _phase3b_detail, methods=["GET"]),
+            Route(
+                "/api/orchestrator/tasks/{task_id}/approval-requests",
+                _request_approval,
+                methods=["POST"],
+            ),
+            Route("/api/orchestrator/tasks/{task_id}/approve", _approve, methods=["POST"]),
+            Route("/api/orchestrator/tasks/{task_id}/reject", _reject, methods=["POST"]),
             Route("/api/orchestrator/health", _health, methods=["GET"]),
         ],
     )

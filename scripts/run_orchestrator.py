@@ -29,12 +29,17 @@ from pathlib import Path
 
 import uvicorn
 
+from factory.approval import ApprovalEngine, SystemClock
+from factory.git.manager import GitManager
 from factory.orchestrator.store.runtime_state import (
     SQLiteOrchestratorStateReader,
     _OrchestratorStateWriter,
 )
-from factory.orchestrator_api import create_app
+from factory.orchestrator_api import Phase3BLifecycleService, create_app
 from factory.orchestrator_api.service import TaskOperatorService
+from factory.promotion import PromotionService, SQLitePromotionReader
+from factory.verification import SQLiteVerificationReader
+from factory.worker_engine.store import SQLiteWorkerRunReader
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _schema_check import require_current_schema_or_exit
@@ -49,6 +54,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-path", type=Path, default=_DEFAULT_DATABASE_PATH)
     parser.add_argument("--migrations-root", type=Path, default=_DEFAULT_MIGRATIONS_ROOT)
+    parser.add_argument("--security-database-path", type=Path)
+    parser.add_argument("--audit-database-path", type=Path)
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8100)
     args = parser.parse_args()
@@ -57,7 +64,36 @@ def main() -> None:
 
     writer = _OrchestratorStateWriter(database_path=args.database_path)
     reader = SQLiteOrchestratorStateReader(database_path=args.database_path)
-    service = TaskOperatorService(writer=writer, reader=reader)
+    phase3b = None
+    if (args.security_database_path is None) != (args.audit_database_path is None):
+        parser.error("security and audit database paths must be supplied together")
+    if args.security_database_path is not None and args.audit_database_path is not None:
+        git = GitManager()
+        verification_reader = SQLiteVerificationReader(args.database_path)
+        approval = ApprovalEngine(
+            args.security_database_path, args.audit_database_path, SystemClock()
+        )
+        promotion = PromotionService(
+            args.database_path,
+            _REPO_ROOT,
+            writer,
+            reader,
+            verification_reader,
+            approval,
+            git,
+        )
+        phase3b = Phase3BLifecycleService(
+            reader,
+            verification_reader,
+            SQLiteWorkerRunReader(args.database_path),
+            approval,
+            promotion,
+            SQLitePromotionReader(args.database_path),
+            git,
+            _REPO_ROOT,
+        )
+        phase3b.reconcile_startup()
+    service = TaskOperatorService(writer=writer, reader=reader, phase3b=phase3b)
     app = create_app(service=service)
     uvicorn.run(app, host=args.host, port=args.port)
 

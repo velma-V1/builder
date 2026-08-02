@@ -51,9 +51,7 @@ def test_submit_repeat_idempotency_key_returns_200_same_task(client: TestClient)
 @pytest.mark.parametrize(
     "missing_field", ["project_ref", "workstream_id", "description", "idempotency_key"]
 )
-def test_submit_missing_required_field_returns_400(
-    client: TestClient, missing_field: str
-) -> None:
+def test_submit_missing_required_field_returns_400(client: TestClient, missing_field: str) -> None:
     body = _submit_body()
     del body[missing_field]
     response = client.post(_SUBMIT_ROUTE, json=body)
@@ -191,20 +189,20 @@ def test_submit_route_rejects_other_methods(client: TestClient, method: str) -> 
     assert response.status_code == 405
 
 
-def test_no_approve_route_exists(client: TestClient) -> None:
+def test_approve_route_fails_closed_when_phase3b_is_not_configured(client: TestClient) -> None:
     task_id = client.post(_SUBMIT_ROUTE, json=_submit_body(idempotency_key="no-approve")).json()[
         "task_id"
     ]
     response = client.post(f"{_SUBMIT_ROUTE}/{task_id}/approve")
-    assert response.status_code == 404
+    assert response.status_code == 503
 
 
-def test_no_reject_route_exists(client: TestClient) -> None:
+def test_reject_route_fails_closed_when_phase3b_is_not_configured(client: TestClient) -> None:
     task_id = client.post(_SUBMIT_ROUTE, json=_submit_body(idempotency_key="no-reject")).json()[
         "task_id"
     ]
     response = client.post(f"{_SUBMIT_ROUTE}/{task_id}/reject")
-    assert response.status_code == 404
+    assert response.status_code == 503
 
 
 def test_forced_unexpected_failure_returns_controlled_503(

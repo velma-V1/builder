@@ -40,6 +40,19 @@ class SQLitePromotionReader:
             connection.close()
         return None if row is None else _row(row)
 
+    def get_latest_for_task(self, task_id: str) -> PromotionRecord | None:
+        connection = sqlite3.connect(f"file:{self.database_path}?mode=ro", uri=True)
+        connection.row_factory = sqlite3.Row
+        connection.set_authorizer(_reader_authorizer)
+        try:
+            row = connection.execute(
+                "SELECT * FROM promotion_records WHERE task_id = ? ORDER BY rowid DESC LIMIT 1",
+                (task_id,),
+            ).fetchone()
+        finally:
+            connection.close()
+        return None if row is None else _row(row)
+
 
 @dataclass(frozen=True, slots=True)
 class _PromotionWriter:
