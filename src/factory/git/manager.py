@@ -17,6 +17,7 @@ absolute path so no partial-path lookup occurs.
 
 from __future__ import annotations
 
+import hashlib
 import shutil
 import subprocess
 from pathlib import Path
@@ -92,6 +93,35 @@ class GitManager:
     def current_branch(self, repo: Path) -> str:
         return self._run(repo, "rev-parse", "--abbrev-ref", "HEAD").strip()
 
+    def resolve_ref(self, repo: Path, ref: str) -> str:
+        return self._run(repo, "rev-parse", f"{ref}^{{commit}}").strip()
+
+    def fast_forward_ref(self, repo: Path, ref: str, commit: str, expected_old: str) -> None:
+        """Atomically advance an unprotected ref after proving ancestry and expected revision."""
+        self.guard_protected_ref(ref)
+        self._run(repo, "merge-base", "--is-ancestor", expected_old, commit)
+        self._run(repo, "update-ref", f"refs/heads/{ref}", commit, expected_old)
+
+    def restore_ref(self, repo: Path, ref: str, commit: str, expected_current: str) -> None:
+        """Atomically restore an unprotected ref during controlled promotion rollback."""
+        self.guard_protected_ref(ref)
+        self._run(repo, "update-ref", f"refs/heads/{ref}", commit, expected_current)
+
+    def file_digest_at(self, repo: Path, commit: str, path: str) -> str:
+        """Return the exact blob digest used for immutable manifest revalidation."""
+        try:
+            result = subprocess.run(  # noqa: S603 - resolved git executable, argv without shell
+                [self._git, "-C", str(repo), "show", f"{commit}:{path}"],
+                capture_output=True,
+                timeout=self._timeout,
+                check=False,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise GitError("GIT_TIMEOUT", "git show exceeded promotion timeout") from exc
+        if result.returncode != 0:
+            raise GitError("GIT_COMMAND_FAILED", f"manifest path unavailable: {path}")
+        return hashlib.sha256(result.stdout).hexdigest()
+
     def has_unexplained_changes(self, repo: Path) -> bool:
         return bool(self._run(repo, "status", "--porcelain").strip())
 
@@ -116,7 +146,8 @@ class GitManager:
         """Automatic force-push / history rewrite is never permitted (``01I §5.13``)."""
         if force:
             raise GitError(
-                "FORCE_PUSH_DENIED", "force-push / history rewrite requires high-risk approval",
+                "FORCE_PUSH_DENIED",
+                "force-push / history rewrite requires high-risk approval",
                 security=True,
             )
 
@@ -197,8 +228,12 @@ class GitManager:
             path
             for path in changed
             if not authority.evaluate(
-                path, operation="write", allowed=list(owned_paths),
-                forbidden=[], read_only=[], active_exclusive_paths=[],
+                path,
+                operation="write",
+                allowed=list(owned_paths),
+                forbidden=[],
+                read_only=[],
+                active_exclusive_paths=[],
             ).allowed
         ]
         if out_of_scope:
