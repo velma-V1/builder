@@ -39,6 +39,44 @@ export interface OrchestratorHealth {
   database: string;
 }
 
+export interface Phase3BEvidenceItem {
+  kind: string;
+  detail: string;
+  passed: boolean;
+}
+
+export interface Phase3BDetail {
+  evidence: null | {
+    run_id: string;
+    digest: string;
+    passed: boolean;
+    created_at: string;
+    items: Phase3BEvidenceItem[];
+  };
+  manifest: null | {
+    run_id: string;
+    digest: string;
+    branch_ref: string;
+    base_sha: string;
+    created_at: string;
+    files: Array<{ path: string; content_digest: string }>;
+  };
+  approval: null | {
+    approval_id: string;
+    state: string;
+    target_ref: string | null;
+    expires_at: number;
+    requires_confirmation: boolean;
+  };
+  promotion: null | {
+    outcome: string;
+    reason: string;
+    target_ref: string | null;
+    commit: string | null;
+    created_at: string;
+  };
+}
+
 async function throwOnError(response: Response, action: string): Promise<void> {
   if (response.ok) return;
   let message = `HTTP ${response.status}`;
@@ -86,4 +124,49 @@ export async function getOrchestratorHealth(): Promise<OrchestratorHealth> {
   // exactly what the health badge needs to display, not an error to propagate.
   const response = await fetch("/api/orchestrator/health");
   return (await response.json()) as OrchestratorHealth;
+}
+
+export async function getPhase3BDetail(taskId: string): Promise<Phase3BDetail> {
+  const response = await fetch(
+    `/api/orchestrator/tasks/${encodeURIComponent(taskId)}/phase3b`,
+  );
+  await throwOnError(response, "Phase 3B detail fetch");
+  return (await response.json()) as Phase3BDetail;
+}
+
+export async function requestPromotionApproval(taskId: string, targetRef: string) {
+  const response = await fetch(
+    `/api/orchestrator/tasks/${encodeURIComponent(taskId)}/approval-requests`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ target_ref: targetRef, actor: "operator" }),
+    },
+  );
+  await throwOnError(response, "promotion approval request");
+  return (await response.json()) as { approval_id: string };
+}
+
+export async function approvePromotion(taskId: string, approvalId: string) {
+  const response = await fetch(`/api/orchestrator/tasks/${encodeURIComponent(taskId)}/approve`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      approval_id: approvalId,
+      operator: "operator",
+      confirmed_destructive: true,
+    }),
+  });
+  await throwOnError(response, "promotion approval");
+  return (await response.json()) as { outcome: string; state: string };
+}
+
+export async function rejectPromotion(taskId: string, approvalId: string, reason: string) {
+  const response = await fetch(`/api/orchestrator/tasks/${encodeURIComponent(taskId)}/reject`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ approval_id: approvalId, operator: "operator", reason }),
+  });
+  await throwOnError(response, "promotion rejection");
+  return (await response.json()) as { outcome: string; state: string };
 }

@@ -9,6 +9,7 @@ from typing import Protocol
 from factory.approval import ApprovalEngine
 from factory.approval.models import (
     ApprovalCard,
+    ApprovalRecord,
     ApprovalRequest,
     DecisionKind,
     Denial,
@@ -35,6 +36,7 @@ class Phase3BDetail:
     evidence: EvidencePackage | None
     manifest: PromotionManifest | None
     promotion: PromotionRecord | None
+    approval: ApprovalRecord | None
 
 
 class Verifier(Protocol):
@@ -60,6 +62,7 @@ class Phase3BLifecycleService:
             evidence=self.verification_reader.get_latest_evidence(task_id),
             manifest=self.verification_reader.get_latest_manifest(task_id),
             promotion=self.promotion_reader.get_latest_for_task(task_id),
+            approval=self.approval_engine.reader.get_latest_promotion_for_task(task_id),
         )
 
     def request_approval(

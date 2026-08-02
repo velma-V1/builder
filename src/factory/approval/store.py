@@ -42,9 +42,7 @@ _EXPECTED_MIGRATION_HASHES: Mapping[str, str] = {
 # The only tables CMP-APPROVAL may write (DEP-RPH3 §4A authorizer partition).
 _APPROVAL_WRITE_TABLES = frozenset({"approval_records", "approval_queue", "approval_intents"})
 
-_WRITE_ACTIONS = frozenset(
-    {sqlite3.SQLITE_INSERT, sqlite3.SQLITE_UPDATE, sqlite3.SQLITE_DELETE}
-)
+_WRITE_ACTIONS = frozenset({sqlite3.SQLITE_INSERT, sqlite3.SQLITE_UPDATE, sqlite3.SQLITE_DELETE})
 
 # DDL / schema-mutating actions the domain writer must never perform at runtime (migrations use a
 # separate, un-authorized connection). Mirrors the reader's denied set minus the DML verbs.
@@ -176,6 +174,13 @@ _SELECT_BY_ID_SQL = (
     "action_fingerprint, state, commit_state, created_ts, updated_ts "
     "FROM approval_records WHERE approval_id = ?"
 )
+_SELECT_LATEST_BY_TASK_SQL = (
+    "SELECT approval_id, task_id, tool, action, resource, scope, purpose, consequences, "
+    "autonomy_level, repetition_limit, uses_consumed, requires_confirmation, expires_at, "
+    "action_fingerprint, state, commit_state, created_ts, updated_ts "
+    "FROM approval_records WHERE task_id = ? AND tool = 'promotion' AND action = 'promote' "
+    "AND commit_state = 'COMMITTED' ORDER BY created_ts DESC, approval_id DESC LIMIT 1"
+)
 _SELECT_COMMITTED_PENDING_SQL = (
     "SELECT approval_id, task_id, tool, action, resource, scope, purpose, consequences, "
     "autonomy_level, repetition_limit, uses_consumed, requires_confirmation, expires_at, "
@@ -242,6 +247,14 @@ class SQLiteApprovalReader:
         connection = self._connect()
         try:
             row = connection.execute(_SELECT_BY_ID_SQL, (approval_id,)).fetchone()
+        finally:
+            connection.close()
+        return _row_to_record(row) if row is not None else None
+
+    def get_latest_promotion_for_task(self, task_id: str) -> ApprovalRecord | None:
+        connection = self._connect()
+        try:
+            row = connection.execute(_SELECT_LATEST_BY_TASK_SQL, (task_id,)).fetchone()
         finally:
             connection.close()
         return _row_to_record(row) if row is not None else None

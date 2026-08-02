@@ -181,6 +181,7 @@ async def _phase3b_detail(request: Request) -> JSONResponse:
     evidence = detail.evidence
     manifest = detail.manifest
     promotion = detail.promotion
+    approval = detail.approval
     return JSONResponse(
         {
             "evidence": None
@@ -216,6 +217,15 @@ async def _phase3b_detail(request: Request) -> JSONResponse:
                 "target_ref": promotion.promoted_branch,
                 "commit": promotion.promoted_commit_sha,
                 "created_at": promotion.created_at,
+            },
+            "approval": None
+            if approval is None
+            else {
+                "approval_id": approval.approval_id,
+                "state": approval.state.value,
+                "target_ref": approval.resource,
+                "expires_at": approval.expires_at,
+                "requires_confirmation": approval.requires_confirmation,
             },
         }
     )
