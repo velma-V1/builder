@@ -30,6 +30,10 @@ Product implementation has not started. This roadmap orders the phases, binds ea
 - **PH-S** — early usable Builder shell (frame + explorer + Monaco + terminal + Ollama health + Aider bridge) so development can migrate inside (`01B`).
 - **PH-2** — the deterministic **Orchestrator**: sole authoritative writer, task/workstream state machine, durable journal, fenced leases.
 - **PH-3** — the independent **Watchdog** supervisor + permission/approval/audit/tool-gateway enforcement (security spine); autonomy-envelope enforcement (Decision A).
+- **Phase 3B implementation note (2026-08-02)** — independent worker verification, durable evidence
+  and manifests, explicit approval-bound promotion/rollback, restart reconciliation, lifecycle API,
+  and required dashboard controls are implemented through `017b2f4`. This is not a release or
+  promotion decision; the verification report remains `INCOMPLETE` until recorded blockers clear.
 - **PH-4** — local-first deterministic routing over Ollama/Aider with resource scheduling and no silent substitution.
 - **PH-5** — repeatable, recoverable isolation: task branches/worktrees, non-root WSL2+Docker sandboxes (Windows-native excluded, Decision C), brokers, quarantined staging.
 - **PH-6** — up to three concurrent full-lifecycle workstreams with conflict detection and integration gates.

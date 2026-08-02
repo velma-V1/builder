@@ -716,3 +716,17 @@ the PH-6 simulated workstream core, demonstrated end-to-end against the PH-4/PH-
   isolation unmodified; no merge, no promotion. `PROM-PH6 := NOT_AUTHORIZED`.
 - **Next:** await operator decision on installation + live validation (PH-4/PH-5/PH-6 live gates) or
   integration/merge; PREINSTALLATION for PH-4/PH-5/PH-6 is COMPLETE.
+
+### Phase 3B worker verify/promote implementation - 2026-08-02
+
+#### Status: `IMPLEMENTED — VERIFICATION GATE INCOMPLETE`
+
+- **Implementation commit:** `017b2f4` after milestone commits `0c65b21`, `3ebdedd`, `41056d6`,
+  `9eca3db`, `f91bace`, and `6f1392e`.
+- **Delivered:** independent verification; append-only evidence/manifests; explicit approval binding;
+  serialized promotion and rollback; restart reconciliation; lifecycle API; Phase 3B dashboard.
+- **Passing evidence:** collection 1710; suite 1625 passed/85 classified skips; Ruff; mypy 305 files;
+  lockfile; frontend typecheck/lint/43 tests/build; focused lifecycle and failure paths.
+- **Not PASS:** loopback and Windows checks are environment-blocked; Section 1 sync is network-
+  blocked; PH-2 history, RPH3 migration-manifest, and PH-4 coverage gates fail.
+- **Boundary:** no push, merge, deploy, release, or protected-ref promotion was performed.
