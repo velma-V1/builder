@@ -37,24 +37,40 @@ def _connect_readonly(database_path: Path) -> sqlite3.Connection:
 
 
 def _row_to_evidence_package(row: sqlite3.Row) -> EvidencePackage:
-    payload = json.loads(row["package_json"])
-    items = tuple(EvidenceItem(**item) for item in payload["items"])
-    return EvidencePackage(
-        task_id=row["task_id"], run_id=row["run_id"], items=items, created_at=row["created_at"]
-    )
+    try:
+        payload = json.loads(row["package_json"])
+        if set(payload) != {"schema_version", "items"} or payload["schema_version"] != 1:
+            raise ValueError("unsupported evidence schema")
+        items = tuple(EvidenceItem(**item) for item in payload["items"])
+        package = EvidencePackage(
+            task_id=row["task_id"], run_id=row["run_id"], items=items, created_at=row["created_at"]
+        )
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        raise VerificationStoreError("EVIDENCE_SCHEMA_INVALID", str(exc)) from exc
+    if package.digest() != row["package_digest"]:
+        raise VerificationStoreError("EVIDENCE_DIGEST_MISMATCH", "stored evidence digest differs")
+    return package
 
 
 def _row_to_manifest(row: sqlite3.Row) -> PromotionManifest:
-    payload = json.loads(row["manifest_json"])
-    files = tuple(ManifestFile(**item) for item in payload["files"])
-    return PromotionManifest(
-        task_id=row["task_id"],
-        run_id=row["run_id"],
-        branch_ref=row["branch_ref"],
-        base_sha=row["base_sha"],
-        files=files,
-        created_at=row["created_at"],
-    )
+    try:
+        payload = json.loads(row["manifest_json"])
+        if set(payload) != {"schema_version", "files"} or payload["schema_version"] != 1:
+            raise ValueError("unsupported manifest schema")
+        files = tuple(ManifestFile(**item) for item in payload["files"])
+        manifest = PromotionManifest(
+            task_id=row["task_id"],
+            run_id=row["run_id"],
+            branch_ref=row["branch_ref"],
+            base_sha=row["base_sha"],
+            files=files,
+            created_at=row["created_at"],
+        )
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        raise VerificationStoreError("MANIFEST_SCHEMA_INVALID", str(exc)) from exc
+    if manifest.digest() != row["manifest_digest"]:
+        raise VerificationStoreError("MANIFEST_DIGEST_MISMATCH", "stored manifest digest differs")
+    return manifest
 
 
 _SELECT_EVIDENCE_BY_TASK_SQL = (
@@ -73,6 +89,14 @@ _INSERT_EVIDENCE_SQL = (
 _INSERT_MANIFEST_SQL = (
     "INSERT INTO promotion_manifests (task_id, run_id, manifest_json, manifest_digest, "
     "base_sha, branch_ref, checkpoint_commit_sha, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+)
+_SELECT_EVIDENCE_BY_RUN_SQL = (
+    "SELECT task_id, run_id, package_json, package_digest, outcome, created_at "
+    "FROM evidence_packages WHERE run_id = ?"
+)
+_SELECT_MANIFEST_BY_RUN_SQL = (
+    "SELECT task_id, run_id, manifest_json, manifest_digest, base_sha, branch_ref, "
+    "checkpoint_commit_sha, created_at FROM promotion_manifests WHERE run_id = ?"
 )
 
 
@@ -129,6 +153,18 @@ class _VerificationWriter:
         connection = self._connect()
         try:
             connection.execute("BEGIN IMMEDIATE")
+            existing = connection.execute(_SELECT_EVIDENCE_BY_RUN_SQL, (package.run_id,)).fetchone()
+            if existing is not None:
+                if (
+                    existing["package_digest"] == package.digest()
+                    and existing["outcome"] == outcome
+                    and existing["task_id"] == package.task_id
+                ):
+                    connection.rollback()
+                    return
+                raise VerificationStoreError(
+                    "EVIDENCE_DUPLICATE_CONFLICT", f"run {package.run_id} already has evidence"
+                )
             connection.execute(
                 _INSERT_EVIDENCE_SQL,
                 (
@@ -141,6 +177,9 @@ class _VerificationWriter:
                 ),
             )
             connection.commit()
+        except VerificationStoreError:
+            connection.rollback()
+            raise
         except sqlite3.Error as exc:
             connection.rollback()
             raise VerificationStoreError(
@@ -154,6 +193,31 @@ class _VerificationWriter:
         connection = self._connect()
         try:
             connection.execute("BEGIN IMMEDIATE")
+            evidence = connection.execute(
+                _SELECT_EVIDENCE_BY_RUN_SQL, (manifest.run_id,)
+            ).fetchone()
+            if (
+                evidence is None
+                or evidence["task_id"] != manifest.task_id
+                or evidence["outcome"] != "PASSED"
+            ):
+                raise VerificationStoreError(
+                    "MANIFEST_EVIDENCE_REQUIRED", "matching passed evidence must exist first"
+                )
+            existing = connection.execute(
+                _SELECT_MANIFEST_BY_RUN_SQL, (manifest.run_id,)
+            ).fetchone()
+            if existing is not None:
+                if (
+                    existing["manifest_digest"] == manifest.digest()
+                    and existing["checkpoint_commit_sha"] == checkpoint_commit_sha
+                    and existing["task_id"] == manifest.task_id
+                ):
+                    connection.rollback()
+                    return
+                raise VerificationStoreError(
+                    "MANIFEST_DUPLICATE_CONFLICT", f"run {manifest.run_id} already has a manifest"
+                )
             connection.execute(
                 _INSERT_MANIFEST_SQL,
                 (
@@ -168,6 +232,9 @@ class _VerificationWriter:
                 ),
             )
             connection.commit()
+        except VerificationStoreError:
+            connection.rollback()
+            raise
         except sqlite3.Error as exc:
             connection.rollback()
             raise VerificationStoreError(

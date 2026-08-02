@@ -12,8 +12,6 @@ import hashlib
 import json
 from dataclasses import dataclass
 
-_SEP = "\x1f"
-
 
 @dataclass(frozen=True, slots=True)
 class EvidenceItem:
@@ -39,9 +37,7 @@ class EvidencePackage:
         return all(item.passed for item in self.items)
 
     def digest(self) -> str:
-        payload = _SEP.join(f"{i.kind}:{i.passed}:{i.detail}" for i in self.items)
-        source = f"{self.task_id}{_SEP}{self.run_id}{_SEP}{payload}".encode()
-        return hashlib.sha256(source).hexdigest()
+        return hashlib.sha256(evidence_package_canonical(self).encode("utf-8")).hexdigest()
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,9 +59,7 @@ class PromotionManifest:
     created_at: str
 
     def digest(self) -> str:
-        payload = _SEP.join(f"{f.path}:{f.content_digest}" for f in self.files)
-        canonical = _SEP.join((self.task_id, self.run_id, self.base_sha, payload))
-        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+        return hashlib.sha256(promotion_manifest_canonical(self).encode("utf-8")).hexdigest()
 
 
 def _canonical_json(value: object) -> str:
@@ -85,6 +79,17 @@ def evidence_package_json(package: EvidencePackage) -> str:
     )
 
 
+def evidence_package_canonical(package: EvidencePackage) -> str:
+    return _canonical_json(
+        {
+            "task_id": package.task_id,
+            "run_id": package.run_id,
+            "created_at": package.created_at,
+            "payload": json.loads(evidence_package_json(package)),
+        }
+    )
+
+
 def promotion_manifest_json(manifest: PromotionManifest) -> str:
     """Serialize only the versioned persistence schema, never dataclass internals."""
     return _canonical_json(
@@ -94,5 +99,18 @@ def promotion_manifest_json(manifest: PromotionManifest) -> str:
                 {"path": item.path, "content_digest": item.content_digest}
                 for item in manifest.files
             ],
+        }
+    )
+
+
+def promotion_manifest_canonical(manifest: PromotionManifest) -> str:
+    return _canonical_json(
+        {
+            "task_id": manifest.task_id,
+            "run_id": manifest.run_id,
+            "branch_ref": manifest.branch_ref,
+            "base_sha": manifest.base_sha,
+            "created_at": manifest.created_at,
+            "payload": json.loads(promotion_manifest_json(manifest)),
         }
     )
