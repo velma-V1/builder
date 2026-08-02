@@ -49,6 +49,16 @@ def _is_windows() -> bool:
     return sys.platform == "win32"
 
 
+def _creation_flags() -> int:
+    """Return the Windows process-group flag without importing a platform-only name."""
+    if not _is_windows():
+        return 0
+    flag = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", None)
+    if not isinstance(flag, int):
+        raise StartupFailure("Windows subprocess support lacks CREATE_NEW_PROCESS_GROUP")
+    return flag
+
+
 def check_required_dependencies(config: BuilderConfig) -> list[str]:
     """Everything Phase 3A actually needs. Returns a list of problems -- empty means all good."""
     problems: list[str] = []
@@ -91,7 +101,7 @@ def spawn(cmd: Sequence[str], *, cwd: Path, log_path: Path) -> subprocess.Popen[
         cwd=str(cwd),
         stdout=log_file,
         stderr=subprocess.STDOUT,
-        creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if _is_windows() else 0,
+        creationflags=_creation_flags(),
         start_new_session=not _is_windows(),
     )
 

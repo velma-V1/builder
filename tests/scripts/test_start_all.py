@@ -151,6 +151,34 @@ def test_docker_ollama_are_reported_but_never_required(
 # ---- process-group spawn / cleanup (the Vite-grandchild lesson) ------------------------
 
 
+def test_windows_creation_flags_uses_guarded_platform_lookup(
+    start_all: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(start_all, "_is_windows", lambda: True)
+    monkeypatch.setattr(start_all.subprocess, "CREATE_NEW_PROCESS_GROUP", 0x200, raising=False)
+
+    assert start_all._creation_flags() == 0x200
+
+
+def test_creation_flags_does_not_require_windows_constant_on_linux(
+    start_all: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(start_all, "_is_windows", lambda: False)
+    monkeypatch.delattr(start_all.subprocess, "CREATE_NEW_PROCESS_GROUP", raising=False)
+
+    assert start_all._creation_flags() == 0
+
+
+def test_windows_creation_flags_fail_closed_when_constant_is_unavailable(
+    start_all: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(start_all, "_is_windows", lambda: True)
+    monkeypatch.delattr(start_all.subprocess, "CREATE_NEW_PROCESS_GROUP", raising=False)
+
+    with pytest.raises(start_all.StartupFailure, match="CREATE_NEW_PROCESS_GROUP"):
+        start_all._creation_flags()
+
+
 def test_spawn_and_terminate_process_group_kills_the_process(
     start_all: ModuleType, tmp_path: Path
 ) -> None:

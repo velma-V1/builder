@@ -7,7 +7,12 @@ from pathlib import Path
 
 import pytest
 
-from factory.permission import PermissionError, PermissionState, apply_permission_migrations
+from factory.permission import (
+    PermissionClass,
+    PermissionError,
+    PermissionState,
+    apply_permission_migrations,
+)
 from factory.permission.writer import _PermissionWriter
 
 pytestmark = pytest.mark.failure_path
@@ -43,10 +48,10 @@ def test_stage_issue_on_broken_store_fails_closed(tmp_path: Path) -> None:
             task_id="t",
             tool="sh",
             action="w",
-            permission_class="WRITE",
+            permission_class=PermissionClass.WRITE,
             resource=None,
             scope="s",
-            purpose="p",  # type: ignore[arg-type]
+            purpose="p",
             grant_fingerprint="fp",
             expires_at=2,
             ts=1,
