@@ -1,20 +1,23 @@
 # Phase 3B Verification Report
 
-**Verdict:** `PASS`
+**Verdict:** `ENVIRONMENT-BLOCKED`
 
-Verified implementation commit: `48e0dd8`. Date: 2026-08-02. Environment: native Windows,
-CPython 3.14.6, locked `uv` environment with network access for dependency bootstrap.
+Verified implementation commit: `475c528580fb580922526b0404101f9b080a0c9c`. Date: 2026-08-02.
+Environment: Linux, CPython 3.14.6, locked `uv` environment. Native-Windows results below
+remain historical evidence for `48e0dd8`; they are not attributed to the current commit.
 
 ## Results
 
 | Command/check | Result |
 |---|---|
-| `pytest --collect-only -q` | PASS — 1730 collected |
-| `pytest -q` | PASS — 1730 passed |
-| two Windows junction cases | PASS — 2 passed; real `mklink /J` escapes denied |
-| `uv run --frozen --no-sync python scripts/verify_section1.py` | PASS — 325 contract tests; 96.86% branch coverage |
-| `pytest -q -m loopback` outside restricted socket sandbox | PASS — 83 passed |
-| `ruff check .` | PASS |
+| `pytest --collect-only -q` | PASS — 1733 collected |
+| `pytest -q` | PASS — 1648 passed, 85 environment-classified skips in the restricted Linux sandbox |
+| `.venv/bin/pytest -q -m loopback` outside restricted socket sandbox | PASS — 83 passed |
+| focused launcher portability regression | PASS — 3 passed; guarded lookup, Linux absence, and fail-closed Windows absence |
+| focused native-Windows launcher tests | ENVIRONMENT-BLOCKED — current host reports `sys.platform == "linux"` |
+| two Windows junction cases | HISTORICAL PASS at `48e0dd8` — 2 passed; rerun at current commit is required |
+| `UV_CACHE_DIR=/tmp/builder-uv-cache .venv/bin/python scripts/verify_section1.py` | PASS — 325 contract tests; 96.86% branch coverage |
+| `ruff format --check .` / `ruff check .` | PASS — 530 files formatted; lint clean |
 | `mypy src/factory scripts` | PASS — 305 source files |
 | `uv lock --check` with writable cache | PASS — 35 packages resolved |
 | `git diff --check` | PASS |
@@ -27,9 +30,12 @@ CPython 3.14.6, locked `uv` environment with network access for dependency boots
 
 ## Environment-blocked checks
 
-None.
+| Command | Exact error | Missing capability | Required rerun environment |
+|---|---|---|---|
+| `py -3.14 -m pytest -q tests/scripts/test_start_all.py -k "creation_flags or spawn_and_terminate_process_group"` | Not executed: capability probe returned `linux`, not `win32` | Native Windows process creation and `CREATE_NEW_PROCESS_GROUP` behavior | Native Windows with CPython 3.14 and the locked dependencies at `475c528580fb580922526b0404101f9b080a0c9c` |
 
 ## Release boundary
 
-No Phase 3B verification blocker remains. This verdict does not authorize a push, merge,
-deployment, release, or protected-ref promotion; those remain operator-only decisions.
+Native-Windows launcher verification remains required at the exact current commit. Independent
+review also remains a separate merge gate. This report does not authorize a merge, deployment,
+release, or protected-ref promotion; those remain operator-only decisions.
