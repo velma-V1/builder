@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import ast
 import hashlib
+import json
 import shutil
 import subprocess
 import sys
@@ -42,13 +43,14 @@ from factory.orchestrator.store.runtime_state import (
 )
 from factory.staging.manager import QuarantinedStaging
 from factory.staging.models import StagedFile
+from factory.verification.errors import VerificationStoreError
 from factory.verification.models import (
     EvidenceItem,
     EvidencePackage,
     ManifestFile,
     PromotionManifest,
 )
-from factory.verification.store import _VerificationWriter
+from factory.verification.store import SQLiteVerificationReader, _VerificationWriter
 from factory.worker_engine.models import WorkerRunRecord
 
 _VERIFICATION_ACTOR = "verification_engine"
@@ -103,6 +105,12 @@ class VerificationEngine:
                     passed=True,
                 )
             )
+            acceptance_ok, acceptance_detail = self._check_acceptance(
+                task_id, self.repo_root, (), direct_read_only=True
+            )
+            items.append(
+                EvidenceItem(kind="acceptance", detail=acceptance_detail, passed=acceptance_ok)
+            )
             return self._conclude(task_id, run, items, manifest=None)
 
         output_root = Path(run.sandbox_path)
@@ -143,11 +151,14 @@ class VerificationEngine:
         lint_ok, lint_detail = self._check_lint(output_root, changed_paths)
         items.append(EvidenceItem(kind="lint", detail=lint_detail, passed=lint_ok))
 
-        tests_ok, tests_detail = self._check_tests(output_root)
+        types_ok, types_detail = self._check_types(output_root, changed_paths)
+        items.append(EvidenceItem(kind="typing", detail=types_detail, passed=types_ok))
+
+        tests_ok, tests_detail = self._check_tests(output_root, changed_paths)
         items.append(EvidenceItem(kind="tests", detail=tests_detail, passed=tests_ok))
 
         acceptance_ok, acceptance_detail = self._check_acceptance(
-            task_id, output_root, changed_paths
+            task_id, output_root, changed_paths, direct_read_only=False
         )
         items.append(
             EvidenceItem(kind="acceptance", detail=acceptance_detail, passed=acceptance_ok)
@@ -166,11 +177,13 @@ class VerificationEngine:
                 ),
                 created_at=_utcnow(),
             )
-            self.verification_writer.record_manifest(
-                manifest, checkpoint_commit_sha=checkpoint_commit_sha
-            )
-
-        return self._conclude(task_id, run, items, manifest=manifest)
+        return self._conclude(
+            task_id,
+            run,
+            items,
+            manifest=manifest,
+            checkpoint_commit_sha=checkpoint_commit_sha,
+        )
 
     # ---- individual checks -----------------------------------------------------------------
 
@@ -270,7 +283,7 @@ class VerificationEngine:
             return True, "no Python files to lint"
         ruff = shutil.which("ruff")
         if ruff is None:
-            return True, "ruff not available in this environment -- lint skipped, not failed"
+            return False, "required ruff executable is unavailable"
         try:
             result = subprocess.run(  # noqa: S603 - fixed executable path, literal argv
                 [ruff, "check", *python_files],
@@ -286,10 +299,38 @@ class VerificationEngine:
             return False, f"ruff check failed: {result.stdout.strip()[:500]}"
         return True, "ruff check clean"
 
-    def _check_tests(self, output_root: Path) -> tuple[bool, str]:
+    def _check_types(self, output_root: Path, changed_paths: tuple[str, ...]) -> tuple[bool, str]:
+        python_files = [path for path in changed_paths if path.endswith(".py")]
+        if not python_files:
+            return True, "no Python files to type-check"
+        mypy = shutil.which("mypy")
+        if mypy is None:
+            return False, "required mypy executable is unavailable"
+        try:
+            result = subprocess.run(  # noqa: S603 - fixed executable path, bounded argv
+                [mypy, "--strict", *python_files],
+                cwd=output_root,
+                capture_output=True,
+                text=True,
+                timeout=_TIMEOUT_S,
+                check=False,
+            )
+        except subprocess.TimeoutExpired:
+            return False, f"mypy exceeded {_TIMEOUT_S}s"
+        if result.returncode != 0:
+            return False, f"mypy failed: {(result.stdout + result.stderr).strip()[:500]}"
+        return True, "mypy strict check clean"
+
+    def _check_tests(self, output_root: Path, changed_paths: tuple[str, ...]) -> tuple[bool, str]:
+        source_changed = any(
+            path.endswith(".py") and not Path(path).name.startswith("test_")
+            for path in changed_paths
+        )
         has_tests = any(output_root.rglob("test_*.py")) or (output_root / "tests").is_dir()
         if not has_tests:
-            return True, "no tests present -- skipped, not failed"
+            if source_changed:
+                return False, "Python source changed without a required regression test"
+            return True, "no testable source changed"
         try:
             result = subprocess.run(  # noqa: S603 - fixed argv, no shell
                 [sys.executable, "-m", "pytest", "-q", str(output_root)],
@@ -305,20 +346,54 @@ class VerificationEngine:
         return True, "tests passed"
 
     def _check_acceptance(
-        self, task_id: str, output_root: Path, changed_paths: tuple[str, ...]
+        self,
+        task_id: str,
+        output_root: Path,
+        changed_paths: tuple[str, ...],
+        *,
+        direct_read_only: bool,
     ) -> tuple[bool, str]:
         request = self.orchestrator_reader.get_task_request(task_id)
         expected = (request.expected_result if request is not None else None) or ""
         if not expected.strip():
-            return True, "no explicit acceptance criteria supplied -- trivially satisfied"
-        haystack = "\n".join(
-            (output_root / p).read_text(encoding="utf-8", errors="replace")
-            for p in changed_paths
-            if (output_root / p).is_file()
+            return True, "no explicit acceptance criteria supplied"
+        if direct_read_only:
+            return False, "DIRECT_READ_ONLY output cannot independently prove supplied acceptance"
+        try:
+            criteria = json.loads(expected)
+        except json.JSONDecodeError as exc:
+            return False, f"expected_result must be a structured JSON object: {exc}"
+        if not isinstance(criteria, dict):
+            return False, "expected_result must be a structured JSON object"
+        if set(criteria) - {"required_files", "required_sha256"}:
+            return False, "expected_result contains unsupported acceptance keys"
+        required_files = criteria.get("required_files", [])
+        required_sha256 = criteria.get("required_sha256", {})
+        if not isinstance(required_files, list) or not all(
+            isinstance(path, str) for path in required_files
+        ):
+            return False, "required_files must be a list of paths"
+        if not isinstance(required_sha256, dict) or not all(
+            isinstance(path, str) and isinstance(digest, str)
+            for path, digest in required_sha256.items()
+        ):
+            return False, "required_sha256 must map paths to digests"
+        if not required_files and not required_sha256:
+            return False, "acceptance criteria must contain at least one exact requirement"
+        changed = set(changed_paths)
+        missing = sorted(set(required_files) - changed)
+        if missing:
+            return False, f"required files missing from output: {missing}"
+        mismatches = sorted(
+            path
+            for path, digest in required_sha256.items()
+            if path not in changed
+            or not (output_root / path).is_file()
+            or _sha256_file(output_root / path) != digest
         )
-        if expected.strip().lower() in haystack.lower():
-            return True, "expected_result text found in changed output"
-        return False, f"expected_result {expected!r} not found in changed output"
+        if mismatches:
+            return False, f"required file digests mismatch: {mismatches}"
+        return True, "all structured acceptance criteria satisfied exactly"
 
     def _conclude(
         self,
@@ -327,15 +402,47 @@ class VerificationEngine:
         items: list[EvidenceItem],
         *,
         manifest: PromotionManifest | None,
+        checkpoint_commit_sha: str = "",
     ) -> VerificationOutcome:
-        evidence = EvidencePackage(
+        candidate = EvidencePackage(
             task_id=task_id, run_id=run.run_id, items=tuple(items), created_at=_utcnow()
         )
+        reader = SQLiteVerificationReader(self.verification_writer.database_path)
+        existing = reader.get_latest_evidence(task_id)
+        if existing is not None and existing.run_id == run.run_id:
+            if existing.items != candidate.items:
+                raise VerificationStoreError(
+                    "VERIFICATION_REPLAY_CONFLICT",
+                    f"run {run.run_id} produced different evidence during recovery",
+                )
+            evidence = existing
+        else:
+            evidence = candidate
         passed = evidence.passed
         self.verification_writer.record_evidence(evidence, outcome="PASSED" if passed else "FAILED")
+        if passed and manifest is not None:
+            existing_manifest = reader.get_latest_manifest(task_id)
+            if existing_manifest is not None and existing_manifest.run_id == run.run_id:
+                if (
+                    existing_manifest.task_id != manifest.task_id
+                    or existing_manifest.branch_ref != manifest.branch_ref
+                    or existing_manifest.base_sha != manifest.base_sha
+                    or existing_manifest.files != manifest.files
+                ):
+                    raise VerificationStoreError(
+                        "MANIFEST_REPLAY_CONFLICT",
+                        f"run {run.run_id} produced a different manifest during recovery",
+                    )
+                manifest = existing_manifest
+            self.verification_writer.record_manifest(
+                manifest, checkpoint_commit_sha=checkpoint_commit_sha
+            )
 
         record = self.orchestrator_reader.get_task(task_id)
         current = record.current_state if record is not None else TaskState.VERIFYING
+        target = TaskState.AWAITING_APPROVAL if passed else TaskState.FAILED
+        if current is target:
+            return VerificationOutcome(passed=passed, evidence=evidence, manifest=manifest)
         if passed:
             self.orchestrator_writer.apply_transition(
                 task_id=task_id,
