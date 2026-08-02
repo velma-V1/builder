@@ -20,8 +20,15 @@ import urllib.request
 from dataclasses import dataclass
 
 _DEFAULT_BASE_URL = "http://127.0.0.1:11434"
-_DEFAULT_MODEL = "devstral-small2:24b"
 _DEFAULT_TIMEOUT_S = 120
+#: The human-facing display name Builder documents/reports everywhere. Never assumed to be the
+#: literal Ollama tag string -- Ollama's own tagging convention for this model varies (e.g. this
+#: environment installs it as "devstral-small-2:24b", not "devstral-small2:24b" or
+#: "devstral:24b") and must always be *discovered*, never guessed. See ``resolve_devstral_tag``.
+DEVSTRAL_DISPLAY_NAME = "Devstral Small 2 24B"
+#: Substring(s) used to recognize an installed tag as "the Devstral Small 2 model" regardless of
+#: the exact hyphenation Ollama's registry uses for it.
+_DEVSTRAL_TAG_MARKERS = ("devstral-small-2", "devstral-small2", "devstral_small_2")
 
 
 class OllamaError(Exception):
@@ -50,6 +57,15 @@ class OllamaGenerateResult:
     response_text: str
     done: bool
     total_duration_ns: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ResolvedModel:
+    """The display name Builder reports everywhere, kept separate from the literal Ollama tag
+    actually resolved on this host -- the two are never assumed to be the same string."""
+
+    display_name: str
+    configured_tag: str
 
 
 class OllamaClient:
@@ -90,7 +106,7 @@ class OllamaClient:
         return any(name == model or name.split(":", 1)[0] == bare for name in installed)
 
     def generate(
-        self, *, model: str = _DEFAULT_MODEL, prompt: str, timeout_s: int | None = None
+        self, *, model: str, prompt: str, timeout_s: int | None = None
     ) -> OllamaGenerateResult:
         """One non-streamed completion call. Raises a typed error for every failure mode."""
         body = json.dumps({"model": model, "prompt": prompt, "stream": False}).encode("utf-8")
@@ -124,3 +140,34 @@ class OllamaClient:
             )
         except (json.JSONDecodeError, KeyError, TypeError) as exc:
             raise OllamaMalformedResponse(f"malformed /api/generate response: {exc}") from exc
+
+
+def resolve_devstral_tag(client: OllamaClient, *, override_tag: str | None = None) -> ResolvedModel:
+    """Discover the exact locally-installed Ollama tag for Devstral Small 2 24B -- never assume
+    a hardcoded string, since the same model may be tagged differently across hosts (e.g.
+    ``devstral-small-2:24b`` vs ``devstral-small2:24b`` vs ``devstral:24b``).
+
+    ``override_tag`` lets an operator pin an exact tag explicitly (e.g. via configuration); when
+    given, it is used as-is (still checked for actual presence via ``has_model``) rather than
+    searched for. Raises :class:`OllamaModelMissing` with the full installed-tag list in the
+    message if nothing matching is found, so the failure is immediately actionable.
+    """
+    if override_tag is not None:
+        if not client.has_model(override_tag):
+            installed = client.list_models()
+            raise OllamaModelMissing(
+                f"configured model tag {override_tag!r} is not installed; "
+                f"installed tags: {list(installed)}"
+            )
+        return ResolvedModel(display_name=DEVSTRAL_DISPLAY_NAME, configured_tag=override_tag)
+
+    installed = client.list_models()
+    for tag in installed:
+        lowered = tag.lower()
+        if any(marker in lowered for marker in _DEVSTRAL_TAG_MARKERS):
+            return ResolvedModel(display_name=DEVSTRAL_DISPLAY_NAME, configured_tag=tag)
+    raise OllamaModelMissing(
+        f"no installed Ollama tag matched {DEVSTRAL_DISPLAY_NAME!r} "
+        f"(looked for a tag containing one of {_DEVSTRAL_TAG_MARKERS}); "
+        f"installed tags: {list(installed)}"
+    )

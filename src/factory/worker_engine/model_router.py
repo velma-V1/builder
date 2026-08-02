@@ -34,7 +34,13 @@ def _fingerprint(*parts: str) -> str:
 
 @dataclass(frozen=True, slots=True)
 class LiveOllamaModelRouter:
-    """Routes every capability request to one real, configured local Ollama model."""
+    """Routes every capability request to one real, configured local Ollama model.
+
+    ``model`` must be the exact, *discovered* Ollama tag (see
+    ``factory.models.ollama_adapter.live_ollama.resolve_devstral_tag`` -- e.g.
+    ``"devstral-small-2:24b"``, never a hardcoded guess), kept separate from whatever
+    human-facing display name (e.g. "Devstral Small 2 24B") a caller reports alongside it.
+    """
 
     client: OllamaClient
     model: str
