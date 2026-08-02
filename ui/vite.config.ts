@@ -14,7 +14,16 @@ export default defineConfig({
     // the frontend's unchanged fetch("/api/tasks/snapshot?...") reaches a real backend
     // instead of Vite's own SPA fallback. Loopback default only; override for local setups
     // where the API runs on a different port via VITE_API_PROXY_TARGET.
+    //
+    // Phase 3A: /api/orchestrator/* is a distinct, write-authorized process (scripts/
+    // run_orchestrator.py) on its own port. This key is listed before the broader "/api"
+    // key so its more specific prefix match wins; the two prefixes never overlap in what
+    // they route to a real backend.
     proxy: {
+      "/api/orchestrator": {
+        target: process.env.VITE_ORCHESTRATOR_PROXY_TARGET ?? "http://127.0.0.1:8100",
+        changeOrigin: true,
+      },
       "/api": {
         target: process.env.VITE_API_PROXY_TARGET ?? "http://127.0.0.1:8000",
         changeOrigin: true,

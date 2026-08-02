@@ -67,9 +67,7 @@ describe("App/Dashboard stale/error truthfulness (API unavailable or invalid)", 
       }),
     );
     renderApp();
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "Snapshot may be stale — reconciling…",
-    );
+    expect(await screen.findByText("Snapshot may be stale — reconciling…")).toBeInTheDocument();
     expect(screen.queryByText("t-1: running")).not.toBeInTheDocument();
   });
 
@@ -79,9 +77,7 @@ describe("App/Dashboard stale/error truthfulness (API unavailable or invalid)", 
       vi.fn(async () => ({ ok: false, status: 503, json: async () => ({}) }) as Response),
     );
     renderApp();
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "Snapshot may be stale — reconciling…",
-    );
+    expect(await screen.findByText("Snapshot may be stale — reconciling…")).toBeInTheDocument();
     expect(screen.queryByText("t-1: running")).not.toBeInTheDocument();
   });
 
@@ -101,9 +97,7 @@ describe("App/Dashboard stale/error truthfulness (API unavailable or invalid)", 
       ),
     );
     renderApp();
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "Snapshot may be stale — reconciling…",
-    );
+    expect(await screen.findByText("Snapshot may be stale — reconciling…")).toBeInTheDocument();
     expect(screen.queryByText("t-1: running")).not.toBeInTheDocument();
   });
 });

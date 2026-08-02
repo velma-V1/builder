@@ -95,9 +95,15 @@ def test_migration_0004_upgrades_a_genuine_v3_database_with_pre_existing_data(
     # predates workstream_id — the column does not exist in this database yet).
     _insert_pre_existing_v3_row(db)
 
-    # The real in-place upgrade, through the real migration manager, using the real (full)
-    # migrations directory — 0001-0003 are already recorded and skipped; only 0004 applies.
-    apply_migrations(db, migrations_root)
+    # The real in-place upgrade, through the real migration manager, using a v4-only migrations
+    # directory (0001-0004; deliberately NOT the full, current migrations_root, which may since
+    # have grown further migrations — this test isolates exactly the v3->v4 transition it names,
+    # so it stays meaningful regardless of what's added to migrations_root later).
+    v4_migrations = tmp_path / "migrations_v4"
+    v4_migrations.mkdir()
+    for filename in (*_FROZEN_MIGRATIONS, "0004_workstream_membership.sql"):
+        (v4_migrations / filename).write_bytes((migrations_root / filename).read_bytes())
+    apply_migrations(db, v4_migrations)
 
     assert "workstream_id" in _tasks_table_column_names(db)
 
@@ -110,8 +116,9 @@ def test_migration_0004_upgrades_a_genuine_v3_database_with_pre_existing_data(
     versions_after = _query_one_column(db, "SELECT version FROM schema_migrations")
     assert versions_after == {1, 2, 3, 4}
 
-    # Rerunning the real migration manager against the now-v4 database is a safe no-op.
-    apply_migrations(db, migrations_root)
+    # Rerunning the real migration manager (same v4-only dir) against the now-v4 database is a
+    # safe no-op.
+    apply_migrations(db, v4_migrations)
     versions_rerun = _query_one_column(db, "SELECT version FROM schema_migrations")
     assert versions_rerun == {1, 2, 3, 4}
 

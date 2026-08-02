@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import hashlib
 import sqlite3
+import uuid
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -30,8 +31,10 @@ from factory.contracts.activation.store import (
 from factory.orchestrator.errors import OrchestratorError
 from factory.orchestrator.models import (
     StateTransitionEvent,
+    TaskRequestRecord,
     TaskRuntimeRecord,
     TaskState,
+    TaskSubmissionResult,
 )
 from factory.orchestrator.state.transitions import TransitionPolicy
 
@@ -44,6 +47,9 @@ _EXPECTED_MIGRATION_HASHES: Mapping[str, str] = {
     "0003_memory.sql": "65e0a4d16b84a49b205b1f2e48c91e11ae6dc48e9c179e318da3026283e10587",
     "0004_workstream_membership.sql": (
         "0274e9f2933b543277a4c50e556f8cc87762a69291e6b882d173c89811c4dc5f"
+    ),
+    "0005_task_requests.sql": (
+        "a68ca07b5c48d494fc42e714828e6c54c3e13f9415b247db1965690b7aa65bc8"
     ),
 }
 
@@ -191,6 +197,21 @@ def _row_to_task(row: sqlite3.Row) -> TaskRuntimeRecord:
     )
 
 
+def _row_to_task_request(row: sqlite3.Row) -> TaskRequestRecord:
+    return TaskRequestRecord(
+        task_id=row["task_id"],
+        project_ref=row["project_ref"],
+        workstream_id=row["workstream_id"],
+        description=row["description"],
+        priority=row["priority"],
+        model_preference=row["model_preference"],
+        expected_result=row["expected_result"],
+        submitted_by=row["submitted_by"],
+        submitted_at=row["submitted_at"],
+        idempotency_key=row["idempotency_key"],
+    )
+
+
 def _row_to_event(row: sqlite3.Row) -> StateTransitionEvent:
     prev = row["prev_state"]
     return StateTransitionEvent(
@@ -227,6 +248,21 @@ _SELECT_EVENT_BY_IDEMPOTENCY_SQL = (
     "occurred_at, linked_reference, idempotency_key FROM task_state_events "
     "WHERE task_id = ? AND idempotency_key = ?"
 )
+_SELECT_TASK_REQUEST_BY_ID_SQL = (
+    "SELECT task_id, project_ref, workstream_id, description, priority, model_preference, "
+    "expected_result, submitted_by, submitted_at, idempotency_key FROM task_requests "
+    "WHERE task_id = ?"
+)
+_SELECT_TASK_REQUEST_BY_IDEMPOTENCY_KEY_SQL = (
+    "SELECT task_id, project_ref, workstream_id, description, priority, model_preference, "
+    "expected_result, submitted_by, submitted_at, idempotency_key FROM task_requests "
+    "WHERE idempotency_key = ?"
+)
+_INSERT_TASK_REQUEST_SQL = (
+    "INSERT INTO task_requests (task_id, project_ref, workstream_id, description, priority, "
+    "model_preference, expected_result, submitted_by, submitted_at, idempotency_key) "
+    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+)
 _INSERT_EVENT_SQL = (
     "INSERT INTO task_state_events (task_id, sequence, prev_state, new_state, cause, actor, "
     "accepted, occurred_at, linked_reference, idempotency_key) "
@@ -238,6 +274,7 @@ class OrchestratorStateReader(Protocol):
     def get_task(self, task_id: str) -> TaskRuntimeRecord | None: ...
     def get_events(self, task_id: str) -> tuple[StateTransitionEvent, ...]: ...
     def list_tasks_by_workstream(self, workstream_id: str) -> tuple[TaskRuntimeRecord, ...]: ...
+    def get_task_request(self, task_id: str) -> TaskRequestRecord | None: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -279,6 +316,41 @@ class SQLiteOrchestratorStateReader:
             connection.close()
         return tuple(_row_to_task(row) for row in rows)
 
+    def get_task_request(self, task_id: str) -> TaskRequestRecord | None:
+        """The human-submission metadata for a task (Phase 3A), read-only. ``None`` if unknown."""
+        connection = _connect_readonly(self.database_path)
+        try:
+            row = connection.execute(_SELECT_TASK_REQUEST_BY_ID_SQL, (task_id,)).fetchone()
+        finally:
+            connection.close()
+        return None if row is None else _row_to_task_request(row)
+
+
+def _insert_genesis_task_row(
+    connection: sqlite3.Connection,
+    *,
+    task_id: str,
+    project_id: str,
+    contract_version: int,
+    workstream_id: str | None,
+    now: str,
+) -> None:
+    """Insert the ``tasks`` row and its genesis ``task_state_events`` row for a brand-new task.
+
+    Shared by ``create_task`` and ``submit_task_request`` so the two never diverge on what
+    "a task's genesis" means. Caller owns the transaction (``BEGIN IMMEDIATE``/commit/rollback).
+    """
+    connection.execute(
+        "INSERT INTO tasks "
+        "(task_id, project_id, contract_version, current_state, sequence, updated_at, "
+        "workstream_id) VALUES (?, ?, ?, ?, 0, ?, ?)",
+        (task_id, project_id, contract_version, TaskState.QUEUED.value, now, workstream_id),
+    )
+    connection.execute(
+        _INSERT_EVENT_SQL,
+        (task_id, 0, None, TaskState.QUEUED.value, "genesis", "orchestrator", 1, now, None, None),
+    )
+
 
 @dataclass(frozen=True, slots=True)
 class _OrchestratorStateWriter:
@@ -317,26 +389,13 @@ class _OrchestratorStateWriter:
             if existing is not None:
                 connection.rollback()
                 raise OrchestratorError("TASK_EXISTS", f"task {task_id} already exists")
-            connection.execute(
-                "INSERT INTO tasks "
-                "(task_id, project_id, contract_version, current_state, sequence, updated_at, "
-                "workstream_id) VALUES (?, ?, ?, ?, 0, ?, ?)",
-                (task_id, project_id, contract_version, TaskState.QUEUED.value, now, workstream_id),
-            )
-            connection.execute(
-                _INSERT_EVENT_SQL,
-                (
-                    task_id,
-                    0,
-                    None,
-                    TaskState.QUEUED.value,
-                    "genesis",
-                    "orchestrator",
-                    1,
-                    now,
-                    None,
-                    None,
-                ),
+            _insert_genesis_task_row(
+                connection,
+                task_id=task_id,
+                project_id=project_id,
+                contract_version=contract_version,
+                workstream_id=workstream_id,
+                now=now,
             )
             connection.commit()
         except sqlite3.Error as exc:
@@ -356,6 +415,90 @@ class _OrchestratorStateWriter:
             linked_reference=None,
             idempotency_key=None,
         )
+
+    def submit_task_request(
+        self,
+        *,
+        project_ref: str,
+        workstream_id: str,
+        description: str,
+        priority: str,
+        model_preference: str | None,
+        expected_result: str | None,
+        submitted_by: str,
+        idempotency_key: str,
+        contract_version: int = 1,
+    ) -> TaskSubmissionResult:
+        """Submit a human-authored task request (Phase 3A, CMP-ORCH-API).
+
+        Idempotent on ``idempotency_key``: if a request with this key already exists, this is a
+        no-op that returns the *original* task's identity/state (``created=False``) instead of
+        creating a duplicate task — the check and the insert happen inside the same
+        ``BEGIN IMMEDIATE`` transaction the rest of this writer already uses, so two
+        near-simultaneous submissions with the same key cannot race past each other.
+
+        ``project_ref`` (the human-submitted project/repository reference) becomes the task's
+        authoritative ``project_id`` — there is no separate project registry to resolve against
+        in this phase.
+        """
+        connection = self._connect()
+        now = _utcnow()
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            existing_request = connection.execute(
+                _SELECT_TASK_REQUEST_BY_IDEMPOTENCY_KEY_SQL, (idempotency_key,)
+            ).fetchone()
+            if existing_request is not None:
+                existing_task_id = existing_request["task_id"]
+                task_row = connection.execute(
+                    "SELECT current_state FROM tasks WHERE task_id = ?", (existing_task_id,)
+                ).fetchone()
+                connection.rollback()
+                if task_row is None:
+                    raise OrchestratorError(
+                        "STATE_TX_FAILED",
+                        f"task_requests row for idempotency_key exists but task "
+                        f"{existing_task_id} is missing",
+                    )
+                return TaskSubmissionResult(
+                    task_id=existing_task_id,
+                    state=TaskState(task_row["current_state"]),
+                    created=False,
+                )
+
+            task_id = str(uuid.uuid4())
+            _insert_genesis_task_row(
+                connection,
+                task_id=task_id,
+                project_id=project_ref,
+                contract_version=contract_version,
+                workstream_id=workstream_id,
+                now=now,
+            )
+            connection.execute(
+                _INSERT_TASK_REQUEST_SQL,
+                (
+                    task_id,
+                    project_ref,
+                    workstream_id,
+                    description,
+                    priority,
+                    model_preference,
+                    expected_result,
+                    submitted_by,
+                    now,
+                    idempotency_key,
+                ),
+            )
+            connection.commit()
+        except sqlite3.Error as exc:
+            connection.rollback()
+            raise OrchestratorError(
+                "STATE_TX_FAILED", f"submit_task_request failed: {exc}"
+            ) from exc
+        finally:
+            connection.close()
+        return TaskSubmissionResult(task_id=task_id, state=TaskState.QUEUED, created=True)
 
     def apply_transition(
         self,

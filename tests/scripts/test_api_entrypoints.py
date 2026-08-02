@@ -1,10 +1,11 @@
-"""Phase 2B, Findings 1-3 (re-review round 2) — schema setup is separated from read-only API
-serving, and startup validates the COMPLETE applied migration-version set against the
-complete expected set, not just a maximum.
+"""Phase 2B/3A — schema setup is separated from read-only/write API serving, and startup
+validates the COMPLETE applied migration-version set against the complete expected set, not
+just a maximum. The currentness check itself now lives in the shared ``scripts/_schema_check``
+module (Phase 3A) so ``run_api.py`` and ``run_orchestrator.py`` never duplicate it.
 
 ``scripts/run_api.py`` must never call ``apply_migrations`` or open a writable database
 connection; ``scripts/setup_api_database.py`` is the only place migrations are applied.
-Both are plain scripts (not part of the ``factory`` package), so they're loaded directly
+All are plain scripts (not part of the ``factory`` package), so they're loaded directly
 from their file paths rather than imported as a package module.
 """
 
@@ -27,6 +28,7 @@ from factory.orchestrator.store.runtime_state import (
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 MIGRATIONS_ROOT = _REPO_ROOT / "migrations" / "runtime"
+_SETUP_COMMAND = "uv run python scripts/setup_api_database.py"
 
 
 def _load_script(name: str) -> ModuleType:
@@ -46,6 +48,11 @@ def run_api() -> ModuleType:
 @pytest.fixture
 def setup_api_database() -> ModuleType:
     return _load_script("setup_api_database")
+
+
+@pytest.fixture
+def schema_check() -> ModuleType:
+    return _load_script("_schema_check")
 
 
 def _migrations_subset(tmp_path: Path, *filenames: str) -> Path:
@@ -70,9 +77,10 @@ def _gapped_1_2_4_migrations(tmp_path: Path) -> Path:
 
 
 def _db_with_recorded_versions(tmp_path: Path, *versions: int) -> Path:
-    """A fully-migrated (1,2,3,4) database with extra version rows appended directly via raw
-    SQL, simulating an unexpected/future applied migration this codebase doesn't recognize
-    (e.g. version 5) -- without needing a real, hash-pinned 0005 migration file to exist."""
+    """A fully-migrated database (whatever MIGRATIONS_ROOT currently contains) with extra
+    version rows appended directly via raw SQL, simulating an unexpected/future applied
+    migration this codebase doesn't recognize (e.g. a large sentinel version) -- without
+    needing a real, hash-pinned migration file at that version to exist."""
     db = tmp_path / "runtime.db"
     apply_migrations(db, MIGRATIONS_ROOT)
     connection = sqlite3.connect(str(db))
@@ -111,7 +119,7 @@ def test_run_api_never_imports_the_writer(run_api: ModuleType) -> None:
 
 
 def test_expected_versions_are_the_complete_ascending_set() -> None:
-    assert expected_migration_versions(MIGRATIONS_ROOT) == (1, 2, 3, 4)
+    assert expected_migration_versions(MIGRATIONS_ROOT) == (1, 2, 3, 4, 5)
 
 
 def test_gapped_history_does_not_equal_expected(tmp_path: Path) -> None:
@@ -124,8 +132,8 @@ def test_gapped_history_does_not_equal_expected(tmp_path: Path) -> None:
 
 
 def test_future_version_history_does_not_equal_expected(tmp_path: Path) -> None:
-    db = _db_with_recorded_versions(tmp_path, 5)
-    assert applied_migration_versions(db) == (1, 2, 3, 4, 5)
+    db = _db_with_recorded_versions(tmp_path, 999999)
+    assert applied_migration_versions(db) == (1, 2, 3, 4, 5, 999999)
     assert applied_migration_versions(db) != expected_migration_versions(MIGRATIONS_ROOT)
 
 
@@ -138,13 +146,15 @@ def test_complete_history_equals_expected(tmp_path: Path) -> None:
 # ---- startup schema check: gapped / future / current / missing-table / missing-file ------
 
 
-def test_startup_rejects_gapped_history_1_2_4(run_api: ModuleType, tmp_path: Path) -> None:
+def test_startup_rejects_gapped_history_1_2_4(
+    schema_check: ModuleType, tmp_path: Path
+) -> None:
     gapped = _gapped_1_2_4_migrations(tmp_path)
     db = tmp_path / "runtime.db"
     apply_migrations(db, gapped)
 
     with pytest.raises(SystemExit) as excinfo:
-        run_api._require_current_schema(db, MIGRATIONS_ROOT)
+        schema_check.require_current_schema_or_exit(db, MIGRATIONS_ROOT, _SETUP_COMMAND)
     message = str(excinfo.value)
     assert "does not match" in message
     assert "1,2,4" in message
@@ -152,32 +162,34 @@ def test_startup_rejects_gapped_history_1_2_4(run_api: ModuleType, tmp_path: Pat
     assert "setup_api_database.py" in message
 
 
-def test_startup_rejects_unexpected_future_version_1_2_3_4_5(
-    run_api: ModuleType, tmp_path: Path
+def test_startup_rejects_unexpected_future_version(
+    schema_check: ModuleType, tmp_path: Path
 ) -> None:
-    db = _db_with_recorded_versions(tmp_path, 5)
+    db = _db_with_recorded_versions(tmp_path, 999999)
 
     with pytest.raises(SystemExit) as excinfo:
-        run_api._require_current_schema(db, MIGRATIONS_ROOT)
+        schema_check.require_current_schema_or_exit(db, MIGRATIONS_ROOT, _SETUP_COMMAND)
     message = str(excinfo.value)
     assert "does not match" in message
-    assert "1,2,3,4,5" in message
+    assert "1,2,3,4,5,999999" in message
     assert "setup_api_database.py" in message
 
 
-def test_startup_accepts_complete_history_1_2_3_4(run_api: ModuleType, tmp_path: Path) -> None:
+def test_startup_accepts_complete_history_1_2_3_4(
+    schema_check: ModuleType, tmp_path: Path
+) -> None:
     db = tmp_path / "runtime.db"
     apply_migrations(db, MIGRATIONS_ROOT)
-    run_api._require_current_schema(db, MIGRATIONS_ROOT)  # must not raise
+    schema_check.require_current_schema_or_exit(db, MIGRATIONS_ROOT, _SETUP_COMMAND)  # no raise
 
 
 def test_startup_rejects_existing_database_with_no_migration_table(
-    run_api: ModuleType, tmp_path: Path
+    schema_check: ModuleType, tmp_path: Path
 ) -> None:
     db = _empty_sqlite_file(tmp_path)
 
     with pytest.raises(SystemExit) as excinfo:
-        run_api._require_current_schema(db, MIGRATIONS_ROOT)
+        schema_check.require_current_schema_or_exit(db, MIGRATIONS_ROOT, _SETUP_COMMAND)
     message = str(excinfo.value)
     assert "does not match" in message
     assert "(none)" in message
@@ -185,16 +197,16 @@ def test_startup_rejects_existing_database_with_no_migration_table(
 
 
 def test_startup_fails_clearly_when_database_missing(
-    run_api: ModuleType, tmp_path: Path
+    schema_check: ModuleType, tmp_path: Path
 ) -> None:
     missing_db = tmp_path / "does-not-exist.db"
     with pytest.raises(SystemExit) as excinfo:
-        run_api._require_current_schema(missing_db, MIGRATIONS_ROOT)
+        schema_check.require_current_schema_or_exit(missing_db, MIGRATIONS_ROOT, _SETUP_COMMAND)
     assert "setup_api_database.py" in str(excinfo.value)
 
 
 def test_startup_fails_clearly_on_malformed_migration_filename(
-    run_api: ModuleType, tmp_path: Path
+    schema_check: ModuleType, tmp_path: Path
 ) -> None:
     clean_dir = tmp_path / "clean"
     clean_dir.mkdir()
@@ -205,7 +217,7 @@ def test_startup_fails_clearly_on_malformed_migration_filename(
     (bad_migrations / "corrupted.sql").write_text("SELECT 1;")
 
     with pytest.raises(SystemExit) as excinfo:
-        run_api._require_current_schema(db, bad_migrations)
+        schema_check.require_current_schema_or_exit(db, bad_migrations, _SETUP_COMMAND)
     message = str(excinfo.value)
     assert "invalid" in message.lower()
     assert "corrupted.sql" in message
@@ -217,19 +229,19 @@ def test_startup_fails_clearly_on_malformed_migration_filename(
 
 
 def test_startup_check_does_not_mutate_the_database(
-    run_api: ModuleType, tmp_path: Path
+    schema_check: ModuleType, tmp_path: Path
 ) -> None:
     db = tmp_path / "runtime.db"
     apply_migrations(db, MIGRATIONS_ROOT)
     before = db.read_bytes()
 
-    run_api._require_current_schema(db, MIGRATIONS_ROOT)
+    schema_check.require_current_schema_or_exit(db, MIGRATIONS_ROOT, _SETUP_COMMAND)
 
     assert db.read_bytes() == before
 
 
 def test_startup_check_does_not_add_missing_migrations(
-    run_api: ModuleType, tmp_path: Path
+    schema_check: ModuleType, tmp_path: Path
 ) -> None:
     v3_migrations = _v3_only_migrations(tmp_path)
     db = tmp_path / "runtime.db"
@@ -237,7 +249,7 @@ def test_startup_check_does_not_add_missing_migrations(
     before = db.read_bytes()
 
     with pytest.raises(SystemExit):
-        run_api._require_current_schema(db, MIGRATIONS_ROOT)
+        schema_check.require_current_schema_or_exit(db, MIGRATIONS_ROOT, _SETUP_COMMAND)
 
     # Byte-for-byte unchanged -- the failed startup check never applied anything itself.
     assert db.read_bytes() == before
@@ -245,7 +257,7 @@ def test_startup_check_does_not_add_missing_migrations(
 
 
 def test_gapped_database_is_unchanged_after_refused_startup(
-    run_api: ModuleType, tmp_path: Path
+    schema_check: ModuleType, tmp_path: Path
 ) -> None:
     gapped = _gapped_1_2_4_migrations(tmp_path)
     db = tmp_path / "runtime.db"
@@ -253,7 +265,7 @@ def test_gapped_database_is_unchanged_after_refused_startup(
     before = db.read_bytes()
 
     with pytest.raises(SystemExit):
-        run_api._require_current_schema(db, MIGRATIONS_ROOT)
+        schema_check.require_current_schema_or_exit(db, MIGRATIONS_ROOT, _SETUP_COMMAND)
 
     assert db.read_bytes() == before
     assert applied_migration_versions(db) == (1, 2, 4)
@@ -300,7 +312,7 @@ def _gapped_1_2_4_db(tmp_path: Path) -> Path:
 
 
 def _future_version_db(tmp_path: Path) -> Path:
-    return _db_with_recorded_versions(tmp_path, 5)
+    return _db_with_recorded_versions(tmp_path, 999999)
 
 
 @pytest.mark.parametrize("make_db", [_v3_only_db, _gapped_1_2_4_db, _future_version_db])

@@ -93,6 +93,41 @@ class TaskRuntimeRecord:
 
 
 @dataclass(frozen=True, slots=True)
+class TaskRequestRecord:
+    """Human-submission metadata for a task (Phase 3A, CMP-ORCH-API).
+
+    Distinct from ``TaskRuntimeRecord``: this is operator-provided intake data (what was asked
+    for), never authoritative execution state (what's actually happening) — the two are joined
+    by ``task_id`` but live in separate tables and are never conflated.
+    """
+
+    task_id: str
+    project_ref: str
+    workstream_id: str
+    description: str
+    priority: str
+    model_preference: str | None
+    expected_result: str | None
+    submitted_by: str
+    submitted_at: str
+    idempotency_key: str
+
+
+@dataclass(frozen=True, slots=True)
+class TaskSubmissionResult:
+    """Result of submitting a task request (Phase 3A).
+
+    ``created`` distinguishes a fresh submission from an idempotent replay (same
+    ``idempotency_key`` submitted again returns the original ``task_id``/``state`` with
+    ``created=False`` instead of creating a duplicate task).
+    """
+
+    task_id: str
+    state: TaskState
+    created: bool
+
+
+@dataclass(frozen=True, slots=True)
 class Lease:
     resource_type: LeaseResourceType
     resource_id: str

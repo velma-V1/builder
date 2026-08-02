@@ -1,0 +1,29 @@
+# Builder configuration — single source of truth for launcher-consumed settings (Phase 3A).
+#
+# Only the fields under the top-level keys below are read by any Phase 3A code
+# (scripts/start_all.py, scripts/windows/Builder.cmd). The `future` section is a documented
+# placeholder for later phases (Agent Zero / Ollama / WorldMonitor) -- intentionally left
+# unelaborated; no Phase 3A code reads it.
+
+wsl:
+  distribution: Ubuntu
+
+repository:
+  # Path to this repository, as seen from inside the configured WSL distribution.
+  path: /home/xxthatguyxx/builder
+
+database:
+  # Relative to repository.path unless given as an absolute path.
+  path: runtime.db
+
+ports:
+  read_api: 8000
+  orchestrator_api: 8100
+  dashboard: 1420
+
+browser:
+  auto_open: true
+
+# Reserved for later phases (Agent Zero / Ollama / WorldMonitor) -- not read by any Phase 3A
+# code. Left empty deliberately; no unused configuration schema is built out ahead of need.
+future: {}

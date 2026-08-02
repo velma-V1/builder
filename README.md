@@ -19,6 +19,36 @@ Continue to the next phase:
 
 The system is intentionally planned in locked sections before code is written. This prevents architecture drift, conflicting parallel edits, unverifiable completion claims, and uncontrolled autonomy.
 
+## Quick start (Phase 3A — task intake, no Agent Zero yet)
+
+Phase 3A adds a one-command launcher and a desktop-operated task-intake dashboard. It does
+**not** activate Agent Zero, Ollama execution, or any approve/reject/promotion flow — those are
+later phases. All settings (WSL distribution, repository path, ports, browser auto-open) live in
+one place: [`config/builder.yaml`](config/builder.yaml).
+
+**From Linux/WSL2 directly:**
+
+```bash
+cd /home/xxthatguyxx/builder
+uv run python scripts/start_all.py
+```
+
+This checks required dependencies (repository path, Python/`uv`, Node/`npm`, free ports),
+separately detects Docker/Ollama and reports their status (informational only — Phase 3A
+doesn't require either), runs database setup, starts the read-only API, the orchestrator API,
+and the Vite dashboard, waits for all three to report healthy, then opens the dashboard in your
+browser. Ctrl-C stops all three cleanly, including any child processes they spawned.
+
+**From Windows, via desktop shortcut:**
+
+1. Once, in PowerShell: `powershell -ExecutionPolicy Bypass -File scripts\windows\install-shortcut.ps1`
+   (creates a `Builder` shortcut on your Desktop). Remove it later with
+   `uninstall-shortcut.ps1` in the same folder.
+2. Double-click **Builder** on the Desktop. It resolves the configured WSL distribution
+   (`scripts/windows/Builder.ps1`), then hands off to the same `scripts/start_all.py` inside
+   WSL2. A missing WSL install, missing distribution, missing repository path, or missing
+   Python/Node produces a specific, readable error instead of a silent failure.
+
 ## Primary operating experience
 
 The **Builder Dashboard is the primary interface**. Normal development must occur inside the Builder without requiring VS Code, Codex, or another IDE.
