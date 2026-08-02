@@ -719,15 +719,25 @@ the PH-6 simulated workstream core, demonstrated end-to-end against the PH-4/PH-
 
 ### Phase 3B worker verify/promote implementation - 2026-08-02
 
-#### Status: `IMPLEMENTED — VERIFICATION COMPLETE`
+#### Status: `IMPLEMENTED CANDIDATE — VERIFICATION BLOCKED`
 
-- **Verified implementation commit:** `48e0dd8` after milestone commits `0c65b21`, `3ebdedd`,
-  `41056d6`, `9eca3db`, `f91bace`, `6f1392e`, and validation repair `c25bb4c`.
+- **Current Linux-tested implementation commit:** `475c528` after milestone commits `0c65b21`,
+  `3ebdedd`, `41056d6`, `9eca3db`, `f91bace`, `6f1392e`, validation repair `c25bb4c`, and launcher
+  portability repair `475c528`.
 - **Delivered:** independent verification; append-only evidence/manifests; explicit approval binding;
   serialized promotion and rollback; restart reconciliation; lifecycle API; Phase 3B dashboard.
-- **Passing evidence:** native Windows collection 1730; suite 1730 passed; two real junction cases;
-  network-enabled Section 1 (325 tests, 96.86% branch coverage); Ruff format/lint; mypy 305 files;
-  lockfile; frontend typecheck/lint/43 tests/build; Section 2 18/18; RPH3 10/10; PH-4 10/10;
-  focused lifecycle and failure paths.
-- **Environment blockers:** none remain for the Phase 3B verification gate.
-- **Boundary:** no push, merge, deploy, release, or protected-ref promotion was performed.
+- **Current PASS evidence:** Linux collection 1733; restricted suite 1648 passed with 85 explicitly
+  classified environment skips; loopback 83/83 outside the restricted socket sandbox; Section 1
+  325 tests at 96.86% branch coverage; Ruff format/lint; mypy 305 files; lockfile; frontend
+  typecheck/lint/43 tests/build; Section 2 18/18; RPH3 10/10; PH-4 10/10; focused lifecycle and
+  failure-path tests.
+- **Historical evidence only:** native Windows collection/suite 1730, two junction cases, and
+  Windows Ruff/mypy/preinstall results belong to `48e0dd8`, not the current PR head.
+- **Environment blocker:** rerun focused native-Windows launcher and junction gates at the exact
+  final PR head.
+- **Review blockers:** independent review reports untrusted verifier execution without a process
+  sandbox, unauthenticated approval authority, incomplete quick-start lifecycle wiring, a
+  path-revalidation TOCTOU window, incomplete promotion restart rollback, and launcher cleanup
+  weaknesses. These must be resolved and independently re-reviewed.
+- **Boundary:** draft PR #18 was pushed; no merge, deploy, release, or protected-ref promotion was
+  performed.

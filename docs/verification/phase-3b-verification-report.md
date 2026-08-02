@@ -33,9 +33,22 @@ remain historical evidence for `48e0dd8`; they are not attributed to the current
 | Command | Exact error | Missing capability | Required rerun environment |
 |---|---|---|---|
 | `py -3.14 -m pytest -q tests/scripts/test_start_all.py -k "creation_flags or spawn_and_terminate_process_group"` | Not executed: capability probe returned `linux`, not `win32` | Native Windows process creation and `CREATE_NEW_PROCESS_GROUP` behavior | Native Windows with CPython 3.14 and the locked dependencies at `475c528580fb580922526b0404101f9b080a0c9c` |
+| `py -3.14 -m pytest -q tests/contracts/security/test_path_attacks.py::test_junction_escape_is_denied_on_windows tests/integrations/agent_zero/test_security_boundaries.py::test_junction_escape_is_denied_on_windows` | Not executed: capability probe returned `linux`, not `win32` | Native NTFS junction creation through `mklink /J` | Native Windows with CPython 3.14 and the locked dependencies at the exact final PR head |
+
+## Independent-review failures
+
+- Untrusted worker tests execute through host `pytest` without a process sandbox.
+- The API accepts caller-supplied operator identity and destructive confirmation without an
+  authentication boundary.
+- The documented quick-start does not wire the Phase 3B databases, verifier, or worker service.
+- Worker writes are not path-revalidated after the model call, leaving a symlink/junction TOCTOU
+  window.
+- Promotion restart reconciliation can leave a ref advanced after an interrupted promotion.
+- Windows `taskkill` cleanup is unbounded and ignores failure.
 
 ## Release boundary
 
-Native-Windows launcher verification remains required at the exact current commit. Independent
-review also remains a separate merge gate. This report does not authorize a merge, deployment,
-release, or protected-ref promotion; those remain operator-only decisions.
+Native-Windows launcher and junction verification remains required at the exact final PR head. The
+independent-review failures above must also be corrected and re-reviewed. This report does not
+authorize a merge, deployment, release, or protected-ref promotion; those remain operator-only
+decisions.
