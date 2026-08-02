@@ -193,7 +193,14 @@ def test_approve_route_fails_closed_when_phase3b_is_not_configured(client: TestC
     task_id = client.post(_SUBMIT_ROUTE, json=_submit_body(idempotency_key="no-approve")).json()[
         "task_id"
     ]
-    response = client.post(f"{_SUBMIT_ROUTE}/{task_id}/approve")
+    response = client.post(
+        f"{_SUBMIT_ROUTE}/{task_id}/approve",
+        json={
+            "approval_id": "apr-test",
+            "operator": "operator",
+            "confirmed_destructive": True,
+        },
+    )
     assert response.status_code == 503
 
 
@@ -201,7 +208,10 @@ def test_reject_route_fails_closed_when_phase3b_is_not_configured(client: TestCl
     task_id = client.post(_SUBMIT_ROUTE, json=_submit_body(idempotency_key="no-reject")).json()[
         "task_id"
     ]
-    response = client.post(f"{_SUBMIT_ROUTE}/{task_id}/reject")
+    response = client.post(
+        f"{_SUBMIT_ROUTE}/{task_id}/reject",
+        json={"approval_id": "apr-test", "operator": "operator", "reason": "declined"},
+    )
     assert response.status_code == 503
 
 
