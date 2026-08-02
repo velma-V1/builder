@@ -199,12 +199,24 @@ class BuilderWorkerTransport:
             )
             return events
 
+        # A read-only run's work-product is its analysis text -- recorded as a genuine artifact
+        # (never a repo patch: DIRECT_READ_ONLY never proposes a file change) so the existing,
+        # unmodified AgentZeroResult completeness rule ("a SUCCESS with neither patches nor
+        # artifacts is incomplete") is satisfied honestly, not worked around.
+        analysis_digest = content_digest(model_result.output)
+        seq += 1
+        events.append(
+            self._emit(
+                work_order.work_order_id, seq, AgentZeroEventType.ARTIFACT_PRODUCED,
+                artifact_path=f"analysis/{work_order.task_id}.txt",
+                content_digest=analysis_digest, media_type="text/plain",
+            )
+        )
         seq += 1
         events.append(
             self._emit(
                 work_order.work_order_id, seq, AgentZeroEventType.EVIDENCE_ATTACHED,
-                kind="analysis", detail=model_result.output,
-                content_digest=content_digest(model_result.output),
+                kind="analysis", detail=model_result.output, content_digest=analysis_digest,
             )
         )
         seq += 1

@@ -55,9 +55,13 @@ def test_read_only_task_completes_without_a_workspace(tmp_path: Path) -> None:
     events = transport.poll_events(run_id, after_sequence=-1)
 
     event_types = [e.event_type for e in events]
+    # ARTIFACT_PRODUCED carries the analysis text itself (not a repo patch) -- required so the
+    # existing, unmodified AgentZeroResult completeness rule ("SUCCESS needs a patch or an
+    # artifact") is satisfied honestly for a read-only run that legitimately proposes no file.
     assert event_types == [
         AgentZeroEventType.STARTED,
         AgentZeroEventType.PROGRESS,
+        AgentZeroEventType.ARTIFACT_PRODUCED,
         AgentZeroEventType.EVIDENCE_ATTACHED,
         AgentZeroEventType.COMPLETED,
     ]
