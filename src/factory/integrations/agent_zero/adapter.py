@@ -187,11 +187,19 @@ class AgentZeroAdapter:
         )
 
     def request_model(
-        self, task_id: str, capability: str, prompt: str, *, privacy: Privacy = Privacy.LOCAL_ONLY,
+        self,
+        task_id: str,
+        capability: str,
+        prompt: str,
+        *,
+        privacy: Privacy = Privacy.LOCAL_ONLY,
     ) -> AgentZeroModelResult:
         """The ONLY way Agent Zero obtains AI: hand a capability request to the Builder router."""
         return self._router.request(
             AgentZeroCapabilityRequest(
-                task_id=task_id, capability=capability, prompt=prompt, privacy=privacy,
+                task_id=task_id,
+                capability=capability,
+                prompt=prompt,
+                privacy=privacy,
             )
         )

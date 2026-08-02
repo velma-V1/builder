@@ -37,7 +37,9 @@ def verify_migration_and_schema() -> VerificationResult:
         "grant_fingerprint",
         "CREATE TABLE IF NOT EXISTS schema_migrations",
     )
-    return VerificationResult("Permission migration: grants + intents (ordered per-domain 0002)", ok, detail)
+    return VerificationResult(
+        "Permission migration: grants + intents (ordered per-domain 0002)", ok, detail
+    )
 
 
 def verify_migration_sha_pinning() -> VerificationResult:
@@ -50,11 +52,17 @@ def verify_migration_sha_pinning() -> VerificationResult:
 def verify_models_and_autonomy() -> VerificationResult:
     ok, detail = _contains(
         "src/factory/permission/models.py",
-        "class PermissionState", "class DecisionKind", "class PermissionClass",
-        "class PermissionGrant", "def grant_fingerprint", "class TaskAuthority",
+        "class PermissionState",
+        "class DecisionKind",
+        "class PermissionClass",
+        "class PermissionGrant",
+        "def grant_fingerprint",
+        "class TaskAuthority",
     )
     ok2, d2 = _contains(
-        "src/factory/permission/autonomy.py", "class AutonomyEnvelope", "def classify",
+        "src/factory/permission/autonomy.py",
+        "class AutonomyEnvelope",
+        "def classify",
         "REQUIRES_CARD",
     )
     return VerificationResult(
@@ -65,28 +73,41 @@ def verify_models_and_autonomy() -> VerificationResult:
 def verify_sole_writer_and_reader() -> VerificationResult:
     writer_ok, wdetail = _contains(
         "src/factory/permission/writer.py",
-        "class _PermissionWriter", "def stage_issue", "def stage_transition",
-        "def commit_operation", "def rollback_operation",
+        "class _PermissionWriter",
+        "def stage_issue",
+        "def stage_transition",
+        "def commit_operation",
+        "def rollback_operation",
     )
     reader_ok, rdetail = _contains(
         "src/factory/permission/store.py",
-        "class SQLitePermissionReader", "_permission_writer_authorizer", "mode=ro",
+        "class SQLitePermissionReader",
+        "_permission_writer_authorizer",
+        "mode=ro",
         "def audit_completion_seq",
     )
     not_exported = "_PermissionWriter" not in Path("src/factory/permission/__init__.py").read_text()
     ok = writer_ok and reader_ok and not_exported
     return VerificationResult(
         "Private sole-writer + read-only reader (writer not exported)",
-        ok, f"writer={wdetail}; reader={rdetail}; not_exported={not_exported}",
+        ok,
+        f"writer={wdetail}; reader={rdetail}; not_exported={not_exported}",
     )
 
 
 def verify_engine() -> VerificationResult:
     ok, detail = _contains(
         "src/factory/permission/engine.py",
-        "class PermissionEngine", "def decide", "def issue_grant", "def revalidate",
-        "def revoke", "def expire", "def canonicalize", "def reconcile_startup",
-        "APPROVAL_REQUIRED_CLASSES", "PERMISSION_AUDIT_CHAIN_INVALID",
+        "class PermissionEngine",
+        "def decide",
+        "def issue_grant",
+        "def revalidate",
+        "def revoke",
+        "def expire",
+        "def canonicalize",
+        "def reconcile_startup",
+        "APPROVAL_REQUIRED_CLASSES",
+        "PERMISSION_AUDIT_CHAIN_INVALID",
     )
     return VerificationResult(
         "Engine: least-privilege decide + grant + TOCTOU + Class-1 + reconcile", ok, detail
@@ -98,7 +119,9 @@ def verify_path_authority_reuse() -> VerificationResult:
         "src/factory/permission/engine.py",
         "from factory.contracts.validation.paths import PathAuthority",
     )
-    return VerificationResult("Path authority reuses the tested PathAuthority (escape-blocking)", ok, detail)
+    return VerificationResult(
+        "Path authority reuses the tested PathAuthority (escape-blocking)", ok, detail
+    )
 
 
 def verify_tests_exist() -> VerificationResult:
@@ -116,19 +139,30 @@ def verify_tests_exist() -> VerificationResult:
     present = [f for f in files if Path(f).exists()]
     return VerificationResult(
         "Permission test files (unit/store/autonomy/security/failure-path/integration)",
-        len(present) == len(files), f"{len(present)}/{len(files)} present",
+        len(present) == len(files),
+        f"{len(present)}/{len(files)} present",
     )
 
 
 def verify_tests_pass_with_coverage() -> VerificationResult:
     result = subprocess.run(
-        [sys.executable, "-m", "pytest", "tests/permission", "-q",
-         "--cov=src/factory/permission", "--cov-branch", "--cov-fail-under=95"],
-        capture_output=True, text=True,
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "tests/permission",
+            "-q",
+            "--cov=src/factory/permission",
+            "--cov-branch",
+            "--cov-fail-under=95",
+        ],
+        capture_output=True,
+        text=True,
     )
     summary = (result.stdout.strip().split("\n") or ["?"])[-1]
     return VerificationResult(
-        "Permission tests pass with >=95% branch coverage", result.returncode == 0,
+        "Permission tests pass with >=95% branch coverage",
+        result.returncode == 0,
         f"exit {result.returncode}; {summary}",
     )
 
@@ -136,17 +170,23 @@ def verify_tests_pass_with_coverage() -> VerificationResult:
 def verify_ruff() -> VerificationResult:
     result = subprocess.run(
         [sys.executable, "-m", "ruff", "check", "src/factory/permission", "tests/permission"],
-        capture_output=True, text=True,
+        capture_output=True,
+        text=True,
     )
-    return VerificationResult("Ruff clean (permission src + tests)", result.returncode == 0, f"exit {result.returncode}")
+    return VerificationResult(
+        "Ruff clean (permission src + tests)", result.returncode == 0, f"exit {result.returncode}"
+    )
 
 
 def verify_mypy() -> VerificationResult:
     result = subprocess.run(
         [sys.executable, "-m", "mypy", "src/factory/permission", "tests/permission", "--strict"],
-        capture_output=True, text=True,
+        capture_output=True,
+        text=True,
     )
-    return VerificationResult("mypy --strict clean (permission)", result.returncode == 0, f"exit {result.returncode}")
+    return VerificationResult(
+        "mypy --strict clean (permission)", result.returncode == 0, f"exit {result.returncode}"
+    )
 
 
 def main() -> int:
@@ -177,7 +217,9 @@ def main() -> int:
     print("=" * 80 + "\n")
 
     if passed == total:
-        print("RPH3-T2 gate: PASS (permission domain). NOT PROM-RPH3; NOT implementation of other tasks.\n")
+        print(
+            "RPH3-T2 gate: PASS (permission domain). NOT PROM-RPH3; NOT implementation of other tasks.\n"
+        )
         return 0
     print("RPH3-T2 gate: INCOMPLETE — fix failures above.\n")
     return 1

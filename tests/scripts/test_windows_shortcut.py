@@ -132,11 +132,11 @@ def test_builder_ps1_uses_the_section_aware_parser_not_a_bare_word_regex() -> No
     content = (_WINDOWS_DIR / "Builder.ps1").read_text()
     assert "function Get-BuilderConfigValue" in content
     assert (
-        'Get-BuilderConfigValue -ConfigTextNoComments $configTextNoComments '
+        "Get-BuilderConfigValue -ConfigTextNoComments $configTextNoComments "
         '-Section "wsl" -Key "distribution"'
     ) in content
     assert (
-        'Get-BuilderConfigValue -ConfigTextNoComments $configTextNoComments '
+        "Get-BuilderConfigValue -ConfigTextNoComments $configTextNoComments "
         '-Section "repository" -Key "path"'
     ) in content
 
@@ -161,9 +161,7 @@ def test_builder_ps1_no_longer_interpolates_the_repo_path_into_a_bash_string() -
     now-removed construction by name.
     """
     content = (_WINDOWS_DIR / "Builder.ps1").read_text()
-    invocation_lines = [
-        line for line in content.splitlines() if line.strip().startswith("& wsl ")
-    ]
+    invocation_lines = [line for line in content.splitlines() if line.strip().startswith("& wsl ")]
     assert len(invocation_lines) == 1, (
         f"expected exactly one wsl invocation, found {invocation_lines!r}"
     )
@@ -247,8 +245,7 @@ def test_parser_preserves_a_repository_path_that_looks_like_an_injection_attempt
     not from any sanitization here."""
     text = "repository:\n  path: /tmp/x'; echo INJECTED-COMMAND-RAN #\n"
     assert (
-        _parse_config_value(text, "repository", "path")
-        == "/tmp/x'; echo INJECTED-COMMAND-RAN #"  # noqa: S108 -- sample path, not a real tempfile
+        _parse_config_value(text, "repository", "path") == "/tmp/x'; echo INJECTED-COMMAND-RAN #"  # noqa: S108 -- sample path, not a real tempfile
     )
 
 
@@ -349,8 +346,7 @@ def test_new_invocation_survives_malicious_repository_paths_without_injection(
         # neither split by an embedded space/semicolon nor merged with an adjacent argument.
         output_lines = result.stdout.splitlines()
         assert len(output_lines) == 1, (
-            f"expected exactly one output line (no injected command executed), "
-            f"got {output_lines!r}"
+            f"expected exactly one output line (no injected command executed), got {output_lines!r}"
         )
 
         received_argv = output_lines[0].removeprefix("ARGV:").split("|")
@@ -358,8 +354,7 @@ def test_new_invocation_survives_malicious_repository_paths_without_injection(
             f"expected {len(argv) - 2} argv elements on the receiving end, got {received_argv!r}"
         )
         assert sample_path in received_argv, (
-            f"expected {sample_path!r} to arrive as one literal argv element, "
-            f"got {received_argv!r}"
+            f"expected {sample_path!r} to arrive as one literal argv element, got {received_argv!r}"
         )
 
 
@@ -375,8 +370,11 @@ def test_old_shell_string_construction_was_genuinely_exploitable() -> None:
     # place in this test file where a shell string is intentionally built, to prove the fix
     # actually changed behavior. `bash` resolved via PATH is acceptable here since this merely
     # demonstrates historical behavior, not part of any real invocation path.
-    result = subprocess.run(  # noqa: S603
-        ["bash", "-lc", old_command], capture_output=True, text=True, check=False  # noqa: S607
+    result = subprocess.run(  # noqa: S603 -- historical shell command regression
+        ["bash", "-lc", old_command],  # noqa: S607 -- intentionally resolved via PATH
+        capture_output=True,
+        text=True,
+        check=False,
     )
 
     assert "INJECTED-COMMAND-RAN" in result.stdout

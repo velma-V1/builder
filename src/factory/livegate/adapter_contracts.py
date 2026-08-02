@@ -28,24 +28,36 @@ class LiveAdapterObligation:
 
 
 LIVE_ADAPTER_OBLIGATIONS: tuple[LiveAdapterObligation, ...] = (
-    LiveAdapterObligation("OB-1",
+    LiveAdapterObligation(
+        "OB-1",
         "An outage is returned as CallResult(status=RUNTIME_UNAVAILABLE), never raised.",
-        "FakeOllamaAdapter.set_status(UNAVAILABLE) → call() returns RUNTIME_UNAVAILABLE"),
-    LiveAdapterObligation("OB-2",
+        "FakeOllamaAdapter.set_status(UNAVAILABLE) → call() returns RUNTIME_UNAVAILABLE",
+    ),
+    LiveAdapterObligation(
+        "OB-2",
         "probe() reports exact served model id + version + capability; no optimistic claims.",
-        "FakeOllamaAdapter.probe() → CapabilityReport with exact fingerprint"),
-    LiveAdapterObligation("OB-3",
+        "FakeOllamaAdapter.probe() → CapabilityReport with exact fingerprint",
+    ),
+    LiveAdapterObligation(
+        "OB-3",
         "supports(model_id) is True only for the exact model currently servable.",
-        "Fake adapters gate supports() on the exact backing model id"),
-    LiveAdapterObligation("OB-4",
+        "Fake adapters gate supports() on the exact backing model id",
+    ),
+    LiveAdapterObligation(
+        "OB-4",
         "call() output is bounded and attributable (fingerprint carried on success).",
-        "Fake CallResult carries a ModelFingerprint and bounded output"),
-    LiveAdapterObligation("OB-5",
+        "Fake CallResult carries a ModelFingerprint and bounded output",
+    ),
+    LiveAdapterObligation(
+        "OB-5",
         "The adapter never certifies work and never widens its own authority.",
-        "Fakes return worker output only; verification remains external"),
-    LiveAdapterObligation("OB-6",
+        "Fakes return worker output only; verification remains external",
+    ),
+    LiveAdapterObligation(
+        "OB-6",
         "cancel(task_id) is idempotent and returns whether something was cancelled.",
-        "Fake cancel() returns a bool without side effects on unknown ids"),
+        "Fake cancel() returns a bool without side effects on unknown ids",
+    ),
 )
 
 

@@ -6,7 +6,10 @@ from factory.integrations.worldmonitor.models import ProvenanceStep, WorldMonito
 
 
 def build_provenance(
-    source: WorldMonitorSourceRef, *, fetched_at: int, provider_route: str = "",
+    source: WorldMonitorSourceRef,
+    *,
+    fetched_at: int,
+    provider_route: str = "",
     model_fingerprint: str = "",
 ) -> tuple[ProvenanceStep, ...]:
     """Build the ordered, immutable provenance chain from source → fetch → normalize → (AI)."""

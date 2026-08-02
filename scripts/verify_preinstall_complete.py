@@ -52,11 +52,28 @@ def verify_prerequisites_fail_closed() -> VerificationResult:
 
     unknown = evaluate_prerequisite("mystery-tool", (1, 0)) is CheckStatus.ERROR
     below = evaluate_prerequisite("sqlite", (3, 50, 4)) is CheckStatus.FAIL
-    ok_all = unmet_mandatory({p: (99, 0, 0) for p in (
-        "wsl2", "docker", "nvidia_cuda", "ollama", "python", "uv", "sqlite", "git")}) == ()
+    ok_all = (
+        unmet_mandatory(
+            {
+                p: (99, 0, 0)
+                for p in (
+                    "wsl2",
+                    "docker",
+                    "nvidia_cuda",
+                    "ollama",
+                    "python",
+                    "uv",
+                    "sqlite",
+                    "git",
+                )
+            }
+        )
+        == ()
+    )
     ok = unknown and below and ok_all
     return VerificationResult(
-        "prerequisites fail closed (unknown→ERROR, below→FAIL)", ok,
+        "prerequisites fail closed (unknown->ERROR, below->FAIL)",
+        ok,
         f"unknown_error={unknown}; below_fail={below}; all_met_empty={ok_all}",
     )
 
@@ -68,8 +85,11 @@ def verify_python_classification() -> VerificationResult:
     distro = classify_python("/usr/bin/python3", "/usr") is PythonKind.DISTRO
     custom = classify_python("/opt/p/bin/python", "/opt/p") is PythonKind.CUSTOM
     ok = uv and distro and custom
-    return VerificationResult("interpreter classification (uv/distro/custom)", ok,
-                              f"uv={uv}; distro={distro}; custom={custom}")
+    return VerificationResult(
+        "interpreter classification (uv/distro/custom)",
+        ok,
+        f"uv={uv}; distro={distro}; custom={custom}",
+    )
 
 
 def verify_network_policy_local_only() -> VerificationResult:
@@ -79,8 +99,11 @@ def verify_network_policy_local_only() -> VerificationResult:
     local_ok = policy.evaluate("127.0.0.1")[0] and policy.evaluate("10.0.0.1")[0]
     hosted_denied = policy.evaluate("api.groq.com") == (False, "HOSTED_EGRESS_DISABLED")
     ok = (HOSTED_EGRESS_DEFAULT_ENABLED is False) and local_ok and hosted_denied
-    return VerificationResult("local-only network; hosted egress disabled by default", ok,
-                              f"default_disabled={not HOSTED_EGRESS_DEFAULT_ENABLED}")
+    return VerificationResult(
+        "local-only network; hosted egress disabled by default",
+        ok,
+        f"default_disabled={not HOSTED_EGRESS_DEFAULT_ENABLED}",
+    )
 
 
 def verify_phase_order() -> VerificationResult:
@@ -90,8 +113,11 @@ def verify_phase_order() -> VerificationResult:
     blocked = not is_authorization_allowed(LivePhase.PH5, frozenset())[0]
     allowed = is_authorization_allowed(LivePhase.PH4, frozenset())[0]
     ok = first and blocked and allowed
-    return VerificationResult("phase order PH4→PH5→PH6 enforced", ok,
-                              f"first_ph4={first}; ph5_blocked={blocked}; ph4_ok={allowed}")
+    return VerificationResult(
+        "phase order PH4->PH5->PH6 enforced",
+        ok,
+        f"first_ph4={first}; ph5_blocked={blocked}; ph4_ok={allowed}",
+    )
 
 
 def verify_installer_dry_run_default() -> VerificationResult:
@@ -104,31 +130,40 @@ def verify_installer_dry_run_default() -> VerificationResult:
 
     step = InstallStep("s", "mutate", mutating=True, rollback="undo", action=_act)
     report = Installer("t", (step,)).run()  # default: dry-run
-    ok = (not report.mutated) and called["n"] == 0 and (
-        report.results[0].outcome is StepOutcome.SKIPPED_DRY_RUN
+    ok = (
+        (not report.mutated)
+        and called["n"] == 0
+        and (report.results[0].outcome is StepOutcome.SKIPPED_DRY_RUN)
     )
-    return VerificationResult("installer is dry-run by default (no mutation)", ok,
-                              f"mutated={report.mutated}; action_calls={called['n']}")
+    return VerificationResult(
+        "installer is dry-run by default (no mutation)",
+        ok,
+        f"mutated={report.mutated}; action_calls={called['n']}",
+    )
 
 
 def verify_rollback_completeness() -> VerificationResult:
     from factory.preinstall.rollback import RollbackPlan, Step
 
     incomplete = RollbackPlan((Step("s", "mutate", mutating=True),))
-    complete = RollbackPlan((
-        Step("s", "mutate", mutating=True, rollback="undo", capture_before=True),
-    ))
+    complete = RollbackPlan(
+        (Step("s", "mutate", mutating=True, rollback="undo", capture_before=True),)
+    )
     ok = (not incomplete.is_complete) and complete.is_complete
-    return VerificationResult("rollback completeness enforced", ok,
-                              f"incomplete_detected={not incomplete.is_complete}")
+    return VerificationResult(
+        "rollback completeness enforced", ok, f"incomplete_detected={not incomplete.is_complete}"
+    )
 
 
 def verify_source_checksums() -> VerificationResult:
     from factory.preinstall.source_manifest import validate_manifest
 
     problems = validate_manifest(ROOT)
-    return VerificationResult("source checksum manifest validates", not problems,
-                              "ok" if not problems else f"problems={list(problems)}")
+    return VerificationResult(
+        "source checksum manifest validates",
+        not problems,
+        "ok" if not problems else f"problems={list(problems)}",
+    )
 
 
 def verify_docs_present() -> VerificationResult:
@@ -153,7 +188,10 @@ def verify_docs_present() -> VerificationResult:
 def verify_tests_pass() -> VerificationResult:
     result = subprocess.run(
         [sys.executable, "-m", "pytest", "tests/preinstall", "-q"],
-        capture_output=True, text=True, cwd=ROOT, timeout=900,
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        timeout=900,
     )
     tail = result.stdout.strip().splitlines()[-1] if result.stdout.strip() else "no output"
     return VerificationResult("preinstall tests pass", result.returncode == 0, tail)
@@ -162,17 +200,27 @@ def verify_tests_pass() -> VerificationResult:
 def verify_ruff() -> VerificationResult:
     result = subprocess.run(
         [sys.executable, "-m", "ruff", "check", "src/factory/preinstall", "tests/preinstall"],
-        capture_output=True, text=True, cwd=ROOT, timeout=900,
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        timeout=900,
     )
-    return VerificationResult("Ruff clean (preinstall)", result.returncode == 0, f"exit {result.returncode}")
+    return VerificationResult(
+        "Ruff clean (preinstall)", result.returncode == 0, f"exit {result.returncode}"
+    )
 
 
 def verify_mypy() -> VerificationResult:
     result = subprocess.run(
         [sys.executable, "-m", "mypy", "src/factory/preinstall", "tests/preinstall", "--strict"],
-        capture_output=True, text=True, cwd=ROOT, timeout=900,
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        timeout=900,
     )
-    return VerificationResult("mypy --strict clean (preinstall)", result.returncode == 0, f"exit {result.returncode}")
+    return VerificationResult(
+        "mypy --strict clean (preinstall)", result.returncode == 0, f"exit {result.returncode}"
+    )
 
 
 def main() -> int:
@@ -210,7 +258,7 @@ def main() -> int:
             "PC_IMPLEMENTATION=NOT_STARTED; PH-4/5/6 PENDING; PROM NOT_AUTHORIZED.\n"
         )
         return 0
-    print("Preinstall completion gate: INCOMPLETE — fix failures above.\n")
+    print("Preinstall completion gate: INCOMPLETE - fix failures above.\n")
     return 1
 
 

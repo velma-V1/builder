@@ -58,7 +58,9 @@ def _pair_conflicts(a: ChangeManifest, b: ChangeManifest) -> list[Conflict]:
     if dep_clash:
         found.append(
             Conflict(
-                ConflictKind.DEPENDENCY, a.workstream_id, b.workstream_id,
+                ConflictKind.DEPENDENCY,
+                a.workstream_id,
+                b.workstream_id,
                 f"deps={sorted(dep_clash)}",
             )
         )

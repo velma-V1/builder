@@ -25,8 +25,9 @@ def _event(seq: int, event_type: str = "PROGRESS", **payload: str) -> RealtimeEv
 
 
 def _contract(replay_window: int = 5) -> RealtimeChannelContract:
-    return RealtimeChannelContract("workstream:t1", event_types=("PROGRESS",),
-                                    replay_window=replay_window)
+    return RealtimeChannelContract(
+        "workstream:t1", event_types=("PROGRESS",), replay_window=replay_window
+    )
 
 
 # --- sequencing / dedup / ordering / gaps ----------------------------------------------------
@@ -112,7 +113,10 @@ def test_reconnect_cursor_carries_last_applied_sequence() -> None:
 def test_reconciliation_is_noop_when_already_current() -> None:
     buffer = ReplayBuffer(_contract())
     result = reconcile_snapshot(
-        "workstream:t1", local_last_sequence=5, backend_snapshot_sequence=5, buffer=buffer,
+        "workstream:t1",
+        local_last_sequence=5,
+        backend_snapshot_sequence=5,
+        buffer=buffer,
     )
     assert result.reconciled
     assert not result.full_snapshot_required
@@ -123,7 +127,10 @@ def test_reconciliation_via_replay_when_gap_is_covered() -> None:
     for i in range(6):
         buffer.append(_event(i))
     result = reconcile_snapshot(
-        "workstream:t1", local_last_sequence=2, backend_snapshot_sequence=5, buffer=buffer,
+        "workstream:t1",
+        local_last_sequence=2,
+        backend_snapshot_sequence=5,
+        buffer=buffer,
     )
     assert result.reconciled
     assert not result.full_snapshot_required
@@ -134,7 +141,10 @@ def test_reconciliation_requires_full_snapshot_when_gap_exceeds_window() -> None
     for i in range(10):
         buffer.append(_event(i))
     result = reconcile_snapshot(
-        "workstream:t1", local_last_sequence=0, backend_snapshot_sequence=9, buffer=buffer,
+        "workstream:t1",
+        local_last_sequence=0,
+        backend_snapshot_sequence=9,
+        buffer=buffer,
     )
     assert not result.reconciled
     assert result.full_snapshot_required
@@ -176,9 +186,7 @@ def test_optimistic_command_confirm_is_immutable_and_returns_new_state() -> None
 
 def test_restart_with_no_persisted_cursor_requires_full_snapshot() -> None:
     buffer = ReplayBuffer(_contract())
-    plan = plan_restart_reconstruction(
-        "workstream:t1", persisted_last_sequence=None, buffer=buffer
-    )
+    plan = plan_restart_reconstruction("workstream:t1", persisted_last_sequence=None, buffer=buffer)
     assert plan.requires_full_snapshot
     assert not plan.can_replay
 
@@ -187,9 +195,7 @@ def test_restart_within_replay_window_resumes_via_replay() -> None:
     buffer = ReplayBuffer(_contract(replay_window=10))
     for i in range(5):
         buffer.append(_event(i))
-    plan = plan_restart_reconstruction(
-        "workstream:t1", persisted_last_sequence=2, buffer=buffer
-    )
+    plan = plan_restart_reconstruction("workstream:t1", persisted_last_sequence=2, buffer=buffer)
     assert plan.can_replay
     assert plan.resume_from_sequence == 3
     assert not plan.requires_full_snapshot
@@ -199,8 +205,6 @@ def test_restart_beyond_replay_window_requires_full_snapshot() -> None:
     buffer = ReplayBuffer(_contract(replay_window=2))
     for i in range(10):
         buffer.append(_event(i))
-    plan = plan_restart_reconstruction(
-        "workstream:t1", persisted_last_sequence=0, buffer=buffer
-    )
+    plan = plan_restart_reconstruction("workstream:t1", persisted_last_sequence=0, buffer=buffer)
     assert plan.requires_full_snapshot
     assert not plan.can_replay

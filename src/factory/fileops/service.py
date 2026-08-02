@@ -41,7 +41,8 @@ class FileOpService:
     def _validate(self, raw_path: str, authority: TaskAuthority, operation: str) -> Path:
         path_authority = PathAuthority(project_root=Path(authority.project_root))
         result = path_authority.evaluate(
-            raw_path, operation=operation,
+            raw_path,
+            operation=operation,
             allowed=authority.allowed_paths or ("**",),
             forbidden=authority.forbidden_paths,
             read_only=authority.read_only_paths,
@@ -55,8 +56,12 @@ class FileOpService:
         """Canonicalize + contain a raw path; raise on any escape class."""
         path_authority = PathAuthority(project_root=Path(authority.project_root))
         result = path_authority.evaluate(
-            raw_path, operation="read", allowed=("**",),
-            forbidden=authority.forbidden_paths, read_only=(), active_exclusive_paths=(),
+            raw_path,
+            operation="read",
+            allowed=("**",),
+            forbidden=authority.forbidden_paths,
+            read_only=(),
+            active_exclusive_paths=(),
         )
         if not result.allowed:
             raise FileOpError("FILEOP_PATH_ESCAPE", f"path denied: {result.reason}")
@@ -108,17 +113,20 @@ class FileOpService:
                 "deletion requires a valid CMP-APPROVAL (Decision B)",
             )
         rel = self._relative(resolved, authority)
-        op_key = hashlib.sha256(
-            f"delete{_SEP}{rel}{_SEP}{uuid.uuid4().hex}".encode()
-        ).hexdigest()
+        op_key = hashlib.sha256(f"delete{_SEP}{rel}{_SEP}{uuid.uuid4().hex}".encode()).hexdigest()
         payload = hashlib.sha256(rel.encode()).hexdigest()
         writer = AuditWriter(database_path=self.audit_database_path)
         # Class-3: durable INTENT before the irreversible effect.
         writer.append(
             AuditEvent(
-                op_key=op_key, record_kind=RecordKind.INTENT, operation_class=3, actor="cmp-fileop",
-                action_class="fileop.delete", payload_hash=payload,
-                occurred_at=self.clock.now_iso(), target_ref=rel,
+                op_key=op_key,
+                record_kind=RecordKind.INTENT,
+                operation_class=3,
+                actor="cmp-fileop",
+                action_class="fileop.delete",
+                payload_hash=payload,
+                occurred_at=self.clock.now_iso(),
+                target_ref=rel,
             )
         )
         try:
@@ -128,9 +136,14 @@ class FileOpService:
         # Class-3: COMPLETION after the proven effect.
         writer.append(
             AuditEvent(
-                op_key=op_key, record_kind=RecordKind.COMPLETION, operation_class=3,
-                actor="cmp-fileop", action_class="fileop.delete", payload_hash=payload,
-                occurred_at=self.clock.now_iso(), target_ref=rel,
+                op_key=op_key,
+                record_kind=RecordKind.COMPLETION,
+                operation_class=3,
+                actor="cmp-fileop",
+                action_class="fileop.delete",
+                payload_hash=payload,
+                occurred_at=self.clock.now_iso(),
+                target_ref=rel,
             )
         )
         return DeleteResult(canonical_path=rel, deleted=True)
@@ -162,7 +175,11 @@ class FileOpService:
                         )
                     # zip-slip: every entry must stay contained under dest.
                     entry = dest_authority.evaluate(
-                        name, operation="write", allowed=("**",), forbidden=(), read_only=(),
+                        name,
+                        operation="write",
+                        allowed=("**",),
+                        forbidden=(),
+                        read_only=(),
                         active_exclusive_paths=(),
                     )
                     if not entry.allowed:
@@ -183,8 +200,9 @@ class FileOpService:
                         count += 1
         except zipfile.BadZipFile as exc:
             raise FileOpError("FILEOP_ARCHIVE_INVALID", f"bad archive: {exc}") from exc
-        return ExtractResult(dest=self._relative(dest_resolved, authority), entries=count,
-                             total_bytes=total)
+        return ExtractResult(
+            dest=self._relative(dest_resolved, authority), entries=count, total_bytes=total
+        )
 
     @staticmethod
     def _relative(resolved: Path, authority: TaskAuthority) -> str:

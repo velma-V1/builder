@@ -162,12 +162,8 @@ def test_create_task_persists_explicit_workstream_id_through_the_writer(
 def test_list_tasks_by_workstream_returns_only_assigned_tasks(
     writer: _OrchestratorStateWriter, reader: SQLiteOrchestratorStateReader
 ) -> None:
-    writer.create_task(
-        task_id="TASK-A", project_id="P", contract_version=1, workstream_id="ws-1"
-    )
-    writer.create_task(
-        task_id="TASK-B", project_id="P", contract_version=1, workstream_id="ws-2"
-    )
+    writer.create_task(task_id="TASK-A", project_id="P", contract_version=1, workstream_id="ws-1")
+    writer.create_task(task_id="TASK-B", project_id="P", contract_version=1, workstream_id="ws-2")
     writer.create_task(task_id="TASK-C", project_id="P", contract_version=1)  # unassigned
 
     result = reader.list_tasks_by_workstream("ws-1")
@@ -195,12 +191,8 @@ def test_list_tasks_by_workstream_orders_by_updated_at_then_task_id(
 ) -> None:
     # Same workstream, created in reverse task_id order but same instant (genesis updated_at is
     # identical to the second): ordering must still be deterministic (task_id tiebreak).
-    writer.create_task(
-        task_id="TASK-Z", project_id="P", contract_version=1, workstream_id="ws-1"
-    )
-    writer.create_task(
-        task_id="TASK-A", project_id="P", contract_version=1, workstream_id="ws-1"
-    )
+    writer.create_task(task_id="TASK-Z", project_id="P", contract_version=1, workstream_id="ws-1")
+    writer.create_task(task_id="TASK-A", project_id="P", contract_version=1, workstream_id="ws-1")
     result = reader.list_tasks_by_workstream("ws-1")
     assert [r.task_id for r in result] == ["TASK-A", "TASK-Z"]
 

@@ -43,8 +43,16 @@ def test_unregistered_is_default_deny(registry: ToolRegistry) -> None:
 
 def test_incomplete_declaration_rejected(registry: ToolRegistry) -> None:
     bad = ToolDeclaration(
-        tool_id="x", version="1", capabilities=(), inputs=(), outputs=(), side_effects=(),
-        permission_classes=(), environment="", resource_profile="", failure_behavior="",
+        tool_id="x",
+        version="1",
+        capabilities=(),
+        inputs=(),
+        outputs=(),
+        side_effects=(),
+        permission_classes=(),
+        environment="",
+        resource_profile="",
+        failure_behavior="",
     )
     verdict = registry.register(_request(bad))
     assert not verdict.approved
@@ -118,13 +126,11 @@ def test_release_guards(registry: ToolRegistry, register_tool: RegisterTool) -> 
     assert exc2.value.code == "TOOL_RELEASE_NEEDS_REVIEW"
 
 
-def test_repeated_failure_quarantines(
-    registry: ToolRegistry, register_tool: RegisterTool
-) -> None:
+def test_repeated_failure_quarantines(registry: ToolRegistry, register_tool: RegisterTool) -> None:
     register_tool()
     assert registry.record_failure("formatter", "1.0") is False  # 1
     assert registry.record_failure("formatter", "1.0") is False  # 2
-    assert registry.record_failure("formatter", "1.0") is True   # 3 → quarantined
+    assert registry.record_failure("formatter", "1.0") is True  # 3 → quarantined
     assert registry.lookup("formatter", "1.0") is None
 
 

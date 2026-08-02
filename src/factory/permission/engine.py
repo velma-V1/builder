@@ -196,26 +196,43 @@ class PermissionEngine:
         ts = self.clock.now_ts()
         expires_at = ts + ttl_seconds
         fingerprint = grant_fingerprint(
-            task_id=request.task_id, tool=request.tool, action=request.action,
-            resource=decision.canonical_resource, scope=request.scope,
+            task_id=request.task_id,
+            tool=request.tool,
+            action=request.action,
+            resource=decision.canonical_resource,
+            scope=request.scope,
         )
         op_key = _new_op_key("issue", grant_id)
         self._writer.stage_issue(
-            grant_id=grant_id, op_key=op_key, task_id=request.task_id, tool=request.tool,
-            action=request.action, permission_class=request.permission_class,
-            resource=decision.canonical_resource, scope=request.scope, purpose=request.purpose,
-            grant_fingerprint=fingerprint, expires_at=expires_at, ts=ts,
+            grant_id=grant_id,
+            op_key=op_key,
+            task_id=request.task_id,
+            tool=request.tool,
+            action=request.action,
+            permission_class=request.permission_class,
+            resource=decision.canonical_resource,
+            scope=request.scope,
+            purpose=request.purpose,
+            grant_fingerprint=fingerprint,
+            expires_at=expires_at,
+            ts=ts,
         )
         payload = _payload_hash(grant_id, request.task_id, request.action, request.scope)
         try:
             audit = self._audit_completion(
-                op_key=op_key, actor=actor, action_class="permission.issue",
-                payload_hash=payload, target_ref=grant_id,
+                op_key=op_key,
+                actor=actor,
+                action_class="permission.issue",
+                payload_hash=payload,
+                target_ref=grant_id,
             )
         except AuditError as exc:
             self._writer.rollback_operation(
-                grant_id=grant_id, op_key=op_key, verb="issue",
-                failure_code="AUDIT_APPEND_FAILED", ts=self.clock.now_ts(),
+                grant_id=grant_id,
+                op_key=op_key,
+                verb="issue",
+                failure_code="AUDIT_APPEND_FAILED",
+                ts=self.clock.now_ts(),
             )
             raise PermissionError(
                 "PERMISSION_AUDIT_FAILED", f"grant issue failed closed (audit unavailable): {exc}"
@@ -256,8 +273,11 @@ class PermissionEngine:
                 "PERMISSION_NOT_REVOCABLE", f"grant {grant_id} is terminal ({grant.state})"
             )
         self._run_transition(
-            grant_id=grant_id, verb="revoke", new_state=PermissionState.REVOKED,
-            actor="operator", action_class="permission.revoke",
+            grant_id=grant_id,
+            verb="revoke",
+            new_state=PermissionState.REVOKED,
+            actor="operator",
+            action_class="permission.revoke",
         )
 
     def expire(self) -> tuple[str, ...]:
@@ -266,8 +286,12 @@ class PermissionEngine:
         expired: list[str] = []
         for grant in self.reader.list_expirable(now):
             self._run_transition(
-                grant_id=grant.grant_id, verb="expire", new_state=PermissionState.EXPIRED,
-                actor="cmp-perm", action_class="permission.expire", ts=now,
+                grant_id=grant.grant_id,
+                verb="expire",
+                new_state=PermissionState.EXPIRED,
+                actor="cmp-perm",
+                action_class="permission.expire",
+                ts=now,
             )
             expired.append(grant.grant_id)
         return tuple(expired)
@@ -291,8 +315,11 @@ class PermissionEngine:
                 )
             else:
                 self._writer.rollback_operation(
-                    grant_id=intent.grant_id, op_key=intent.op_key, verb=intent.verb,
-                    failure_code="RECONCILE_NO_AUDIT", ts=now,
+                    grant_id=intent.grant_id,
+                    op_key=intent.op_key,
+                    verb=intent.verb,
+                    failure_code="RECONCILE_NO_AUDIT",
+                    ts=now,
                 )
 
     # --- internals -------------------------------------------------------------------------------
@@ -302,15 +329,26 @@ class PermissionEngine:
     ) -> AuditRecord:
         return self._audit.append(
             AuditEvent(
-                op_key=op_key, record_kind=RecordKind.COMPLETION, operation_class=1, actor=actor,
-                action_class=action_class, payload_hash=payload_hash,
-                occurred_at=self.clock.now_iso(), target_ref=target_ref,
+                op_key=op_key,
+                record_kind=RecordKind.COMPLETION,
+                operation_class=1,
+                actor=actor,
+                action_class=action_class,
+                payload_hash=payload_hash,
+                occurred_at=self.clock.now_iso(),
+                target_ref=target_ref,
             )
         )
 
     def _run_transition(
-        self, *, grant_id: str, verb: str, new_state: PermissionState, actor: str,
-        action_class: str, ts: int | None = None,
+        self,
+        *,
+        grant_id: str,
+        verb: str,
+        new_state: PermissionState,
+        actor: str,
+        action_class: str,
+        ts: int | None = None,
     ) -> None:
         at = self.clock.now_ts() if ts is None else ts
         op_key = _new_op_key(verb, grant_id)
@@ -320,13 +358,19 @@ class PermissionEngine:
         payload = _payload_hash(grant_id, verb, str(new_state))
         try:
             audit = self._audit_completion(
-                op_key=op_key, actor=actor, action_class=action_class,
-                payload_hash=payload, target_ref=grant_id,
+                op_key=op_key,
+                actor=actor,
+                action_class=action_class,
+                payload_hash=payload,
+                target_ref=grant_id,
             )
         except AuditError as exc:
             self._writer.rollback_operation(
-                grant_id=grant_id, op_key=op_key, verb=verb,
-                failure_code="AUDIT_APPEND_FAILED", ts=self.clock.now_ts(),
+                grant_id=grant_id,
+                op_key=op_key,
+                verb=verb,
+                failure_code="AUDIT_APPEND_FAILED",
+                ts=self.clock.now_ts(),
             )
             raise PermissionError(
                 "PERMISSION_AUDIT_FAILED", f"{verb} failed closed (audit unavailable): {exc}"

@@ -64,8 +64,6 @@ class HealthLedger:
         record = self._records.get(route_key)
         return record is not None and record.is_valid_at(now)
 
-    def check(
-        self, route_key: str, healthy: bool, now: int, ttl: int, reason: str
-    ) -> HealthRecord:
+    def check(self, route_key: str, healthy: bool, now: int, ttl: int, reason: str) -> HealthRecord:
         state = HealthState.HEALTHY if healthy else HealthState.UNHEALTHY
         return self.record(HealthRecord(route_key, state, now, now + ttl, reason))

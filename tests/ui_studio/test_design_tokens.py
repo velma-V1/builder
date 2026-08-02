@@ -46,7 +46,10 @@ def test_low_contrast_pairing_is_denied() -> None:
     base = default_token_set()
     tokens = DesignTokenSet(
         colors={**base.colors, "foreground": "#fefefe"},  # near-white on white background
-        spacing=base.spacing, typography=base.typography, radii=base.radii, motion=base.motion,
+        spacing=base.spacing,
+        typography=base.typography,
+        radii=base.radii,
+        motion=base.motion,
     )
     with pytest.raises(UIStudioError) as excinfo:
         validate_token_set(tokens)

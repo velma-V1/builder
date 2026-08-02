@@ -20,8 +20,13 @@ ROOT = Path(__file__).resolve().parents[1]
 _UIS = ROOT / "src" / "factory" / "ui_studio"
 _UI_FRONTEND = ROOT / "ui"
 _FORBIDDEN_HTTP = (
-    "import requests", "import httpx", "import aiohttp", "import http.client",
-    "from urllib.request", "import urllib.request", "import socket",
+    "import requests",
+    "import httpx",
+    "import aiohttp",
+    "import http.client",
+    "from urllib.request",
+    "import urllib.request",
+    "import socket",
 )
 _FORBIDDEN_PROCESS = ("import subprocess", "import docker", "from docker", "os.system(")
 _FORBIDDEN_SECRET = ("os.environ", "os.getenv", "getenv(")
@@ -46,10 +51,21 @@ def _scan(directory: Path, needles: tuple[str, ...]) -> list[str]:
 
 def verify_layout() -> VerificationResult:
     files = [
-        "errors", "models", "design_tokens", "component_registry", "page_widget_registry",
-        "template_registry", "requirements_compiler", "manifest", "state_contracts",
-        "data_contracts", "realtime_contracts", "artifact_package", "fake_renderer",
-        "preview_lifecycle", "verification",
+        "errors",
+        "models",
+        "design_tokens",
+        "component_registry",
+        "page_widget_registry",
+        "template_registry",
+        "requirements_compiler",
+        "manifest",
+        "state_contracts",
+        "data_contracts",
+        "realtime_contracts",
+        "artifact_package",
+        "fake_renderer",
+        "preview_lifecycle",
+        "verification",
     ]
     missing = [f for f in files if not (_UIS / f"{f}.py").exists()]
     return VerificationResult("UI Studio modules present", not missing, f"missing={missing}")
@@ -64,13 +80,15 @@ def verify_no_direct_http_process_or_secret() -> VerificationResult:
 
 def verify_no_source_copied() -> VerificationResult:
     vendor_dirs = [
-        d.name for d in _UIS.iterdir()
+        d.name
+        for d in _UIS.iterdir()
         if d.is_dir() and d.name in ("vendor", "_vendor", "node_modules", "third_party")
     ]
     total_kb = sum(p.stat().st_size for p in _UIS.rglob("*.py")) // 1024
     ok = not vendor_dirs and total_kb < 400
     return VerificationResult(
-        "no vendored frontend source in the backend package", ok,
+        "no vendored frontend source in the backend package",
+        ok,
         f"vendor_dirs={vendor_dirs}; size_kb={total_kb}",
     )
 
@@ -84,10 +102,15 @@ def verify_npm_lockfile_present_and_node_modules_not_committed() -> Verification
     if git is None:
         return VerificationResult(
             "ui/package-lock.json is git-tracked; node_modules/other lockfiles are not",
-            False, "git executable not found on PATH",
+            False,
+            "git executable not found on PATH",
         )
     result = subprocess.run(  # noqa: S603 - fixed args, resolved absolute git
-        [git, "ls-files", "ui"], capture_output=True, text=True, cwd=ROOT, timeout=30,
+        [git, "ls-files", "ui"],
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        timeout=30,
     )
     tracked = result.stdout.splitlines()
     forbidden_names = ("node_modules", "pnpm-lock.yaml", "yarn.lock", "bun.lockb")
@@ -96,7 +119,8 @@ def verify_npm_lockfile_present_and_node_modules_not_committed() -> Verification
     ok = result.returncode == 0 and lockfile_tracked and not hits
     return VerificationResult(
         "ui/package-lock.json is git-tracked; node_modules/other lockfiles are not",
-        ok, f"lockfile_tracked={lockfile_tracked}; forbidden_hits={hits}",
+        ok,
+        f"lockfile_tracked={lockfile_tracked}; forbidden_hits={hits}",
     )
 
 
@@ -112,7 +136,8 @@ def verify_dependency_versions_pinned_and_consistent() -> VerificationResult:
     package_json_path = _UI_FRONTEND / "package.json"
     if not manifest_path.is_file() or not package_json_path.is_file():
         return VerificationResult(
-            "ui/package.manifest.json pinned versions match ui/package.json", False,
+            "ui/package.manifest.json pinned versions match ui/package.json",
+            False,
             f"missing: manifest={not manifest_path.is_file()} package.json={not package_json_path.is_file()}",
         )
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -132,7 +157,8 @@ def verify_dependency_versions_pinned_and_consistent() -> VerificationResult:
             mismatches.append(f"{name}: not installed but not marked NOT_INSTALLED_PHASE_1")
     ok = bool(deps) and not mismatches
     return VerificationResult(
-        "ui/package.manifest.json pinned versions match ui/package.json", ok,
+        "ui/package.manifest.json pinned versions match ui/package.json",
+        ok,
         f"mismatches={mismatches}",
     )
 
@@ -159,12 +185,17 @@ def verify_all_templates_render_complete_artifacts() -> VerificationResult:
         try:
             plan = compile_requirement(
                 UIRequirement(template_id=template.template_id, title="Verification Project"),
-                templates=templates, components=components,
+                templates=templates,
+                components=components,
             )
             tokens = default_token_set()
             render_result = FakeRenderer().render(RenderRequest(plan, tokens))
             package = assemble_artifact_package(
-                plan, tokens, render_result, components=components, project_id="verify-1",
+                plan,
+                tokens,
+                render_result,
+                components=components,
+                project_id="verify-1",
                 created_at=1000,
                 state_contracts=(builder_command_center_workflow(),),
                 data_contracts=(builder_task_snapshot_contract(),),
@@ -173,7 +204,8 @@ def verify_all_templates_render_complete_artifacts() -> VerificationResult:
         except Exception as exc:
             failures.append(f"{template.template_id}: {exc}")
     return VerificationResult(
-        "all 16 templates render a complete, verified artifact", not failures and len(TEMPLATES) == 16,
+        "all 16 templates render a complete, verified artifact",
+        not failures and len(TEMPLATES) == 16,
         f"template_count={len(TEMPLATES)}; failures={failures}",
     )
 
@@ -184,14 +216,19 @@ def verify_preview_lifecycle_dry_run() -> VerificationResult:
     report = build_preview_lifecycle().run()
     ok = not report.mutated and "(MISSING)" not in build_preview_lifecycle().format_plan()
     return VerificationResult(
-        "preview lifecycle is dry-run by default (no server started)", ok, f"mutated={report.mutated}"
+        "preview lifecycle is dry-run by default (no server started)",
+        ok,
+        f"mutated={report.mutated}",
     )
 
 
 def verify_tests() -> VerificationResult:
     result = subprocess.run(
         [sys.executable, "-m", "pytest", "tests/ui_studio", "-q"],
-        capture_output=True, text=True, cwd=ROOT, timeout=900,
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        timeout=900,
     )
     tail = result.stdout.strip().splitlines()[-1] if result.stdout.strip() else "no output"
     return VerificationResult("UI Studio tests pass", result.returncode == 0, tail)
@@ -200,15 +237,23 @@ def verify_tests() -> VerificationResult:
 def verify_ruff() -> VerificationResult:
     result = subprocess.run(
         [sys.executable, "-m", "ruff", "check", "src/factory/ui_studio", "tests/ui_studio"],
-        capture_output=True, text=True, cwd=ROOT, timeout=900,
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        timeout=900,
     )
-    return VerificationResult("Ruff clean (ui_studio)", result.returncode == 0, f"exit {result.returncode}")
+    return VerificationResult(
+        "Ruff clean (ui_studio)", result.returncode == 0, f"exit {result.returncode}"
+    )
 
 
 def verify_mypy() -> VerificationResult:
     result = subprocess.run(
         [sys.executable, "-m", "mypy", "src/factory/ui_studio", "tests/ui_studio", "--strict"],
-        capture_output=True, text=True, cwd=ROOT, timeout=900,
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        timeout=900,
     )
     return VerificationResult(
         "mypy --strict clean (ui_studio)", result.returncode == 0, f"exit {result.returncode}"
@@ -217,10 +262,16 @@ def verify_mypy() -> VerificationResult:
 
 def main() -> int:
     checks = [
-        verify_layout, verify_no_direct_http_process_or_secret, verify_no_source_copied,
+        verify_layout,
+        verify_no_direct_http_process_or_secret,
+        verify_no_source_copied,
         verify_npm_lockfile_present_and_node_modules_not_committed,
-        verify_dependency_versions_pinned_and_consistent, verify_all_templates_render_complete_artifacts,
-        verify_preview_lifecycle_dry_run, verify_tests, verify_ruff, verify_mypy,
+        verify_dependency_versions_pinned_and_consistent,
+        verify_all_templates_render_complete_artifacts,
+        verify_preview_lifecycle_dry_run,
+        verify_tests,
+        verify_ruff,
+        verify_mypy,
     ]
     results = [c() for c in checks]
     passed = sum(1 for r in results if r.passed)
@@ -234,9 +285,11 @@ def main() -> int:
     print(f"TOTAL: {passed}/{total} checks passed")
     print("=" * 80 + "\n")
     if passed == total:
-        print("UI Studio structure gate: PASS. PHASE_1_DASHBOARD_RUNNABLE_LOCALLY; "
-              "fake renderer backend contract unchanged; frontend installed, not Tauri-bundled, "
-              "no live backend connection opened.\n")
+        print(
+            "UI Studio structure gate: PASS. PHASE_1_DASHBOARD_RUNNABLE_LOCALLY; "
+            "fake renderer backend contract unchanged; frontend installed, not Tauri-bundled, "
+            "no live backend connection opened.\n"
+        )
         return 0
     print("UI Studio structure gate: INCOMPLETE — fix failures above.\n")
     return 1

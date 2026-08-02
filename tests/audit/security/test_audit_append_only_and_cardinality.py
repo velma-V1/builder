@@ -67,9 +67,7 @@ def test_readonly_connection_denies_mutation(
         connection.close()
 
 
-def test_duplicate_completion_rejected(
-    writer: AuditWriter, make_event: EventFactory
-) -> None:
+def test_duplicate_completion_rejected(writer: AuditWriter, make_event: EventFactory) -> None:
     writer.append(make_event("op-1", record_kind=RecordKind.COMPLETION, operation_class=1))
     with pytest.raises(AuditError) as exc:
         writer.append(make_event("op-1", record_kind=RecordKind.COMPLETION, operation_class=1))

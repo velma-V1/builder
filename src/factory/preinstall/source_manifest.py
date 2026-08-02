@@ -38,7 +38,8 @@ MANIFEST_SOURCES: tuple[str, ...] = (
 
 
 def sha256_of(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    canonical_bytes = path.read_bytes().replace(b"\r\n", b"\n")
+    return hashlib.sha256(canonical_bytes).hexdigest()
 
 
 def render_manifest(root: Path) -> str:

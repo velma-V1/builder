@@ -30,17 +30,24 @@ def _package_for(template_id: str) -> ArtifactPackage:
     templates, components = TemplateRegistry(), ComponentRegistry()
     plan = compile_requirement(
         UIRequirement(template_id=template_id, title="Test Project"),
-        templates=templates, components=components,
+        templates=templates,
+        components=components,
     )
     tokens = default_token_set()
     render_result = FakeRenderer().render(RenderRequest(plan, tokens))
     return assemble_artifact_package(
-        plan, tokens, render_result, components=components, project_id="proj-1", created_at=1000,
+        plan,
+        tokens,
+        render_result,
+        components=components,
+        project_id="proj-1",
+        created_at=1000,
         state_contracts=(builder_command_center_workflow(),),
         data_contracts=(builder_task_snapshot_contract(),),
         realtime_contracts=(
             (RealtimeChannelContract(template_id, event_types=("PROGRESS",)),)
-            if plan.template.realtime else ()
+            if plan.template.realtime
+            else ()
         ),
     )
 
@@ -122,7 +129,8 @@ def test_rollback_record_can_reference_a_prior_manifest() -> None:
     rolled = dataclasses.replace(
         package,
         rollback=RollbackRecord(
-            previous_project_manifest_ref="proj-0", rollback_available=True,
+            previous_project_manifest_ref="proj-0",
+            rollback_available=True,
             detail="reverted to proj-0 after a failed render",
         ),
     )

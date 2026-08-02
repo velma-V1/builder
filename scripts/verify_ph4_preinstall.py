@@ -64,12 +64,16 @@ def verify_roster_excludes_glm() -> VerificationResult:
     # The default roster defines a route for every TaskType member (roster._ROUTES is complete).
     approved: list[str] = []
     for task_type in TaskType:
-        approved.extend(roster.descriptor(k).model_id.lower() for k in roster.candidates_for(task_type))
+        approved.extend(
+            roster.descriptor(k).model_id.lower() for k in roster.candidates_for(task_type)
+        )
     leaked = [m for m in approved if "glm" in m]
     excluded_present = "glm-4.7" in EXCLUDED_MODEL_IDS and "zai-glm-4.7" in EXCLUDED_MODEL_IDS
     ok = not leaked and excluded_present
     detail = f"leaked={leaked}; exclusion_constant={excluded_present}"
-    return VerificationResult("No GLM route is approved (03 §6); exclusion constant present", ok, detail)
+    return VerificationResult(
+        "No GLM route is approved (03 §6); exclusion constant present", ok, detail
+    )
 
 
 def verify_provider_adapter_interface() -> VerificationResult:
@@ -113,7 +117,9 @@ def verify_no_silent_substitution() -> VerificationResult:
         adapters={Provider.OLLAMA: FakeOllamaAdapter(status=RuntimeStatus.UNAVAILABLE)},
         clock=ManualClock(),
     )
-    req = RouteRequest("t", "s", TaskType.DISPATCH, ResourceProfile(ResourceClass.GPU_LIGHT, 1, 1, 1, 1))
+    req = RouteRequest(
+        "t", "s", TaskType.DISPATCH, ResourceProfile(ResourceClass.GPU_LIGHT, 1, 1, 1, 1)
+    )
     out = router.execute(req)
     same_route = out.record is not None and out.record.route_key == "OLLAMA:qwen3:8b"
     explicit = out.record is not None and out.record.status is ExecutionStatus.RUNTIME_UNAVAILABLE
@@ -125,7 +131,8 @@ def verify_no_silent_substitution() -> VerificationResult:
         rejected = exc.code == "FALLBACK_UNAPPROVED"
     ok = same_route and explicit and no_auto_fallback and rejected
     return VerificationResult(
-        "No silent substitution: explicit unavailable + approved-only fallback", ok,
+        "No silent substitution: explicit unavailable + approved-only fallback",
+        ok,
         f"same_route={same_route}; explicit={explicit}; no_auto={no_auto_fallback}; rejected={rejected}",
     )
 
@@ -150,7 +157,9 @@ def verify_fingerprint_and_append_only() -> VerificationResult:
         fp_rejected = exc.code == "FINGERPRINT_INSUFFICIENT"
 
     ledger = ExecutionLedger()
-    rec = ExecutionRecord("e1", "t", "s", 1, "OLLAMA:qwen3:8b", "d", ExecutionStatus.SUCCEEDED, 0, "ok")
+    rec = ExecutionRecord(
+        "e1", "t", "s", 1, "OLLAMA:qwen3:8b", "d", ExecutionStatus.SUCCEEDED, 0, "ok"
+    )
     ledger.record(rec)
     try:
         ledger.record(rec)
@@ -159,7 +168,8 @@ def verify_fingerprint_and_append_only() -> VerificationResult:
         append_only = exc.code == "RECORD_DUPLICATE"
     ok = fp_rejected and append_only
     return VerificationResult(
-        "Bare tag rejected (01J §3.1); execution ledger is append-only", ok,
+        "Bare tag rejected (01J §3.1); execution ledger is append-only",
+        ok,
         f"fp_rejected={fp_rejected}; append_only={append_only}",
     )
 
@@ -179,18 +189,27 @@ def verify_single_gpu_heavy_and_reservations() -> VerificationResult:
 def verify_tests_pass_with_coverage() -> VerificationResult:
     result = subprocess.run(
         [
-            sys.executable, "-m", "pytest", "tests/routing", "-q",
+            sys.executable,
+            "-m",
+            "pytest",
+            "tests/routing",
+            "-q",
             "--cov=src/factory/routing",
             "--cov=src/factory/scheduler",
             "--cov=src/factory/models/ollama_adapter",
             "--cov=src/factory/workers/aider_adapter",
-            "--cov-branch", "--cov-fail-under=95",
+            "--cov-branch",
+            "--cov-fail-under=95",
         ],
-        capture_output=True, text=True, cwd=ROOT, timeout=900,
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        timeout=900,
     )
     summary = (result.stdout.strip().split("\n") or ["?"])[-1]
     return VerificationResult(
-        "PH-4 tests pass with >=95% branch coverage", result.returncode == 0,
+        "PH-4 tests pass with >=95% branch coverage",
+        result.returncode == 0,
         f"exit {result.returncode}; {summary}",
     )
 
@@ -198,27 +217,47 @@ def verify_tests_pass_with_coverage() -> VerificationResult:
 def verify_ruff() -> VerificationResult:
     result = subprocess.run(
         [
-            sys.executable, "-m", "ruff", "check",
-            "src/factory/routing", "src/factory/scheduler",
-            "src/factory/models/ollama_adapter", "src/factory/workers/aider_adapter",
+            sys.executable,
+            "-m",
+            "ruff",
+            "check",
+            "src/factory/routing",
+            "src/factory/scheduler",
+            "src/factory/models/ollama_adapter",
+            "src/factory/workers/aider_adapter",
             "tests/routing",
         ],
-        capture_output=True, text=True, cwd=ROOT, timeout=900,
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        timeout=900,
     )
-    return VerificationResult("Ruff clean (PH-4 src + tests)", result.returncode == 0, f"exit {result.returncode}")
+    return VerificationResult(
+        "Ruff clean (PH-4 src + tests)", result.returncode == 0, f"exit {result.returncode}"
+    )
 
 
 def verify_mypy() -> VerificationResult:
     result = subprocess.run(
         [
-            sys.executable, "-m", "mypy",
-            "src/factory/routing", "src/factory/scheduler",
-            "src/factory/models/ollama_adapter", "src/factory/workers/aider_adapter",
-            "tests/routing", "--strict",
+            sys.executable,
+            "-m",
+            "mypy",
+            "src/factory/routing",
+            "src/factory/scheduler",
+            "src/factory/models/ollama_adapter",
+            "src/factory/workers/aider_adapter",
+            "tests/routing",
+            "--strict",
         ],
-        capture_output=True, text=True, cwd=ROOT, timeout=900,
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        timeout=900,
     )
-    return VerificationResult("mypy --strict clean (PH-4)", result.returncode == 0, f"exit {result.returncode}")
+    return VerificationResult(
+        "mypy --strict clean (PH-4)", result.returncode == 0, f"exit {result.returncode}"
+    )
 
 
 def verify_evidence_present() -> VerificationResult:

@@ -17,8 +17,15 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 _WM = ROOT / "src" / "factory" / "integrations" / "worldmonitor"
-_FORBIDDEN_HTTP = ("import requests", "import httpx", "import aiohttp", "import http.client",
-                   "from urllib.request", "import urllib.request", "import socket")
+_FORBIDDEN_HTTP = (
+    "import requests",
+    "import httpx",
+    "import aiohttp",
+    "import http.client",
+    "from urllib.request",
+    "import urllib.request",
+    "import socket",
+)
 _FORBIDDEN_SECRET = ("os.environ", "os.getenv", "getenv(")
 
 
@@ -40,21 +47,40 @@ def _scan(needles: tuple[str, ...]) -> list[str]:
 
 
 def verify_layout() -> VerificationResult:
-    files = ["errors", "models", "manifest", "capabilities", "adapter", "rest_client", "mcp_client",
-             "normalization", "provenance", "health", "lifecycle", "policy", "retention",
-             "ui_bridge", "fake_transport"]
+    files = [
+        "errors",
+        "models",
+        "manifest",
+        "capabilities",
+        "adapter",
+        "rest_client",
+        "mcp_client",
+        "normalization",
+        "provenance",
+        "health",
+        "lifecycle",
+        "policy",
+        "retention",
+        "ui_bridge",
+        "fake_transport",
+    ]
     missing = [f for f in files if not (_WM / f"{f}.py").exists()]
     return VerificationResult("WorldMonitor modules present", not missing, f"missing={missing}")
 
 
 def verify_no_source_copied() -> VerificationResult:
     # A thin managed interface has no vendored subtree and stays modest in size.
-    vendor_dirs = [d.name for d in _WM.iterdir()
-                   if d.is_dir() and d.name in ("vendor", "_vendor", "upstream", "third_party")]
+    vendor_dirs = [
+        d.name
+        for d in _WM.iterdir()
+        if d.is_dir() and d.name in ("vendor", "_vendor", "upstream", "third_party")
+    ]
     total_kb = sum(p.stat().st_size for p in _WM.rglob("*.py")) // 1024
     ok = not vendor_dirs and total_kb < 200
     return VerificationResult(
-        "no WorldMonitor upstream source vendored", ok, f"vendor_dirs={vendor_dirs}; size_kb={total_kb}"
+        "no WorldMonitor upstream source vendored",
+        ok,
+        f"vendor_dirs={vendor_dirs}; size_kb={total_kb}",
     )
 
 
@@ -82,8 +108,11 @@ def verify_model_router_only() -> VerificationResult:
 
     slots = set(WorldMonitorAdapter.__slots__)
     ok = "_router" in slots and not any("provider" in s or "secret" in s for s in slots)
-    return VerificationResult("AI access is Builder-router-only (no provider/secret handle)", ok,
-                              f"router_slot={'_router' in slots}")
+    return VerificationResult(
+        "AI access is Builder-router-only (no provider/secret handle)",
+        ok,
+        f"router_slot={'_router' in slots}",
+    )
 
 
 def verify_lifecycle_dry_run() -> VerificationResult:
@@ -91,13 +120,18 @@ def verify_lifecycle_dry_run() -> VerificationResult:
 
     report = build_lifecycle().run()  # default dry-run
     ok = not report.mutated and "(MISSING)" not in build_lifecycle().format_plan()
-    return VerificationResult("lifecycle is dry-run by default (no mutation)", ok, f"mutated={report.mutated}")
+    return VerificationResult(
+        "lifecycle is dry-run by default (no mutation)", ok, f"mutated={report.mutated}"
+    )
 
 
 def verify_tests() -> VerificationResult:
     result = subprocess.run(
         [sys.executable, "-m", "pytest", "tests/integrations/worldmonitor", "-q"],
-        capture_output=True, text=True, cwd=ROOT, timeout=900,
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        timeout=900,
     )
     tail = result.stdout.strip().splitlines()[-1] if result.stdout.strip() else "no output"
     return VerificationResult("WorldMonitor tests pass", result.returncode == 0, tail)
@@ -106,24 +140,47 @@ def verify_tests() -> VerificationResult:
 def verify_ruff() -> VerificationResult:
     result = subprocess.run(
         [sys.executable, "-m", "ruff", "check", "src/factory/integrations", "tests/integrations"],
-        capture_output=True, text=True, cwd=ROOT, timeout=900,
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        timeout=900,
     )
-    return VerificationResult("Ruff clean (integrations)", result.returncode == 0, f"exit {result.returncode}")
+    return VerificationResult(
+        "Ruff clean (integrations)", result.returncode == 0, f"exit {result.returncode}"
+    )
 
 
 def verify_mypy() -> VerificationResult:
     result = subprocess.run(
-        [sys.executable, "-m", "mypy", "src/factory/integrations", "tests/integrations", "--strict"],
-        capture_output=True, text=True, cwd=ROOT, timeout=900,
+        [
+            sys.executable,
+            "-m",
+            "mypy",
+            "src/factory/integrations",
+            "tests/integrations",
+            "--strict",
+        ],
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        timeout=900,
     )
-    return VerificationResult("mypy --strict clean (integrations)", result.returncode == 0, f"exit {result.returncode}")
+    return VerificationResult(
+        "mypy --strict clean (integrations)", result.returncode == 0, f"exit {result.returncode}"
+    )
 
 
 def main() -> int:
     checks = [
-        verify_layout, verify_no_source_copied, verify_attribution_and_license,
-        verify_no_direct_http_or_secret, verify_model_router_only, verify_lifecycle_dry_run,
-        verify_tests, verify_ruff, verify_mypy,
+        verify_layout,
+        verify_no_source_copied,
+        verify_attribution_and_license,
+        verify_no_direct_http_or_secret,
+        verify_model_router_only,
+        verify_lifecycle_dry_run,
+        verify_tests,
+        verify_ruff,
+        verify_mypy,
     ]
     results = [c() for c in checks]
     passed = sum(1 for r in results if r.passed)
@@ -137,8 +194,10 @@ def main() -> int:
     print(f"TOTAL: {passed}/{total} checks passed")
     print("=" * 80 + "\n")
     if passed == total:
-        print("WorldMonitor structure gate: PASS. STRUCTURE_COMPLETE_NOT_INSTALLED; "
-              "external pinned dependency; hosted access DISABLED; router-only AI.\n")
+        print(
+            "WorldMonitor structure gate: PASS. STRUCTURE_COMPLETE_NOT_INSTALLED; "
+            "external pinned dependency; hosted access DISABLED; router-only AI.\n"
+        )
         return 0
     print("WorldMonitor structure gate: INCOMPLETE — fix failures above.\n")
     return 1

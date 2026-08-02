@@ -146,9 +146,7 @@ class RPH3CrossLaneBridge:
             self._seen[signal.op_key] = (fingerprint, result)
             return result
 
-    def from_permission(
-        self, decision: PermissionDecision, op_key: str
-    ) -> CrossLaneResult:
+    def from_permission(self, decision: PermissionDecision, op_key: str) -> CrossLaneResult:
         if decision.decision is PermissionDecisionKind.ALLOW:
             kind = LaneBSignalKind.HEALTHY
         elif decision.decision is PermissionDecisionKind.REQUIRES_APPROVAL:
@@ -165,9 +163,7 @@ class RPH3CrossLaneBridge:
             )
         )
 
-    def from_approval(
-        self, record: ApprovalRecord, op_key: str
-    ) -> CrossLaneResult:
+    def from_approval(self, record: ApprovalRecord, op_key: str) -> CrossLaneResult:
         now = self.clock.now_ts()
         if now >= record.expires_at:
             kind = LaneBSignalKind.APPROVAL_EXPIRED
@@ -184,9 +180,7 @@ class RPH3CrossLaneBridge:
         else:
             kind = LaneBSignalKind.APPROVAL_DENIED
             detail = f"approval state {record.state} is not authoritative for use"
-        return self.handle(
-            self._signal(kind, "CMP-APPROVAL", record.task_id, detail, op_key)
-        )
+        return self.handle(self._signal(kind, "CMP-APPROVAL", record.task_id, detail, op_key))
 
     def from_tool_gateway(
         self, result: ToolResult | ToolDenial, target_ref: str, op_key: str
@@ -199,9 +193,7 @@ class RPH3CrossLaneBridge:
             detail = "tool result validated by CMP-TOOLGW"
         return self.handle(self._signal(kind, "CMP-TOOLGW", target_ref, detail, op_key))
 
-    def from_fileop(
-        self, error: FileOpError, target_ref: str, op_key: str
-    ) -> CrossLaneResult:
+    def from_fileop(self, error: FileOpError, target_ref: str, op_key: str) -> CrossLaneResult:
         return self.handle(
             self._signal(
                 LaneBSignalKind.FILEOP_DENIED,
@@ -212,9 +204,7 @@ class RPH3CrossLaneBridge:
             )
         )
 
-    def audit_health(
-        self, target_ref: str, expected_state: str, op_key: str
-    ) -> CrossLaneResult:
+    def audit_health(self, target_ref: str, expected_state: str, op_key: str) -> CrossLaneResult:
         try:
             verdict = self.audit_validator.verify_chain()
         except Exception as exc:
@@ -258,9 +248,7 @@ class RPH3CrossLaneBridge:
             )
         )
 
-    def request_safe_mode(
-        self, *, target_ref: str, detail: str, op_key: str
-    ) -> CrossLaneResult:
+    def request_safe_mode(self, *, target_ref: str, detail: str, op_key: str) -> CrossLaneResult:
         return self.handle(
             self._signal(
                 LaneBSignalKind.SAFE_MODE_REQUIRED,
@@ -275,9 +263,7 @@ class RPH3CrossLaneBridge:
         if signal.kind is LaneBSignalKind.HEALTHY:
             return self._result(signal, CrossLaneOutcome.HEALTHY, signal.detail)
         if signal.kind is LaneBSignalKind.APPROVAL_REQUIRED:
-            return self._result(
-                signal, CrossLaneOutcome.APPROVAL_REQUIRED, signal.detail
-            )
+            return self._result(signal, CrossLaneOutcome.APPROVAL_REQUIRED, signal.detail)
         if signal.kind in {
             LaneBSignalKind.PERMISSION_DENIED,
             LaneBSignalKind.APPROVAL_DENIED,
@@ -372,9 +358,7 @@ class RPH3CrossLaneBridge:
         return None
 
     @staticmethod
-    def _result(
-        signal: LaneBSignal, outcome: CrossLaneOutcome, detail: str
-    ) -> CrossLaneResult:
+    def _result(signal: LaneBSignal, outcome: CrossLaneOutcome, detail: str) -> CrossLaneResult:
         return CrossLaneResult(
             outcome=outcome,
             source=signal.source,

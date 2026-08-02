@@ -22,9 +22,7 @@ class WorkerState(StrEnum):
     DEAD = "DEAD"
 
 
-TERMINAL_WORKER_STATES: frozenset[WorkerState] = frozenset(
-    {WorkerState.DONE, WorkerState.DEAD}
-)
+TERMINAL_WORKER_STATES: frozenset[WorkerState] = frozenset({WorkerState.DONE, WorkerState.DEAD})
 
 
 class ExecutionEventType(StrEnum):

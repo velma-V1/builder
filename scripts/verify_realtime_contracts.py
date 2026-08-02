@@ -52,14 +52,18 @@ def _expect_code(fn: object, code: UIStudioErrorCode) -> bool:
 def verify_monotonic_sequencing() -> VerificationResult:
     stream = validate_realtime_stream(tuple(_event(i) for i in range(5)))
     ok = len(stream.accepted) == 5 and [e.sequence for e in stream.accepted] == list(range(5))
-    return VerificationResult("monotonic sequence numbers respected", ok, f"accepted={len(stream.accepted)}")
+    return VerificationResult(
+        "monotonic sequence numbers respected", ok, f"accepted={len(stream.accepted)}"
+    )
 
 
 def verify_idempotent_duplicate() -> VerificationResult:
     e = _event(0)
     stream = validate_realtime_stream((e, e))
     ok = len(stream.accepted) == 1 and stream.duplicates_skipped == 1
-    return VerificationResult("duplicate events are idempotent", ok, f"duplicates_skipped={stream.duplicates_skipped}")
+    return VerificationResult(
+        "duplicate events are idempotent", ok, f"duplicates_skipped={stream.duplicates_skipped}"
+    )
 
 
 def verify_out_of_order_rejection() -> VerificationResult:
@@ -83,9 +87,12 @@ def verify_bounded_replay() -> VerificationResult:
     for i in range(10):
         buffer.append(_event(i))
     ok = buffer.oldest_available_sequence == 7
-    exceeded = _expect_code(lambda: buffer.events_since(0), UIStudioErrorCode.REPLAY_WINDOW_EXCEEDED)
+    exceeded = _expect_code(
+        lambda: buffer.events_since(0), UIStudioErrorCode.REPLAY_WINDOW_EXCEEDED
+    )
     return VerificationResult(
-        "replay is bounded and rejects a cursor outside the window", ok and exceeded,
+        "replay is bounded and rejects a cursor outside the window",
+        ok and exceeded,
         f"oldest={buffer.oldest_available_sequence}",
     )
 
@@ -112,7 +119,9 @@ def verify_snapshot_reconciliation() -> VerificationResult:
 
 def verify_stale_state_indicator() -> VerificationResult:
     indicator = compute_staleness("verify:channel", last_event_at=0, now=1000, stale_after_s=30)
-    return VerificationResult("stale-state indicator flags an old snapshot", indicator.stale, str(indicator))
+    return VerificationResult(
+        "stale-state indicator flags an old snapshot", indicator.stale, str(indicator)
+    )
 
 
 def verify_pending_optimistic_commands() -> VerificationResult:
@@ -121,21 +130,29 @@ def verify_pending_optimistic_commands() -> VerificationResult:
     confirmed = command.confirm(5)
     ok = pending_before and command.is_pending and not confirmed.is_pending
     return VerificationResult(
-        "optimistic commands stay pending until explicitly confirmed", ok,
+        "optimistic commands stay pending until explicitly confirmed",
+        ok,
         f"original_still_pending={command.is_pending}",
     )
 
 
 def verify_restart_reconstruction() -> VerificationResult:
-    contract = RealtimeChannelContract("verify:channel", event_types=("PROGRESS",), replay_window=10)
+    contract = RealtimeChannelContract(
+        "verify:channel", event_types=("PROGRESS",), replay_window=10
+    )
     buffer = ReplayBuffer(contract)
     for i in range(5):
         buffer.append(_event(i))
-    no_cursor = plan_restart_reconstruction("verify:channel", persisted_last_sequence=None, buffer=buffer)
-    with_cursor = plan_restart_reconstruction("verify:channel", persisted_last_sequence=2, buffer=buffer)
+    no_cursor = plan_restart_reconstruction(
+        "verify:channel", persisted_last_sequence=None, buffer=buffer
+    )
+    with_cursor = plan_restart_reconstruction(
+        "verify:channel", persisted_last_sequence=2, buffer=buffer
+    )
     ok = no_cursor.requires_full_snapshot and with_cursor.can_replay
     return VerificationResult(
-        "restart reconstruction never invents a starting point", ok,
+        "restart reconstruction never invents a starting point",
+        ok,
         f"no_cursor_requires_snapshot={no_cursor.requires_full_snapshot}; "
         f"with_cursor_can_replay={with_cursor.can_replay}",
     )
@@ -146,15 +163,23 @@ def verify_no_client_invented_authoritative_state() -> VerificationResult:
     ok = _expect_code(
         lambda: deny_client_invented_state(bad_event), UIStudioErrorCode.CLIENT_INVENTED_STATE
     )
-    return VerificationResult("client-invented authoritative state is denied", ok, "CLIENT_INVENTED_STATE raised")
+    return VerificationResult(
+        "client-invented authoritative state is denied", ok, "CLIENT_INVENTED_STATE raised"
+    )
 
 
 def main() -> int:
     checks = [
-        verify_monotonic_sequencing, verify_idempotent_duplicate, verify_out_of_order_rejection,
-        verify_gap_detection, verify_bounded_replay, verify_reconnect_cursor,
-        verify_snapshot_reconciliation, verify_stale_state_indicator,
-        verify_pending_optimistic_commands, verify_restart_reconstruction,
+        verify_monotonic_sequencing,
+        verify_idempotent_duplicate,
+        verify_out_of_order_rejection,
+        verify_gap_detection,
+        verify_bounded_replay,
+        verify_reconnect_cursor,
+        verify_snapshot_reconciliation,
+        verify_stale_state_indicator,
+        verify_pending_optimistic_commands,
+        verify_restart_reconstruction,
         verify_no_client_invented_authoritative_state,
     ]
     results = [c() for c in checks]

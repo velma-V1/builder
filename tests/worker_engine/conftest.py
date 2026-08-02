@@ -71,7 +71,10 @@ def workspace_manager(git: GitManager, tmp_path: Path) -> WorkspaceManager:
 def successful_router() -> FakeModelRouter:
     return FakeModelRouter(
         default=AgentZeroModelResult(
-            ok=True, output=_SUCCESSFUL_OUTPUT, model_fingerprint="fp", provider_route="fake",
+            ok=True,
+            output=_SUCCESSFUL_OUTPUT,
+            model_fingerprint="fp",
+            provider_route="fake",
         )
     )
 
@@ -80,7 +83,11 @@ def successful_router() -> FakeModelRouter:
 def failing_router() -> FakeModelRouter:
     return FakeModelRouter(
         default=AgentZeroModelResult(
-            ok=False, output="", model_fingerprint="fp", provider_route="fake", reason="boom",
+            ok=False,
+            output="",
+            model_fingerprint="fp",
+            provider_route="fake",
+            reason="boom",
         )
     )
 
@@ -109,12 +116,20 @@ def service(
 
 
 def submit_task(
-    writer: _OrchestratorStateWriter, *, description: str, workstream_id: str = "ws-1",
+    writer: _OrchestratorStateWriter,
+    *,
+    description: str,
+    workstream_id: str = "ws-1",
     idempotency_key: str = "k1",
 ) -> str:
     result = writer.submit_task_request(
-        project_ref="builder", workstream_id=workstream_id, description=description,
-        priority="normal", model_preference=None, expected_result=None,
-        submitted_by="tester", idempotency_key=idempotency_key,
+        project_ref="builder",
+        workstream_id=workstream_id,
+        description=description,
+        priority="normal",
+        model_preference=None,
+        expected_result=None,
+        submitted_by="tester",
+        idempotency_key=idempotency_key,
     )
     return result.task_id

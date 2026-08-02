@@ -88,10 +88,7 @@ def test_full_permission_approval_fileop_audit_watchdog_flow(
         ),
     )
     assert isinstance(approval, ApprovalRecord)
-    assert (
-        bridge.from_approval(approval, "flow-approval").outcome
-        is CrossLaneOutcome.HEALTHY
-    )
+    assert bridge.from_approval(approval, "flow-approval").outcome is CrossLaneOutcome.HEALTHY
     fingerprint = action_fingerprint(
         task_id=running_task,
         tool="fileop",
@@ -99,9 +96,9 @@ def test_full_permission_approval_fileop_audit_watchdog_flow(
         resource="old.txt",
         scope="repo",
     )
-    deleted = FileOpService(
-        permission_engine, approval_engine, databases[1], clock
-    ).delete("old.txt", authority, approval, fingerprint)
+    deleted = FileOpService(permission_engine, approval_engine, databases[1], clock).delete(
+        "old.txt", authority, approval, fingerprint
+    )
     assert deleted.deleted
     assert not target.exists()
     assert AuditValidator(databases[1]).verify_chain().valid

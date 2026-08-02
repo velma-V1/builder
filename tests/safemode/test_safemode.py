@@ -34,9 +34,16 @@ pytestmark = pytest.mark.security
 def _repair_approval(approval_engine: ApprovalEngine) -> tuple[ApprovalRecord, str]:
     card = approval_engine.enqueue(
         ApprovalRequest(
-            task_id="task-1", tool="diag", action="repair", scope="state", purpose="fix",
-            consequences="repairs state", autonomy_level="L2-supervised", ttl_seconds=100,
-            resource="journal", destructive=True,
+            task_id="task-1",
+            tool="diag",
+            action="repair",
+            scope="state",
+            purpose="fix",
+            consequences="repairs state",
+            autonomy_level="L2-supervised",
+            ttl_seconds=100,
+            resource="journal",
+            destructive=True,
         )
     )
     record = approval_engine.decide(
@@ -52,13 +59,20 @@ def _repair_approval(approval_engine: ApprovalEngine) -> tuple[ApprovalRecord, s
 
 def _repair_grant(permission_engine: PermissionEngine) -> PermissionGrant:
     authority = TaskAuthority(
-        task_id="task-1", autonomy_level="L2-supervised",
-        allowed_classes=frozenset({PermissionClass.WRITE}), project_root="root-x",
+        task_id="task-1",
+        autonomy_level="L2-supervised",
+        allowed_classes=frozenset({PermissionClass.WRITE}),
+        project_root="root-x",
     )
     decision = permission_engine.decide(
         ActionRequest(
-            task_id="task-1", tool="diag", action="repair", permission_class=PermissionClass.WRITE,
-            scope="state", purpose="fix", resource=None,
+            task_id="task-1",
+            tool="diag",
+            action="repair",
+            permission_class=PermissionClass.WRITE,
+            scope="state",
+            purpose="fix",
+            resource=None,
         ),
         authority,
     )
@@ -93,7 +107,9 @@ def test_approved_repair_applies_with_valid_approval_and_permission(
     grant = _repair_grant(permission_engine)
     result = safe_mode.approved_repair(
         RepairAction(capability="approved_repair", description="rebuild index", target="journal"),
-        record, fingerprint, grant,
+        record,
+        fingerprint,
+        grant,
     )
     assert result.applied is True
     assert AuditValidator(database_path=safe_mode.audit_database_path).verify_chain().valid is True
@@ -107,7 +123,9 @@ def test_repair_without_valid_approval_denied_no_autonomous_write(
     with pytest.raises(SafeModeError) as exc:
         safe_mode.approved_repair(
             RepairAction(capability="approved_repair", description="x", target="journal"),
-            record, "wrong-fingerprint", grant,
+            record,
+            "wrong-fingerprint",
+            grant,
         )
     assert exc.value.code == "SAFEMODE_UNAPPROVED"
 
@@ -121,7 +139,9 @@ def test_repair_without_valid_permission_denied(
     with pytest.raises(SafeModeError) as exc:
         safe_mode.approved_repair(
             RepairAction(capability="approved_repair", description="x", target="journal"),
-            record, fingerprint, grant,
+            record,
+            fingerprint,
+            grant,
         )
     assert exc.value.code == "SAFEMODE_UNPERMITTED"
 
@@ -134,7 +154,9 @@ def test_out_of_scope_capability_refused(
     with pytest.raises(SafeModeError) as exc:
         safe_mode.approved_repair(
             RepairAction(capability="autonomous_write", description="x", target="journal"),
-            record, fingerprint, grant,
+            record,
+            fingerprint,
+            grant,
         )
     assert exc.value.code == "SAFEMODE_OUT_OF_SCOPE"
 

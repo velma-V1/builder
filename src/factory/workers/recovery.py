@@ -95,9 +95,7 @@ class StartupRecovery:
             self._apply_outcome(task_id, outcome, actor)
         return outcomes
 
-    def _apply_outcome(
-        self, task_id: str, outcome: ReconciliationOutcome, actor: str
-    ) -> None:
+    def _apply_outcome(self, task_id: str, outcome: ReconciliationOutcome, actor: str) -> None:
         record = self.integration.reader.get_task(task_id)
         if record is None:
             self.quarantine.record(task_id, "unknown_task_at_reconcile")

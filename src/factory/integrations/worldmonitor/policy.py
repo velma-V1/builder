@@ -36,7 +36,7 @@ class AiCapabilityRequest:
     """What WorldMonitor asks Builder for — a capability, never a provider/model choice."""
 
     task_id: str
-    capability: str            # e.g. "summarize", "classify_risk"
+    capability: str  # e.g. "summarize", "classify_risk"
     prompt: str
     privacy: Privacy = Privacy.LOCAL_ONLY  # local-first; hosted requires CLOUD_ALLOWED
     max_tokens: int = 512
@@ -77,8 +77,12 @@ class BrokeredWorldMonitorHttp:
     __slots__ = ("_network", "_now", "_policy", "_secret", "_transport")
 
     def __init__(
-        self, transport: HttpTransport, network: NetworkBroker, secret: SecretBroker,
-        policy: WorldMonitorNetworkPolicy, now: int,
+        self,
+        transport: HttpTransport,
+        network: NetworkBroker,
+        secret: SecretBroker,
+        policy: WorldMonitorNetworkPolicy,
+        now: int,
     ) -> None:
         self._transport = transport
         self._network = network
@@ -90,12 +94,19 @@ class BrokeredWorldMonitorHttp:
         return self._secret.redact(text, self._now)
 
     def request(
-        self, method: str, url: str, *, body: bytes = b"", headers: dict[str, str] | None = None,
+        self,
+        method: str,
+        url: str,
+        *,
+        body: bytes = b"",
+        headers: dict[str, str] | None = None,
     ) -> HttpResponse:
         policy = self._policy
         host = _host(url)
         decision = self._network.evaluate(
-            policy.approval, NetworkRequest(host, "https", method, Direction.OUTBOUND), self._now,
+            policy.approval,
+            NetworkRequest(host, "https", method, Direction.OUTBOUND),
+            self._now,
         )
         if not decision.allowed:
             raise WorldMonitorError(

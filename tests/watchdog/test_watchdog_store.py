@@ -16,9 +16,7 @@ def test_migration_creates_only_the_intervention_journal(
     try:
         tables = {
             str(row[0])
-            for row in connection.execute(
-                "SELECT name FROM sqlite_master WHERE type='table'"
-            )
+            for row in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")
         }
     finally:
         connection.close()

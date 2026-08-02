@@ -86,8 +86,8 @@ def test_crashed_task_stays_failed_across_recovery(
     integration = _integration(writer, reader)
     _running(integration, writer, "TASK-001")
     integration.fail_crashed("TASK-001", actor="rec")  # RUNNING→FAILED
-    outcomes = StartupRecovery(
-        integration=integration, quarantine=QuarantineRegistry()
-    ).recover(["TASK-001"])
+    outcomes = StartupRecovery(integration=integration, quarantine=QuarantineRegistry()).recover(
+        ["TASK-001"]
+    )
     assert outcomes["TASK-001"] is ReconciliationOutcome.FAILED
     assert reader.get_task("TASK-001").current_state is TaskState.FAILED

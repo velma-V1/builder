@@ -133,16 +133,12 @@ def running_task(
 
 
 @pytest.fixture
-def permission_engine(
-    databases: tuple[Path, Path, Path], clock: FakeClock
-) -> PermissionEngine:
+def permission_engine(databases: tuple[Path, Path, Path], clock: FakeClock) -> PermissionEngine:
     return PermissionEngine(databases[0], databases[1], clock)
 
 
 @pytest.fixture
-def approval_engine(
-    databases: tuple[Path, Path, Path], clock: FakeClock
-) -> ApprovalEngine:
+def approval_engine(databases: tuple[Path, Path, Path], clock: FakeClock) -> ApprovalEngine:
     return ApprovalEngine(databases[0], databases[1], clock)
 
 

@@ -47,17 +47,19 @@ def test_grant_cannot_exceed_task_mismatch(
 @pytest.mark.parametrize(
     "bad_path",
     [
-        "../etc/passwd",          # traversal
-        "/etc/passwd",            # absolute posix
-        "C:\\Windows\\notepad",   # drive-qualified
-        "src/main.py:stream",     # NTFS ADS
-        "src/CON",                # reserved device name
-        "src/bad\x00name",        # null byte
-        "src/trailing ",          # trailing space
+        "../etc/passwd",  # traversal
+        "/etc/passwd",  # absolute posix
+        "C:\\Windows\\notepad",  # drive-qualified
+        "src/main.py:stream",  # NTFS ADS
+        "src/CON",  # reserved device name
+        "src/bad\x00name",  # null byte
+        "src/trailing ",  # trailing space
     ],
 )
 def test_path_escapes_are_denied(
-    engine: PermissionEngine, make_request: RequestFactory, make_authority: AuthorityFactory,
+    engine: PermissionEngine,
+    make_request: RequestFactory,
+    make_authority: AuthorityFactory,
     bad_path: str,
 ) -> None:
     decision = engine.decide(make_request(resource=bad_path), make_authority())
@@ -66,7 +68,9 @@ def test_path_escapes_are_denied(
 
 
 def test_symlink_escape_is_denied(
-    engine: PermissionEngine, project_root: Path, make_request: RequestFactory,
+    engine: PermissionEngine,
+    project_root: Path,
+    make_request: RequestFactory,
     make_authority: AuthorityFactory,
 ) -> None:
     outside = project_root.parent / "outside"
@@ -141,8 +145,8 @@ def test_permission_writer_cannot_touch_approval_tables(tmp_path: Path) -> None:
 
     root = Path("migrations/security")
     store = tmp_path / "spine.db"
-    apply_security_migrations(store, root)      # 0001 approval
-    apply_permission_migrations(store, root)    # 0002 permission
+    apply_security_migrations(store, root)  # 0001 approval
+    apply_permission_migrations(store, root)  # 0002 permission
     connection = _PermissionWriter(database_path=store)._connect()
     try:
         with pytest.raises(sqlite3.DatabaseError):
@@ -172,8 +176,13 @@ def test_grant_only_stores_canonical_path_never_raw(
 ) -> None:
     # a raw path with mixed separators + redundant segments is stored only in canonical form.
     request = ActionRequest(
-        task_id="task-1", tool="sh", action="w", permission_class=PermissionClass.WRITE,
-        scope="src", purpose="p", resource="src/./main.py",
+        task_id="task-1",
+        tool="sh",
+        action="w",
+        permission_class=PermissionClass.WRITE,
+        scope="src",
+        purpose="p",
+        resource="src/./main.py",
     )
     decision = engine.decide(request, make_authority())
     assert decision.decision is DecisionKind.ALLOW

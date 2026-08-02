@@ -45,10 +45,10 @@ class PreviewState(StrEnum):
 class StateOwner(StrEnum):
     """Who owns a piece of state. Only BACKEND_AUTHORITATIVE may hold durable truth."""
 
-    XSTATE_WORKFLOW = "XSTATE_WORKFLOW"                    # workflows and legal transitions
-    TANSTACK_QUERY_SNAPSHOT = "TANSTACK_QUERY_SNAPSHOT"     # backend snapshots and records
-    ZUSTAND_PRESENTATION = "ZUSTAND_PRESENTATION"           # presentation-only state
-    BACKEND_AUTHORITATIVE = "BACKEND_AUTHORITATIVE"         # all authoritative state
+    XSTATE_WORKFLOW = "XSTATE_WORKFLOW"  # workflows and legal transitions
+    TANSTACK_QUERY_SNAPSHOT = "TANSTACK_QUERY_SNAPSHOT"  # backend snapshots and records
+    ZUSTAND_PRESENTATION = "ZUSTAND_PRESENTATION"  # presentation-only state
+    BACKEND_AUTHORITATIVE = "BACKEND_AUTHORITATIVE"  # all authoritative state
 
 
 @dataclass(frozen=True, slots=True)

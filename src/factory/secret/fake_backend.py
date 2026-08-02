@@ -56,9 +56,7 @@ class FakeSecretBackend:
         return len(to_revoke)
 
     def active_values(self, now: int) -> tuple[str, ...]:
-        return tuple(
-            lease.value for lease in self._leases.values() if lease.is_active(now)
-        )
+        return tuple(lease.value for lease in self._leases.values() if lease.is_active(now))
 
     def redact(self, text: str, now: int) -> str:
         return redact(text, self.active_values(now))

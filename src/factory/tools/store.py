@@ -38,19 +38,29 @@ _TOOL_WRITE_TABLES = frozenset(
     {"tool_registry", "tool_declarations", "tool_quarantine", "tool_registry_intents"}
 )
 
-_WRITE_ACTIONS = frozenset(
-    {sqlite3.SQLITE_INSERT, sqlite3.SQLITE_UPDATE, sqlite3.SQLITE_DELETE}
-)
+_WRITE_ACTIONS = frozenset({sqlite3.SQLITE_INSERT, sqlite3.SQLITE_UPDATE, sqlite3.SQLITE_DELETE})
 
 _WRITER_DENIED_ACTIONS = frozenset(
     {
-        sqlite3.SQLITE_CREATE_INDEX, sqlite3.SQLITE_CREATE_TABLE, sqlite3.SQLITE_CREATE_TEMP_INDEX,
-        sqlite3.SQLITE_CREATE_TEMP_TABLE, sqlite3.SQLITE_CREATE_TEMP_TRIGGER,
-        sqlite3.SQLITE_CREATE_TEMP_VIEW, sqlite3.SQLITE_CREATE_TRIGGER, sqlite3.SQLITE_CREATE_VIEW,
-        sqlite3.SQLITE_DROP_INDEX, sqlite3.SQLITE_DROP_TABLE, sqlite3.SQLITE_DROP_TEMP_INDEX,
-        sqlite3.SQLITE_DROP_TEMP_TABLE, sqlite3.SQLITE_DROP_TEMP_TRIGGER,
-        sqlite3.SQLITE_DROP_TEMP_VIEW, sqlite3.SQLITE_DROP_TRIGGER, sqlite3.SQLITE_DROP_VIEW,
-        sqlite3.SQLITE_ALTER_TABLE, sqlite3.SQLITE_ATTACH, sqlite3.SQLITE_DETACH,
+        sqlite3.SQLITE_CREATE_INDEX,
+        sqlite3.SQLITE_CREATE_TABLE,
+        sqlite3.SQLITE_CREATE_TEMP_INDEX,
+        sqlite3.SQLITE_CREATE_TEMP_TABLE,
+        sqlite3.SQLITE_CREATE_TEMP_TRIGGER,
+        sqlite3.SQLITE_CREATE_TEMP_VIEW,
+        sqlite3.SQLITE_CREATE_TRIGGER,
+        sqlite3.SQLITE_CREATE_VIEW,
+        sqlite3.SQLITE_DROP_INDEX,
+        sqlite3.SQLITE_DROP_TABLE,
+        sqlite3.SQLITE_DROP_TEMP_INDEX,
+        sqlite3.SQLITE_DROP_TEMP_TABLE,
+        sqlite3.SQLITE_DROP_TEMP_TRIGGER,
+        sqlite3.SQLITE_DROP_TEMP_VIEW,
+        sqlite3.SQLITE_DROP_TRIGGER,
+        sqlite3.SQLITE_DROP_VIEW,
+        sqlite3.SQLITE_ALTER_TABLE,
+        sqlite3.SQLITE_ATTACH,
+        sqlite3.SQLITE_DETACH,
     }
 )
 
@@ -137,12 +147,16 @@ _SELECT_RECORD_SQL = (
 
 def _row_to_record(row: sqlite3.Row) -> ToolRecord:
     return ToolRecord(
-        tool_id=str(row["tool_id"]), version=str(row["version"]),
-        state=ToolState(row["state"]), commit_state=CommitState(row["commit_state"]),
+        tool_id=str(row["tool_id"]),
+        version=str(row["version"]),
+        state=ToolState(row["state"]),
+        commit_state=CommitState(row["commit_state"]),
         declaration_hash=str(row["declaration_hash"]),
         provenance_source=str(row["provenance_source"]),
-        provenance_checksum=str(row["provenance_checksum"]), license=str(row["license"]),
-        failure_count=int(row["failure_count"]), created_ts=int(row["created_ts"]),
+        provenance_checksum=str(row["provenance_checksum"]),
+        license=str(row["license"]),
+        failure_count=int(row["failure_count"]),
+        created_ts=int(row["created_ts"]),
         updated_ts=int(row["updated_ts"]),
     )
 

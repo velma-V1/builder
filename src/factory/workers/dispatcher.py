@@ -56,7 +56,5 @@ class Dispatcher:
                 break  # no capacity; leave the rest for a later pass
             lease = self.coordinator.acquire_task_lease(task_id, worker_pid=worker.pid)
             self.pool.assign_task(worker.worker_id, task_id)
-            records.append(
-                DispatchRecord(task_id=task_id, worker_id=worker.worker_id, lease=lease)
-            )
+            records.append(DispatchRecord(task_id=task_id, worker_id=worker.worker_id, lease=lease))
         return tuple(records)

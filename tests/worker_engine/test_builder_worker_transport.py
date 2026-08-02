@@ -24,7 +24,8 @@ _RESOURCES = ResourceEnvelope(cpu_millis=1000, memory_mb=512, disk_mb=512, wall_
 
 
 def _work_order(
-    *, instructions: str = "Explain what this repository does.",
+    *,
+    instructions: str = "Explain what this repository does.",
     allowed_path_globs: tuple[str, ...] = (),
 ) -> WorkOrder:
     return build_work_order(
@@ -45,7 +46,10 @@ def test_read_only_task_completes_without_a_workspace(tmp_path: Path) -> None:
     and the transport never receives or needs one."""
     router = FakeModelRouter(
         default=AgentZeroModelResult(
-            ok=True, output="analysis result", model_fingerprint="fp", provider_route="fake",
+            ok=True,
+            output="analysis result",
+            model_fingerprint="fp",
+            provider_route="fake",
         )
     )
     transport = BuilderWorkerTransport(model_router=router, allowed_path_globs=())
@@ -78,7 +82,10 @@ def test_read_only_task_never_touches_the_filesystem_even_with_a_tempting_target
     write -- DIRECT_READ_ONLY mode never looks at target-path selection at all."""
     router = FakeModelRouter(
         default=AgentZeroModelResult(
-            ok=True, output="analysis result", model_fingerprint="fp", provider_route="fake",
+            ok=True,
+            output="analysis result",
+            model_fingerprint="fp",
+            provider_route="fake",
         )
     )
     transport = BuilderWorkerTransport(model_router=router, allowed_path_globs=("**",))

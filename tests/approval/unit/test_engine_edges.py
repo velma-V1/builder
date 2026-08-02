@@ -56,8 +56,11 @@ def test_consume_of_deleted_record_returns_false(
 ) -> None:
     record = _grant(engine, make_request())
     fingerprint = action_fingerprint(
-        task_id=record.task_id, tool=record.tool, action=record.action,
-        resource=record.resource, scope=record.scope,
+        task_id=record.task_id,
+        tool=record.tool,
+        action=record.action,
+        resource=record.resource,
+        scope=record.scope,
     )
     # delete the row out-of-band (simulate a vanished record) → consume denies, does not crash
     raw = sqlite3.connect(str(engine.security_database_path))

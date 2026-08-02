@@ -66,9 +66,7 @@ class ContentAddressedCache:
 
     def visible_to(self, scope: CacheScope, scope_id: str) -> tuple[CacheEntry, ...]:
         return tuple(
-            entry
-            for (s, sid, _), entry in self._entries.items()
-            if s is scope and sid == scope_id
+            entry for (s, sid, _), entry in self._entries.items() if s is scope and sid == scope_id
         )
 
     def invalidate(self, key: CacheKey) -> bool:

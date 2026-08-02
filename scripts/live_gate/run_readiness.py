@@ -81,17 +81,22 @@ def _read_only_command(argv: list[str]) -> str | None:
 
 
 def _host_inventory() -> ReadinessCheck:
-    facts = redact_pairs((
-        ("system", platform.system()),
-        ("release", platform.release()),
-        ("machine", platform.machine()),
-        ("python", platform.python_version()),
-        ("processor", platform.processor() or "unknown"),
-    ))
+    facts = redact_pairs(
+        (
+            ("system", platform.system()),
+            ("release", platform.release()),
+            ("machine", platform.machine()),
+            ("python", platform.python_version()),
+            ("processor", platform.processor() or "unknown"),
+        )
+    )
     return ReadinessCheck(
-        "host-inventory", "Host/environment inventory captured", CheckStatus.PASS,
+        "host-inventory",
+        "Host/environment inventory captured",
+        CheckStatus.PASS,
         f"discovered on {platform.system()} (advisory baseline; target host is WSL2)",
-        mandatory=False, facts=facts,
+        mandatory=False,
+        facts=facts,
     )
 
 
@@ -122,16 +127,19 @@ def _sqlite() -> ReadinessCheck:
     # Independent confirmation that a below-floor engine cannot silently activate a durable store.
     if not durable_activation_fails_closed_below_floor():  # pragma: no cover - guard is unit-tested
         return ReadinessCheck(
-            check.check_id, check.title, CheckStatus.ERROR,
+            check.check_id,
+            check.title,
+            CheckStatus.ERROR,
             "durable-store guard did NOT fail closed below floor — investigate before any live use",
-            mandatory=True, facts=check.facts,
+            mandatory=True,
+            facts=check.facts,
         )
     return check
 
 
 def build_report() -> ReadinessReport:
     checks = (
-        _sqlite(),          # first mandatory gate
+        _sqlite(),  # first mandatory gate
         _host_inventory(),
         _docker(),
         _wsl(),

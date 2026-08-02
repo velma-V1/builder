@@ -92,9 +92,7 @@ def test_restart_duplicate_delivery_uses_wir_durable_result(
         audit_validator=AuditValidator(databases[1]),
         clock=clock,
     )
-    replay = restarted_bridge.audit_health(
-        running_task, expected, "op-restart-replay"
-    )
+    replay = restarted_bridge.audit_health(running_task, expected, "op-restart-replay")
     assert replay.outcome is CrossLaneOutcome.INTERVENED
     assert replay.intervention == first.intervention
 

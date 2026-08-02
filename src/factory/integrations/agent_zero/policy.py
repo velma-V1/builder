@@ -120,12 +120,19 @@ class BrokeredAgentZeroHttp:
         self._now = now
 
     def request(
-        self, method: str, url: str, *, body: bytes = b"", headers: dict[str, str] | None = None,
+        self,
+        method: str,
+        url: str,
+        *,
+        body: bytes = b"",
+        headers: dict[str, str] | None = None,
     ) -> HttpResponse:
         policy = self._policy
         host = _host(url)
         decision = self._network.evaluate(
-            policy.approval, NetworkRequest(host, "https", method, Direction.OUTBOUND), self._now,
+            policy.approval,
+            NetworkRequest(host, "https", method, Direction.OUTBOUND),
+            self._now,
         )
         if not decision.allowed:
             raise AgentZeroError(
@@ -166,9 +173,7 @@ def enforce_sandbox_boundary(spec: SandboxSpec) -> None:
     if docker is not None:
         raise AgentZeroError(AgentZeroErrorCode.DOCKER_SOCKET_DENIED, docker.detail)
     first = violations[0]
-    raise AgentZeroError(
-        AgentZeroErrorCode.CAPABILITY_UNAVAILABLE, f"{first.code}: {first.detail}"
-    )
+    raise AgentZeroError(AgentZeroErrorCode.CAPABILITY_UNAVAILABLE, f"{first.code}: {first.detail}")
 
 
 def deny_direct_main_access(
@@ -244,7 +249,11 @@ def evaluate_output_path(
     drive/UNC, reserved device names, NTFS ADS, TOCTOU) is defended here too, with no weaker path.
     """
     result = authority.evaluate(
-        candidate, operation="write", allowed=allowed, forbidden=(), read_only=(),
+        candidate,
+        operation="write",
+        allowed=allowed,
+        forbidden=(),
+        read_only=(),
         active_exclusive_paths=(),
     )
     if not result.allowed:

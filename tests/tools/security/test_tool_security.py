@@ -49,7 +49,9 @@ def test_no_bypass_unregistered_cannot_execute(
 
 
 def test_quarantined_tool_denied_at_gateway(
-    gateway: ToolGateway, registry: ToolRegistry, register_tool: RegisterTool,
+    gateway: ToolGateway,
+    registry: ToolRegistry,
+    register_tool: RegisterTool,
     execute_grant: GrantFactory,
 ) -> None:
     register_tool()
@@ -59,7 +61,9 @@ def test_quarantined_tool_denied_at_gateway(
 
 
 def test_repeated_output_failure_quarantines_tool(
-    gateway: ToolGateway, registry: ToolRegistry, register_tool: RegisterTool,
+    gateway: ToolGateway,
+    registry: ToolRegistry,
+    register_tool: RegisterTool,
     execute_grant: GrantFactory,
 ) -> None:
     register_tool(output_schema=OutputSchema(kind="json", max_bytes=100, required_keys=("ok",)))

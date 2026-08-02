@@ -12,6 +12,7 @@ import dataclasses
 import importlib.util
 import os
 import socket
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -25,6 +26,10 @@ from tests.worker_engine.support import loopback_unavailable_reason
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
+def _is_windows() -> bool:
+    return sys.platform == "win32"
+
+
 def _load_script(name: str) -> ModuleType:
     path = _REPO_ROOT / "scripts" / f"{name}.py"
     spec = importlib.util.spec_from_file_location(name, path)
@@ -36,6 +41,23 @@ def _load_script(name: str) -> ModuleType:
     sys.modules[name] = module
     spec.loader.exec_module(module)
     return module
+
+
+def _process_exists(pid: int) -> bool:
+    if _is_windows():
+        tasklist = Path(os.environ["SYSTEMROOT"]) / "System32" / "tasklist.exe"
+        completed = subprocess.run(  # noqa: S603 -- fixed system executable and numeric PID
+            [str(tasklist), "/FI", f"PID eq {pid}", "/NH"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        return str(pid) in completed.stdout
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    return True
 
 
 @pytest.fixture
@@ -168,8 +190,7 @@ def test_terminate_process_group_also_kills_a_spawned_grandchild(
 
     # The grandchild must be gone too -- killing only the direct child would leave it orphaned.
     time.sleep(0.2)
-    with pytest.raises(ProcessLookupError):
-        os.kill(grandchild_pid, 0)
+    assert not _process_exists(grandchild_pid)
 
 
 def test_terminate_process_group_on_an_already_exited_process_is_a_no_op(
@@ -239,8 +260,7 @@ def test_start_services_is_all_or_nothing_on_a_failed_health_check(
     assert pid_file.exists()
     good_pid = int(pid_file.read_text())
     time.sleep(0.3)
-    with pytest.raises(ProcessLookupError):
-        os.kill(good_pid, 0)
+    assert not _process_exists(good_pid)
 
 
 def test_wait_healthy_raises_startup_failure_on_timeout(start_all: ModuleType) -> None:

@@ -48,12 +48,8 @@ _EXPECTED_MIGRATION_HASHES: Mapping[str, str] = {
     "0004_workstream_membership.sql": (
         "0274e9f2933b543277a4c50e556f8cc87762a69291e6b882d173c89811c4dc5f"
     ),
-    "0005_task_requests.sql": (
-        "a68ca07b5c48d494fc42e714828e6c54c3e13f9415b247db1965690b7aa65bc8"
-    ),
-    "0006_worker_runs.sql": (
-        "38d36efe4cdbb2397da486271dce79d40fc88a737cca9fc6c8883f6134e0ba71"
-    ),
+    "0005_task_requests.sql": ("a68ca07b5c48d494fc42e714828e6c54c3e13f9415b247db1965690b7aa65bc8"),
+    "0006_worker_runs.sql": ("38d36efe4cdbb2397da486271dce79d40fc88a737cca9fc6c8883f6134e0ba71"),
     "0007_verification_promotion.sql": (
         "f0f8441120ae50e2732ccb7e3d74899a897b70db33ded820e36ed26697458556"
     ),
@@ -73,9 +69,7 @@ def _parse_migration_filename(path: Path) -> int:
     """
     match = _MIGRATION_FILENAME.match(path.name)
     if not match:
-        raise OrchestratorError(
-            "MIGRATION_MALFORMED", f"malformed migration filename: {path.name}"
-        )
+        raise OrchestratorError("MIGRATION_MALFORMED", f"malformed migration filename: {path.name}")
     return int(match.group(1))
 
 
@@ -324,9 +318,7 @@ class SQLiteOrchestratorStateReader:
         """
         connection = _connect_readonly(self.database_path)
         try:
-            rows = connection.execute(
-                _SELECT_TASKS_BY_WORKSTREAM_SQL, (workstream_id,)
-            ).fetchall()
+            rows = connection.execute(_SELECT_TASKS_BY_WORKSTREAM_SQL, (workstream_id,)).fetchall()
         finally:
             connection.close()
         return tuple(_row_to_task(row) for row in rows)
@@ -340,9 +332,7 @@ class SQLiteOrchestratorStateReader:
             connection.close()
         return None if row is None else _row_to_task_request(row)
 
-    def list_tasks_by_states(
-        self, states: frozenset[TaskState]
-    ) -> tuple[TaskRuntimeRecord, ...]:
+    def list_tasks_by_states(self, states: frozenset[TaskState]) -> tuple[TaskRuntimeRecord, ...]:
         """Every task currently in any of ``states``, across all workstreams (Phase 3B).
 
         Used by the Worker Engine to discover claimable QUEUED tasks and, at startup, every

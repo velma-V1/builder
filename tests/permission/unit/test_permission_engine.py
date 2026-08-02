@@ -110,7 +110,9 @@ def test_revalidate_after_revoke_is_false(
 
 
 def test_expire_sweeps_and_revalidate_false(
-    engine: PermissionEngine, clock: ControllableClock, make_request: RequestFactory,
+    engine: PermissionEngine,
+    clock: ControllableClock,
+    make_request: RequestFactory,
     make_authority: AuthorityFactory,
 ) -> None:
     grant = _issue(engine, make_request(), make_authority(), ttl=10)

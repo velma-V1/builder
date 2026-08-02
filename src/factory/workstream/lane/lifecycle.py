@@ -57,9 +57,7 @@ _LEGAL: dict[LaneState, frozenset[LaneState]] = {
     LaneState.HANDOFF: frozenset(
         {LaneState.ACTIVE, LaneState.INTEGRATED, LaneState.FAILED, LaneState.QUARANTINED}
     ),
-    LaneState.INTEGRATED: frozenset(
-        {LaneState.CLOSED, LaneState.FAILED, LaneState.QUARANTINED}
-    ),
+    LaneState.INTEGRATED: frozenset({LaneState.CLOSED, LaneState.FAILED, LaneState.QUARANTINED}),
     LaneState.FAILED: frozenset({LaneState.READY, LaneState.QUARANTINED, LaneState.CLOSED}),
     LaneState.QUARANTINED: frozenset({LaneState.BLOCKED, LaneState.FAILED, LaneState.CLOSED}),
     LaneState.CLOSED: frozenset(),

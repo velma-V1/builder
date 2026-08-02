@@ -74,9 +74,7 @@ class FakeOllamaAdapter:
             return CapabilityReport(
                 Provider.OLLAMA, RuntimeStatus.UNAVAILABLE, (), self._version, "daemon unreachable"
             )
-        return CapabilityReport(
-            Provider.OLLAMA, self._status, self._installed, self._version, "ok"
-        )
+        return CapabilityReport(Provider.OLLAMA, self._status, self._installed, self._version, "ok")
 
     def supports(self, model_id: str) -> bool:
         return self._status is not RuntimeStatus.UNAVAILABLE and model_id in self._installed
@@ -88,21 +86,33 @@ class FakeOllamaAdapter:
             return CallResult(ExecutionStatus.CANCELLED, "", 0, None, "cancelled", "CANCELLED")
         if self._status is RuntimeStatus.UNAVAILABLE:
             return CallResult(
-                ExecutionStatus.RUNTIME_UNAVAILABLE, "", 0, None, "runtime down",
+                ExecutionStatus.RUNTIME_UNAVAILABLE,
+                "",
+                0,
+                None,
+                "runtime down",
                 "RUNTIME_UNAVAILABLE",
             )
         if model_id not in self._installed:
             return CallResult(
-                ExecutionStatus.RUNTIME_UNAVAILABLE, "", 0, None,
-                f"model {model_id} not installed", "MODEL_MISSING",
+                ExecutionStatus.RUNTIME_UNAVAILABLE,
+                "",
+                0,
+                None,
+                f"model {model_id} not installed",
+                "MODEL_MISSING",
             )
         forced = self._behaviors.get(model_id)
         if forced is ExecutionStatus.TIMED_OUT:
             return CallResult(ExecutionStatus.TIMED_OUT, "", 0, None, "timed out", "TIMEOUT")
         if forced is ExecutionStatus.FAILED:
             return CallResult(
-                ExecutionStatus.FAILED, "malformed{", 0, _fingerprint(model_id),
-                "malformed output", "MALFORMED_OUTPUT",
+                ExecutionStatus.FAILED,
+                "malformed{",
+                0,
+                _fingerprint(model_id),
+                "malformed output",
+                "MALFORMED_OUTPUT",
             )
         tokens = min(request.max_tokens, 32)
         return CallResult(

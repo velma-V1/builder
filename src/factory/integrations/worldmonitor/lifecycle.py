@@ -13,8 +13,15 @@ from dataclasses import dataclass
 from factory.preinstall.installer import Installer, InstallStep
 
 LIFECYCLE_PHASES = (
-    "inspect", "prepare", "install_later", "start_later", "health",
-    "stop_later", "update_later", "rollback_later", "remove_later",
+    "inspect",
+    "prepare",
+    "install_later",
+    "start_later",
+    "health",
+    "stop_later",
+    "update_later",
+    "rollback_later",
+    "remove_later",
 )
 
 
@@ -41,18 +48,42 @@ def build_lifecycle() -> Installer:
     steps = (
         InstallStep("inspect", "inspect current WorldMonitor state (read-only)", mutating=False),
         InstallStep("prepare", "prepare config + pinned manifest (read-only)", mutating=False),
-        InstallStep("install_later", "install the pinned WorldMonitor image", mutating=True,
-                    rollback="remove the installed image + config"),
-        InstallStep("start_later", "start the isolated WorldMonitor service", mutating=True,
-                    rollback="stop the service and remove its containers/networks"),
+        InstallStep(
+            "install_later",
+            "install the pinned WorldMonitor image",
+            mutating=True,
+            rollback="remove the installed image + config",
+        ),
+        InstallStep(
+            "start_later",
+            "start the isolated WorldMonitor service",
+            mutating=True,
+            rollback="stop the service and remove its containers/networks",
+        ),
         InstallStep("health", "check service health (read-only)", mutating=False),
-        InstallStep("stop_later", "stop the service", mutating=True,
-                    rollback="restart the service from the last good state"),
-        InstallStep("update_later", "update to a newer pinned revision", mutating=True,
-                    rollback="roll back to the previous pinned revision"),
-        InstallStep("rollback_later", "roll back to the previous revision", mutating=True,
-                    rollback="re-apply the prior revision snapshot"),
-        InstallStep("remove_later", "remove the service + volumes", mutating=True,
-                    rollback="reinstall from the pinned manifest"),
+        InstallStep(
+            "stop_later",
+            "stop the service",
+            mutating=True,
+            rollback="restart the service from the last good state",
+        ),
+        InstallStep(
+            "update_later",
+            "update to a newer pinned revision",
+            mutating=True,
+            rollback="roll back to the previous pinned revision",
+        ),
+        InstallStep(
+            "rollback_later",
+            "roll back to the previous revision",
+            mutating=True,
+            rollback="re-apply the prior revision snapshot",
+        ),
+        InstallStep(
+            "remove_later",
+            "remove the service + volumes",
+            mutating=True,
+            rollback="reinstall from the pinned manifest",
+        ),
     )
     return Installer("worldmonitor", steps)

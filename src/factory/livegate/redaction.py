@@ -12,8 +12,10 @@ import re
 
 _TOKEN_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
     # PEM private-key blocks.
-    (re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----.*?-----END [A-Z ]*PRIVATE KEY-----", re.S),
-     "[REDACTED_PRIVATE_KEY]"),
+    (
+        re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----.*?-----END [A-Z ]*PRIVATE KEY-----", re.S),
+        "[REDACTED_PRIVATE_KEY]",
+    ),
     # Common cloud / VCS token shapes.
     (re.compile(r"\bghp_[A-Za-z0-9]{20,}\b"), "[REDACTED_TOKEN]"),
     (re.compile(r"\bgithub_pat_[A-Za-z0-9_]{20,}\b"), "[REDACTED_TOKEN]"),
@@ -21,9 +23,13 @@ _TOKEN_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"\bxox[baprs]-[A-Za-z0-9-]{10,}\b"), "[REDACTED_TOKEN]"),
     # key=value secrets (token / secret / password / api_key). Group 1 keeps the key + separator;
     # the value (group 2) is masked.
-    (re.compile(r"(?i)\b([a-z0-9_]*(?:token|secret|password|passwd|api[_-]?key)\s*[=:]\s*)"
-                r"(\"[^\"]+\"|'[^']+'|\S+)"),
-     r"\1[REDACTED]"),
+    (
+        re.compile(
+            r"(?i)\b([a-z0-9_]*(?:token|secret|password|passwd|api[_-]?key)\s*[=:]\s*)"
+            r"(\"[^\"]+\"|'[^']+'|\S+)"
+        ),
+        r"\1[REDACTED]",
+    ),
 )
 
 _HOME_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (

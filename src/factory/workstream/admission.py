@@ -91,7 +91,8 @@ class AdmissionController:
             if _scopes_overlap(candidate, other):
                 findings.append(
                     IndependenceFinding(
-                        IndependenceKind.SCOPE_OVERLAP, other.workstream_id,
+                        IndependenceKind.SCOPE_OVERLAP,
+                        other.workstream_id,
                         f"scope overlaps {other.workstream_id}",
                     )
                 )
@@ -99,7 +100,8 @@ class AdmissionController:
             if shared:
                 findings.append(
                     IndependenceFinding(
-                        IndependenceKind.SHARED_CONTRACT, other.workstream_id,
+                        IndependenceKind.SHARED_CONTRACT,
+                        other.workstream_id,
                         f"shares contracts {sorted(shared)}",
                     )
                 )

@@ -270,8 +270,13 @@ class ModelRouter:
                 )
             )
             record = self._commit_attempt(
-                request, descriptor.route_key, call, now,
-                reason=call.reason, supersedes=None, reverify=False,
+                request,
+                descriptor.route_key,
+                call,
+                now,
+                reason=call.reason,
+                supersedes=None,
+                reverify=False,
             )
         finally:
             # The reservation is released even if adapter lookup, fingerprint validation, quota
@@ -327,9 +332,13 @@ class ModelRouter:
             )
             # New execution record supersedes the failed one; reverification is mandatory.
             record = self._commit_attempt(
-                request, substitute_route_key, call, now,
+                request,
+                substitute_route_key,
+                call,
+                now,
                 reason=f"fallback from {failed.route_key}: {call.reason}",
-                supersedes=failed_record_id, reverify=True,
+                supersedes=failed_record_id,
+                reverify=True,
             )
             self._ledger.register_fallback(
                 FallbackRecord(

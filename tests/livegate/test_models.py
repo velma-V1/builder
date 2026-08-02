@@ -21,18 +21,22 @@ def test_advisory_never_blocks() -> None:
 
 
 def test_report_ready_only_when_no_blocking_failures() -> None:
-    ready = ReadinessReport("env", (_check(CheckStatus.PASS, mandatory=True),
-                                    _check(CheckStatus.FAIL, mandatory=False)))
+    ready = ReadinessReport(
+        "env", (_check(CheckStatus.PASS, mandatory=True), _check(CheckStatus.FAIL, mandatory=False))
+    )
     assert ready.ready and ready.blocking_failures == ()
     not_ready = ReadinessReport("env", (_check(CheckStatus.FAIL, mandatory=True),))
     assert not not_ready.ready and len(not_ready.blocking_failures) == 1
 
 
 def test_by_status_filters() -> None:
-    report = ReadinessReport("env", (
-        _check(CheckStatus.PASS, mandatory=True),
-        _check(CheckStatus.UNAVAILABLE, mandatory=False),
-    ))
+    report = ReadinessReport(
+        "env",
+        (
+            _check(CheckStatus.PASS, mandatory=True),
+            _check(CheckStatus.UNAVAILABLE, mandatory=False),
+        ),
+    )
     assert len(report.by_status(CheckStatus.PASS)) == 1
     assert len(report.by_status(CheckStatus.UNAVAILABLE)) == 1
     assert report.by_status(CheckStatus.ERROR) == ()

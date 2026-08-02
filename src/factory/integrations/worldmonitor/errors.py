@@ -6,15 +6,15 @@ from enum import StrEnum
 
 
 class WorldMonitorErrorCode(StrEnum):
-    CAPABILITY_UNAVAILABLE = "CAPABILITY_UNAVAILABLE"   # not discovered/supported → denied
-    NETWORK_DENIED = "NETWORK_DENIED"                   # broker refused
+    CAPABILITY_UNAVAILABLE = "CAPABILITY_UNAVAILABLE"  # not discovered/supported → denied
+    NETWORK_DENIED = "NETWORK_DENIED"  # broker refused
     SECRET_UNAVAILABLE = "SECRET_UNAVAILABLE"  # noqa: S105 - error code; secret lease missing
-    MALFORMED_RESPONSE = "MALFORMED_RESPONSE"           # bad JSON / schema / timestamp / geography
-    RESPONSE_TOO_LARGE = "RESPONSE_TOO_LARGE"           # exceeded byte ceiling
-    SOURCE_URL_DENIED = "SOURCE_URL_DENIED"             # source/output URL outside approved domains
+    MALFORMED_RESPONSE = "MALFORMED_RESPONSE"  # bad JSON / schema / timestamp / geography
+    RESPONSE_TOO_LARGE = "RESPONSE_TOO_LARGE"  # exceeded byte ceiling
+    SOURCE_URL_DENIED = "SOURCE_URL_DENIED"  # source/output URL outside approved domains
     TIMED_OUT = "TIMED_OUT"
-    UNAVAILABLE = "UNAVAILABLE"                         # service unhealthy/unreachable
-    UI_MESSAGE_REJECTED = "UI_MESSAGE_REJECTED"         # unknown/unsafe UI message
+    UNAVAILABLE = "UNAVAILABLE"  # service unhealthy/unreachable
+    UI_MESSAGE_REJECTED = "UI_MESSAGE_REJECTED"  # unknown/unsafe UI message
     MODEL_AUTHORITY_VIOLATION = "MODEL_AUTHORITY_VIOLATION"  # attempted to bypass Builder router
 
 

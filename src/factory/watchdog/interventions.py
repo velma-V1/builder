@@ -119,13 +119,9 @@ class WatchdogInterventionReceiver:
                 request, InterventionOutcome.REJECTED, "command failed immutable allowlist"
             )
         if not self._authenticated(request):
-            return self._terminal(
-                request, InterventionOutcome.REJECTED, "authentication failed"
-            )
+            return self._terminal(request, InterventionOutcome.REJECTED, "authentication failed")
         if command in _INERT_COMMANDS:
-            return self._terminal(
-                request, InterventionOutcome.INERT, "command is inert until PH-7"
-            )
+            return self._terminal(request, InterventionOutcome.INERT, "command is inert until PH-7")
         if (
             command is InterventionCommand.QUARANTINE_RESOURCE
             and self.task_reader.get_task(request.target_ref) is None
@@ -140,9 +136,7 @@ class WatchdogInterventionReceiver:
                 request, InterventionOutcome.REJECTED, "bounded target validation failed"
             )
         if not self._expected_matches(command, request):
-            return self._terminal(
-                request, InterventionOutcome.REJECTED, "expected-state mismatch"
-            )
+            return self._terminal(request, InterventionOutcome.REJECTED, "expected-state mismatch")
         if not self.authority_gate.authorize(request):
             return self._terminal(
                 request,
@@ -165,11 +159,7 @@ class WatchdogInterventionReceiver:
                 and str(event.new_state) == record.desired_state
                 for event in self.task_reader.get_events(record.target_ref)
             )
-            outcome = (
-                InterventionOutcome.APPLIED
-                if applied
-                else InterventionOutcome.FAILED
-            )
+            outcome = InterventionOutcome.APPLIED if applied else InterventionOutcome.FAILED
             audit = self._audit_record(record.op_key, RecordKind.COMPLETION)
             if audit is None:
                 audit = self._append_completion(
@@ -181,15 +171,9 @@ class WatchdogInterventionReceiver:
                 )
             self._writer.finish(
                 record.op_key,
-                status=(
-                    InterventionStatus.COMMITTED
-                    if applied
-                    else InterventionStatus.ABORTED
-                ),
+                status=(InterventionStatus.COMMITTED if applied else InterventionStatus.ABORTED),
                 reconciliation=(
-                    ReconciliationState.ROLL_FORWARD
-                    if applied
-                    else ReconciliationState.ROLL_BACK
+                    ReconciliationState.ROLL_FORWARD if applied else ReconciliationState.ROLL_BACK
                 ),
                 outcome=outcome,
                 cause=(
@@ -290,9 +274,7 @@ class WatchdogInterventionReceiver:
             and not any(marker in request.target_ref for marker in ("*", ",", "\n", "\x00"))
         )
 
-    def _expected_matches(
-        self, command: InterventionCommand, request: InterventionRequest
-    ) -> bool:
+    def _expected_matches(self, command: InterventionCommand, request: InterventionRequest) -> bool:
         if command in _TASK_COMMANDS:
             return request.expected_state == task_state_hash(
                 self.task_reader.get_task(request.target_ref)
@@ -308,9 +290,7 @@ class WatchdogInterventionReceiver:
                 request, InterventionOutcome.REJECTED, "task target does not exist"
             )
         desired = self._desired_task_state(command, current.current_state, request.target_ref)
-        self._writer.stage(
-            request, 2, self.clock.now_ts(), desired_state=str(desired)
-        )
+        self._writer.stage(request, 2, self.clock.now_ts(), desired_state=str(desired))
         try:
             event = self.task_writer.apply_transition(
                 task_id=request.target_ref,
@@ -501,9 +481,7 @@ class WatchdogInterventionReceiver:
             )
         )
 
-    def _audit_record(
-        self, op_key: str, record_kind: RecordKind
-    ) -> AuditRecord | None:
+    def _audit_record(self, op_key: str, record_kind: RecordKind) -> AuditRecord | None:
         return next(
             (
                 record

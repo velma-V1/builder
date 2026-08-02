@@ -68,9 +68,7 @@ def test_path_escaping_staged_output_is_blocked_regardless_of_authorization(
     tmp_path: Path,
 ) -> None:
     staging = _staging(tmp_path)
-    staging.stage(
-        StagedFile(path="../../etc/passwd", content=b"root:x:0:0", provenance="worker")
-    )
+    staging.stage(StagedFile(path="../../etc/passwd", content=b"root:x:0:0", provenance="worker"))
 
     with pytest.raises(StagingError) as excinfo:
         staging.promote(authorized=True)

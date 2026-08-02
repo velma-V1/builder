@@ -61,9 +61,7 @@ def _record_sandbox_policy(*, task_id: str, workstream_id: str) -> None:
     violations = evaluate_spec(spec)
     if violations:
         first = violations[0]
-        raise WorkerEngineRunError(
-            "SANDBOX_POLICY_DENIED", f"{first.code}: {first.detail}"
-        )
+        raise WorkerEngineRunError("SANDBOX_POLICY_DENIED", f"{first.code}: {first.detail}")
 
 
 class WorkspaceManager:

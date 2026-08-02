@@ -64,9 +64,7 @@ def _migrations_subset(tmp_path: Path, *filenames: str) -> Path:
 
 
 def _v3_only_migrations(tmp_path: Path) -> Path:
-    return _migrations_subset(
-        tmp_path, "0001_state.sql", "0002_leases.sql", "0003_memory.sql"
-    )
+    return _migrations_subset(tmp_path, "0001_state.sql", "0002_leases.sql", "0003_memory.sql")
 
 
 def _gapped_1_2_4_migrations(tmp_path: Path) -> Path:
@@ -146,9 +144,7 @@ def test_complete_history_equals_expected(tmp_path: Path) -> None:
 # ---- startup schema check: gapped / future / current / missing-table / missing-file ------
 
 
-def test_startup_rejects_gapped_history_1_2_4(
-    schema_check: ModuleType, tmp_path: Path
-) -> None:
+def test_startup_rejects_gapped_history_1_2_4(schema_check: ModuleType, tmp_path: Path) -> None:
     gapped = _gapped_1_2_4_migrations(tmp_path)
     db = tmp_path / "runtime.db"
     apply_migrations(db, gapped)
@@ -175,9 +171,7 @@ def test_startup_rejects_unexpected_future_version(
     assert "setup_api_database.py" in message
 
 
-def test_startup_accepts_complete_history_1_2_3_4(
-    schema_check: ModuleType, tmp_path: Path
-) -> None:
+def test_startup_accepts_complete_history_1_2_3_4(schema_check: ModuleType, tmp_path: Path) -> None:
     db = tmp_path / "runtime.db"
     apply_migrations(db, MIGRATIONS_ROOT)
     schema_check.require_current_schema_or_exit(db, MIGRATIONS_ROOT, _SETUP_COMMAND)  # no raise

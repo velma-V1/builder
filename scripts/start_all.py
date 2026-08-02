@@ -45,6 +45,10 @@ class StartupFailure(Exception):
     """Raised to trigger the all-or-nothing cleanup path; never leaks internals to stdout."""
 
 
+def _is_windows() -> bool:
+    return sys.platform == "win32"
+
+
 def check_required_dependencies(config: BuilderConfig) -> list[str]:
     """Everything Phase 3A actually needs. Returns a list of problems -- empty means all good."""
     problems: list[str] = []
@@ -87,7 +91,8 @@ def spawn(cmd: Sequence[str], *, cwd: Path, log_path: Path) -> subprocess.Popen[
         cwd=str(cwd),
         stdout=log_file,
         stderr=subprocess.STDOUT,
-        start_new_session=True,
+        creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if _is_windows() else 0,
+        start_new_session=not _is_windows(),
     )
 
 
@@ -96,13 +101,28 @@ def terminate_process_group(proc: subprocess.Popen[bytes]) -> None:
     it's actually gone -- never leaves an orphan behind on a normal Ctrl-C/shutdown path."""
     if proc.poll() is not None:
         return
+    if _is_windows():
+        taskkill = Path(os.environ["SYSTEMROOT"]) / "System32" / "taskkill.exe"
+        subprocess.run(  # noqa: S603 -- fixed system executable and numeric child PID
+            [str(taskkill), "/PID", str(proc.pid), "/T", "/F"],
+            check=False,
+            capture_output=True,
+        )
+        with contextlib.suppress(subprocess.TimeoutExpired):
+            proc.wait(timeout=5)
+        return
+
     with contextlib.suppress(ProcessLookupError):
-        os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+        subprocess.run(  # noqa: S603 -- fixed executable and numeric process-group ID
+            ["/bin/kill", "--", f"-{proc.pid}"], check=False, capture_output=True
+        )
     try:
         proc.wait(timeout=5)
     except subprocess.TimeoutExpired:
         with contextlib.suppress(ProcessLookupError):
-            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+            subprocess.run(  # noqa: S603 -- fixed executable and numeric process-group ID
+                ["/bin/kill", "-KILL", "--", f"-{proc.pid}"], check=False, capture_output=True
+            )
         with contextlib.suppress(subprocess.TimeoutExpired):
             proc.wait(timeout=5)
 
@@ -187,8 +207,7 @@ def _service_specs(config: BuilderConfig, log_dir: Path) -> tuple[ServiceSpec, .
             cwd=_REPO_ROOT,
             log_path=log_dir / "read_api.log",
             health_check=http_health_check(
-                f"http://127.0.0.1:{config.read_api_port}"
-                "/api/tasks/snapshot?workstream=__health__"
+                f"http://127.0.0.1:{config.read_api_port}/api/tasks/snapshot?workstream=__health__"
             ),
         ),
         ServiceSpec(

@@ -33,9 +33,7 @@ def _grant(
         allowed_paths=("**",),
     )
     decision = permission_engine.decide(
-        ActionRequest(
-            "task-1", tool, action, permission_class, "repo", "integration", None
-        ),
+        ActionRequest("task-1", tool, action, permission_class, "repo", "integration", None),
         authority,
     )
     return permission_engine.issue_grant(decision, 100), authority
@@ -67,9 +65,7 @@ def test_fileop_revoked_permission_propagates_terminal_denial(
 ) -> None:
     target = tmp_path / "input.txt"
     target.write_text("safe")
-    grant, authority = _grant(
-        permission_engine, tmp_path, PermissionClass.READ, "fileop", "read"
-    )
+    grant, authority = _grant(permission_engine, tmp_path, PermissionClass.READ, "fileop", "read")
     permission_engine.revoke(grant.grant_id)
     service = FileOpService(permission_engine, approval_engine, databases[1], clock)
     with pytest.raises(FileOpError) as caught:

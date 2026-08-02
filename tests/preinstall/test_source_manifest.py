@@ -9,6 +9,7 @@ from factory.preinstall.source_manifest import (
     MANIFEST_SOURCES,
     parse_manifest,
     render_manifest,
+    sha256_of,
     validate_manifest,
 )
 
@@ -26,6 +27,15 @@ def test_manifest_file_exists_and_covers_all_sources() -> None:
 
 def test_render_is_deterministic() -> None:
     assert render_manifest(ROOT) == render_manifest(ROOT)
+
+
+def test_source_hash_is_stable_across_lf_and_crlf_checkouts(tmp_path: Path) -> None:
+    lf_source = tmp_path / "lf.py"
+    crlf_source = tmp_path / "crlf.py"
+    lf_source.write_bytes(b"first\nsecond\n")
+    crlf_source.write_bytes(b"first\r\nsecond\r\n")
+
+    assert sha256_of(lf_source) == sha256_of(crlf_source)
 
 
 def test_tamper_is_detected(tmp_path: Path) -> None:

@@ -46,14 +46,23 @@ def test_write_over_directory_fails(
 
 
 def test_delete_of_directory_fails(
-    service: FileOpService, authority: TaskAuthority, approval_engine: ApprovalEngine,
+    service: FileOpService,
+    authority: TaskAuthority,
+    approval_engine: ApprovalEngine,
     project_root: Path,
 ) -> None:
     (project_root / "src" / "ddir").mkdir()
     card = approval_engine.enqueue(
         ApprovalRequest(
-            task_id="task-1", tool="fs", action="delete", scope="src", purpose="c",
-            consequences="x", autonomy_level="L2-supervised", ttl_seconds=100, resource="src/ddir",
+            task_id="task-1",
+            tool="fs",
+            action="delete",
+            scope="src",
+            purpose="c",
+            consequences="x",
+            autonomy_level="L2-supervised",
+            ttl_seconds=100,
+            resource="src/ddir",
             destructive=True,
         )
     )
@@ -78,8 +87,10 @@ def test_archive_with_directory_entry(
         z.writestr("subdir/", "")  # a directory entry
         z.writestr("subdir/f.txt", "hi")
     result = service.extract_archive(
-        "src/withdir.zip", "src/od",
-        ArchiveLimits(max_entries=10, max_depth=5, max_total_bytes=999), authority,
+        "src/withdir.zip",
+        "src/od",
+        ArchiveLimits(max_entries=10, max_depth=5, max_total_bytes=999),
+        authority,
     )
     assert result.entries == 1  # only the file counted; the dir entry skipped
     assert (project_root / "src" / "od" / "subdir" / "f.txt").read_text() == "hi"

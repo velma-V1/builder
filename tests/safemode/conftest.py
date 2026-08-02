@@ -45,9 +45,7 @@ def _dbs(tmp_path: Path) -> tuple[Path, Path]:
 @pytest.fixture
 def permission_engine(_dbs: tuple[Path, Path], clock: FakeClock) -> PermissionEngine:
     security, audit = _dbs
-    return PermissionEngine(
-        security_database_path=security, audit_database_path=audit, clock=clock
-    )
+    return PermissionEngine(security_database_path=security, audit_database_path=audit, clock=clock)
 
 
 @pytest.fixture
@@ -58,11 +56,15 @@ def approval_engine(_dbs: tuple[Path, Path], clock: FakeClock) -> ApprovalEngine
 
 @pytest.fixture
 def safe_mode(
-    permission_engine: PermissionEngine, approval_engine: ApprovalEngine,
-    _dbs: tuple[Path, Path], clock: FakeClock,
+    permission_engine: PermissionEngine,
+    approval_engine: ApprovalEngine,
+    _dbs: tuple[Path, Path],
+    clock: FakeClock,
 ) -> SafeMode:
     _security, audit = _dbs
     return SafeMode(
-        audit_database_path=audit, permission_engine=permission_engine,
-        approval_engine=approval_engine, clock=clock,
+        audit_database_path=audit,
+        permission_engine=permission_engine,
+        approval_engine=approval_engine,
+        clock=clock,
     )

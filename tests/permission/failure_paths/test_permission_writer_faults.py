@@ -19,7 +19,10 @@ def test_stage_transition_on_missing_grant_raises(security_db_path: Path) -> Non
     writer = _PermissionWriter(database_path=security_db_path)
     with pytest.raises(PermissionError) as exc:
         writer.stage_transition(
-            grant_id="absent", op_key="k", verb="revoke", new_state=PermissionState.REVOKED,
+            grant_id="absent",
+            op_key="k",
+            verb="revoke",
+            new_state=PermissionState.REVOKED,
             ts=1_000_000,
         )
     assert exc.value.code == "PERMISSION_NOT_FOUND"
@@ -35,9 +38,18 @@ def test_stage_issue_on_broken_store_fails_closed(tmp_path: Path) -> None:
     writer = _PermissionWriter(database_path=db)
     with pytest.raises(PermissionError) as exc:
         writer.stage_issue(
-            grant_id="g", op_key="k", task_id="t", tool="sh", action="w",
-            permission_class="WRITE", resource=None, scope="s", purpose="p",  # type: ignore[arg-type]
-            grant_fingerprint="fp", expires_at=2, ts=1,
+            grant_id="g",
+            op_key="k",
+            task_id="t",
+            tool="sh",
+            action="w",
+            permission_class="WRITE",
+            resource=None,
+            scope="s",
+            purpose="p",  # type: ignore[arg-type]
+            grant_fingerprint="fp",
+            expires_at=2,
+            ts=1,
         )
     assert exc.value.code == "PERMISSION_STAGE_FAILED"
 

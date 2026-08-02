@@ -181,15 +181,21 @@ class ApprovalEngine:
             )
         except AuditError as exc:
             self._writer.rollback_operation(
-                approval_id=approval_id, op_key=op_key, verb="enqueue",
-                failure_code="AUDIT_APPEND_FAILED", ts=self.clock.now_ts(),
+                approval_id=approval_id,
+                op_key=op_key,
+                verb="enqueue",
+                failure_code="AUDIT_APPEND_FAILED",
+                ts=self.clock.now_ts(),
             )
             raise ApprovalError(
                 "APPROVAL_AUDIT_FAILED", f"enqueue failed closed (audit unavailable): {exc}"
             ) from exc
 
         self._writer.commit_operation(
-            approval_id=approval_id, op_key=op_key, audit_seq=audit.sequence, ts=ts,
+            approval_id=approval_id,
+            op_key=op_key,
+            audit_seq=audit.sequence,
+            ts=ts,
             drop_queue=False,
         )
         return ApprovalCard(
@@ -226,11 +232,15 @@ class ApprovalEngine:
 
         if decision.decision is DecisionKind.DENY:
             self._run_transition(
-                approval_id=card_id, verb="deny", new_state=ApprovalState.DENIED,
-                actor=decision.operator, action_class="approval.deny",
+                approval_id=card_id,
+                verb="deny",
+                new_state=ApprovalState.DENIED,
+                actor=decision.operator,
+                action_class="approval.deny",
             )
             return Denial(
-                reason_code="OPERATOR_DENIED", message="operator denied the request",
+                reason_code="OPERATOR_DENIED",
+                message="operator denied the request",
                 approval_id=card_id,
             )
 
@@ -243,12 +253,19 @@ class ApprovalEngine:
             )
 
         fingerprint = action_fingerprint(
-            task_id=record.task_id, tool=record.tool, action=record.action,
-            resource=record.resource, scope=record.scope,
+            task_id=record.task_id,
+            tool=record.tool,
+            action=record.action,
+            resource=record.resource,
+            scope=record.scope,
         )
         self._run_transition(
-            approval_id=card_id, verb="grant", new_state=ApprovalState.GRANTED,
-            actor=decision.operator, action_class="approval.grant", fingerprint=fingerprint,
+            approval_id=card_id,
+            verb="grant",
+            new_state=ApprovalState.GRANTED,
+            actor=decision.operator,
+            action_class="approval.grant",
+            fingerprint=fingerprint,
         )
         granted = self.reader.get_record(card_id)
         if granted is None:  # pragma: no cover - defensive; the row was just committed
@@ -277,8 +294,13 @@ class ApprovalEngine:
         exhausted = uses_after >= fresh.repetition_limit
         new_state = ApprovalState.CONSUMED if exhausted else ApprovalState.GRANTED
         self._run_transition(
-            approval_id=fresh.approval_id, verb="consume", new_state=new_state,
-            actor="cmp-approval", action_class="approval.consume", increment_use=True, ts=at,
+            approval_id=fresh.approval_id,
+            verb="consume",
+            new_state=new_state,
+            actor="cmp-approval",
+            action_class="approval.consume",
+            increment_use=True,
+            ts=at,
         )
         return True
 
@@ -296,8 +318,11 @@ class ApprovalEngine:
                 "APPROVAL_NOT_REVOCABLE", f"record {record_id} is terminal ({record.state})"
             )
         self._run_transition(
-            approval_id=record_id, verb="revoke", new_state=ApprovalState.REVOKED,
-            actor="operator", action_class="approval.revoke",
+            approval_id=record_id,
+            verb="revoke",
+            new_state=ApprovalState.REVOKED,
+            actor="operator",
+            action_class="approval.revoke",
         )
 
     # --- expire ----------------------------------------------------------------------------------
@@ -308,8 +333,12 @@ class ApprovalEngine:
         expired: list[str] = []
         for record in self.reader.list_expirable(now):
             self._run_transition(
-                approval_id=record.approval_id, verb="expire", new_state=ApprovalState.EXPIRED,
-                actor="cmp-approval", action_class="approval.expire", ts=now,
+                approval_id=record.approval_id,
+                verb="expire",
+                new_state=ApprovalState.EXPIRED,
+                actor="cmp-approval",
+                action_class="approval.expire",
+                ts=now,
             )
             expired.append(record.approval_id)
         return tuple(expired)
@@ -343,13 +372,19 @@ class ApprovalEngine:
             seq = audit_completion_seq(self.audit_database_path, intent.op_key)
             if seq is not None:
                 self._writer.commit_operation(
-                    approval_id=intent.approval_id, op_key=intent.op_key, audit_seq=seq, ts=now,
+                    approval_id=intent.approval_id,
+                    op_key=intent.op_key,
+                    audit_seq=seq,
+                    ts=now,
                     drop_queue=intent.verb != "enqueue",
                 )
             else:
                 self._writer.rollback_operation(
-                    approval_id=intent.approval_id, op_key=intent.op_key, verb=intent.verb,
-                    failure_code="RECONCILE_NO_AUDIT", ts=now,
+                    approval_id=intent.approval_id,
+                    op_key=intent.op_key,
+                    verb=intent.verb,
+                    failure_code="RECONCILE_NO_AUDIT",
+                    ts=now,
                 )
 
     # --- internals -------------------------------------------------------------------------------
@@ -370,19 +405,30 @@ class ApprovalEngine:
         at = self.clock.now_ts() if ts is None else ts
         op_key = _new_op_key(verb, approval_id)
         self._writer.stage_transition(
-            approval_id=approval_id, op_key=op_key, verb=verb, new_state=new_state, ts=at,
-            action_fingerprint=fingerprint, increment_use=increment_use,
+            approval_id=approval_id,
+            op_key=op_key,
+            verb=verb,
+            new_state=new_state,
+            ts=at,
+            action_fingerprint=fingerprint,
+            increment_use=increment_use,
         )
         payload = _payload_hash(approval_id, verb, str(new_state))
         try:
             audit = self._audit_completion(
-                op_key=op_key, actor=actor, action_class=action_class,
-                payload_hash=payload, target_ref=approval_id,
+                op_key=op_key,
+                actor=actor,
+                action_class=action_class,
+                payload_hash=payload,
+                target_ref=approval_id,
             )
         except AuditError as exc:
             self._writer.rollback_operation(
-                approval_id=approval_id, op_key=op_key, verb=verb,
-                failure_code="AUDIT_APPEND_FAILED", ts=self.clock.now_ts(),
+                approval_id=approval_id,
+                op_key=op_key,
+                verb=verb,
+                failure_code="AUDIT_APPEND_FAILED",
+                ts=self.clock.now_ts(),
             )
             raise ApprovalError(
                 "APPROVAL_AUDIT_FAILED", f"{verb} failed closed (audit unavailable): {exc}"
@@ -398,8 +444,13 @@ class ApprovalEngine:
         if request.repetition_limit < 1:
             raise ApprovalError("APPROVAL_INVALID_REQUEST", "repetition_limit must be >= 1")
         required = (
-            request.task_id, request.tool, request.action, request.scope, request.purpose,
-            request.consequences, request.autonomy_level,
+            request.task_id,
+            request.tool,
+            request.action,
+            request.scope,
+            request.purpose,
+            request.consequences,
+            request.autonomy_level,
         )
         if not all(bool(field) for field in required):
             raise ApprovalError(

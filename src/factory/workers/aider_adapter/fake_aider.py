@@ -87,7 +87,11 @@ class FakeAiderWorker:
     def call(self, request: CallRequest) -> CallResult:
         if not self._available:
             return CallResult(
-                ExecutionStatus.RUNTIME_UNAVAILABLE, "", 0, None, "aider offline",
+                ExecutionStatus.RUNTIME_UNAVAILABLE,
+                "",
+                0,
+                None,
+                "aider offline",
                 "RUNTIME_UNAVAILABLE",
             )
         return CallResult(

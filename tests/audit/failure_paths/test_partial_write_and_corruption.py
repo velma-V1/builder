@@ -168,9 +168,7 @@ def test_detects_bad_anchor(
     _seed(writer, make_event, 2)
     connection = _drop_triggers(audit_db_path)
     try:
-        connection.execute(
-            "UPDATE audit_records SET predecessor_hash = 'ff' WHERE sequence = 1"
-        )
+        connection.execute("UPDATE audit_records SET predecessor_hash = 'ff' WHERE sequence = 1")
         connection.commit()
     finally:
         connection.close()

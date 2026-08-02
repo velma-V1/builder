@@ -31,9 +31,7 @@ from factory.orchestrator.store.runtime_state import OrchestratorStateReader
 async def _get_tasks_snapshot(request: Request) -> JSONResponse:
     workstream_id = request.query_params.get("workstream")
     if workstream_id is None or workstream_id.strip() == "":
-        return JSONResponse(
-            {"error": "workstream query parameter is required"}, status_code=400
-        )
+        return JSONResponse({"error": "workstream query parameter is required"}, status_code=400)
 
     reader: OrchestratorStateReader = request.app.state.task_reader
     try:

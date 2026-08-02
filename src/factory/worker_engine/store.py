@@ -107,9 +107,7 @@ _INSERT_RUN_SQL = (
     "work_order_json, model_route_token, started_at) "
     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 )
-_FINISH_RUN_SQL = (
-    "UPDATE worker_runs SET finished_at = ?, outcome = ?, reason = ? WHERE run_id = ?"
-)
+_FINISH_RUN_SQL = "UPDATE worker_runs SET finished_at = ?, outcome = ?, reason = ? WHERE run_id = ?"
 _INSERT_EVENT_SQL = (
     "INSERT INTO worker_events (run_id, sequence, event_type, payload_json, occurred_at) "
     "VALUES (?, ?, ?, ?, ?)"
@@ -212,9 +210,20 @@ class _WorkerRunWriter:
             connection.execute(
                 _INSERT_RUN_SQL,
                 (
-                    run_id, task_id, attempt, requested_mode.name, selected_mode.name,
-                    mode_reason, policy_rule, sandbox_path, branch_ref, base_sha, staging_id,
-                    work_order_json, model_route_token, now,
+                    run_id,
+                    task_id,
+                    attempt,
+                    requested_mode.name,
+                    selected_mode.name,
+                    mode_reason,
+                    policy_rule,
+                    sandbox_path,
+                    branch_ref,
+                    base_sha,
+                    staging_id,
+                    work_order_json,
+                    model_route_token,
+                    now,
                 ),
             )
             connection.commit()
@@ -224,13 +233,23 @@ class _WorkerRunWriter:
         finally:
             connection.close()
         return WorkerRunRecord(
-            run_id=run_id, task_id=task_id, attempt=attempt,
-            requested_mode=requested_mode, selected_mode=selected_mode,
-            mode_reason=mode_reason, policy_rule=policy_rule,
-            sandbox_path=sandbox_path, branch_ref=branch_ref, base_sha=base_sha,
-            staging_id=staging_id, work_order_json=work_order_json,
-            model_route_token=model_route_token, started_at=now, finished_at=None,
-            outcome=None, reason=None,
+            run_id=run_id,
+            task_id=task_id,
+            attempt=attempt,
+            requested_mode=requested_mode,
+            selected_mode=selected_mode,
+            mode_reason=mode_reason,
+            policy_rule=policy_rule,
+            sandbox_path=sandbox_path,
+            branch_ref=branch_ref,
+            base_sha=base_sha,
+            staging_id=staging_id,
+            work_order_json=work_order_json,
+            model_route_token=model_route_token,
+            started_at=now,
+            finished_at=None,
+            outcome=None,
+            reason=None,
         )
 
     def append_event(
@@ -240,9 +259,7 @@ class _WorkerRunWriter:
         connection = self._connect()
         try:
             connection.execute("BEGIN IMMEDIATE")
-            connection.execute(
-                _INSERT_EVENT_SQL, (run_id, sequence, event_type, payload_json, now)
-            )
+            connection.execute(_INSERT_EVENT_SQL, (run_id, sequence, event_type, payload_json, now))
             connection.commit()
         except sqlite3.Error as exc:
             connection.rollback()
@@ -270,16 +287,12 @@ class _WorkerRunWriter:
         finally:
             connection.close()
 
-    def finish_run(
-        self, *, run_id: str, outcome: WorkerRunOutcome, reason: str
-    ) -> None:
+    def finish_run(self, *, run_id: str, outcome: WorkerRunOutcome, reason: str) -> None:
         now = _utcnow()
         connection = self._connect()
         try:
             connection.execute("BEGIN IMMEDIATE")
-            cursor = connection.execute(
-                _FINISH_RUN_SQL, (now, outcome.value, reason, run_id)
-            )
+            cursor = connection.execute(_FINISH_RUN_SQL, (now, outcome.value, reason, run_id))
             if cursor.rowcount == 0:
                 connection.rollback()
                 raise WorkerEngineRunError("RUN_NOT_FOUND", f"run {run_id} does not exist")

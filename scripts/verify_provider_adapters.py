@@ -17,9 +17,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 _PROVIDERS = ROOT / "src" / "factory" / "providers"
-_FORBIDDEN_HTTP = ("import requests", "import httpx", "import aiohttp", "import http.client",
-                   "from urllib.request", "import urllib.request", "urllib.request.urlopen",
-                   "import socket")
+_FORBIDDEN_HTTP = (
+    "import requests",
+    "import httpx",
+    "import aiohttp",
+    "import http.client",
+    "from urllib.request",
+    "import urllib.request",
+    "urllib.request.urlopen",
+    "import socket",
+)
 _FORBIDDEN_SECRET = ("os.environ", "os.getenv", "getenv(")
 
 
@@ -41,8 +48,19 @@ def _scan(directory: Path, needles: tuple[str, ...]) -> list[str]:
 
 
 def verify_layout() -> VerificationResult:
-    files = ["errors", "transport", "models", "brokered", "openai_core", "hosted",
-             "openrouter", "huggingface", "together", "replicate", "registry"]
+    files = [
+        "errors",
+        "transport",
+        "models",
+        "brokered",
+        "openai_core",
+        "hosted",
+        "openrouter",
+        "huggingface",
+        "together",
+        "replicate",
+        "registry",
+    ]
     missing = [f for f in files if not (_PROVIDERS / f"{f}.py").exists()]
     return VerificationResult("provider modules present", not missing, f"missing={missing}")
 
@@ -68,7 +86,9 @@ def verify_provider_enum() -> VerificationResult:
     added = {"OPENROUTER", "HUGGING_FACE", "TOGETHER", "REPLICATE"}
     preserved = {"OLLAMA", "AIDER", "GROQ", "CEREBRAS", "NVIDIA"}
     ok = added <= names and preserved <= names
-    return VerificationResult("Provider enum extended, existing preserved", ok, f"names={sorted(names)}")
+    return VerificationResult(
+        "Provider enum extended, existing preserved", ok, f"names={sorted(names)}"
+    )
 
 
 def verify_brokered_usage() -> VerificationResult:
@@ -89,7 +109,10 @@ def verify_hosted_egress_disabled() -> VerificationResult:
 def verify_tests() -> VerificationResult:
     result = subprocess.run(
         [sys.executable, "-m", "pytest", "tests/providers", "-q"],
-        capture_output=True, text=True, cwd=ROOT, timeout=900,
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        timeout=900,
     )
     tail = result.stdout.strip().splitlines()[-1] if result.stdout.strip() else "no output"
     return VerificationResult("provider tests pass", result.returncode == 0, tail)
@@ -98,23 +121,40 @@ def verify_tests() -> VerificationResult:
 def verify_ruff() -> VerificationResult:
     result = subprocess.run(
         [sys.executable, "-m", "ruff", "check", "src/factory/providers", "tests/providers"],
-        capture_output=True, text=True, cwd=ROOT, timeout=900,
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        timeout=900,
     )
-    return VerificationResult("Ruff clean (providers)", result.returncode == 0, f"exit {result.returncode}")
+    return VerificationResult(
+        "Ruff clean (providers)", result.returncode == 0, f"exit {result.returncode}"
+    )
 
 
 def verify_mypy() -> VerificationResult:
     result = subprocess.run(
         [sys.executable, "-m", "mypy", "src/factory/providers", "tests/providers", "--strict"],
-        capture_output=True, text=True, cwd=ROOT, timeout=900,
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        timeout=900,
     )
-    return VerificationResult("mypy --strict clean (providers)", result.returncode == 0, f"exit {result.returncode}")
+    return VerificationResult(
+        "mypy --strict clean (providers)", result.returncode == 0, f"exit {result.returncode}"
+    )
 
 
 def main() -> int:
     checks = [
-        verify_layout, verify_no_direct_http, verify_no_env_secret_access, verify_provider_enum,
-        verify_brokered_usage, verify_hosted_egress_disabled, verify_tests, verify_ruff, verify_mypy,
+        verify_layout,
+        verify_no_direct_http,
+        verify_no_env_secret_access,
+        verify_provider_enum,
+        verify_brokered_usage,
+        verify_hosted_egress_disabled,
+        verify_tests,
+        verify_ruff,
+        verify_mypy,
     ]
     results = [c() for c in checks]
     passed = sum(1 for r in results if r.passed)
@@ -128,8 +168,10 @@ def main() -> int:
     print(f"TOTAL: {passed}/{total} checks passed")
     print("=" * 80 + "\n")
     if passed == total:
-        print("Provider adapters gate: PASS. BUILT_NOT_ACTIVATED; keys NOT_PROVISIONED; "
-              "no live calls; hosted egress DISABLED.\n")
+        print(
+            "Provider adapters gate: PASS. BUILT_NOT_ACTIVATED; keys NOT_PROVISIONED; "
+            "no live calls; hosted egress DISABLED.\n"
+        )
         return 0
     print("Provider adapters gate: INCOMPLETE — fix failures above.\n")
     return 1

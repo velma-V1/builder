@@ -33,9 +33,7 @@ class LeaseCoordinator:
     def for_pool(cls, database_path: Path, process_epoch: ProcessEpoch) -> LeaseCoordinator:
         """Build a coordinator bound to ``process_epoch`` (typically the WorkerPool's epoch)."""
         return cls(
-            lease_manager=LeaseManager(
-                database_path=database_path, process_epoch=process_epoch
-            )
+            lease_manager=LeaseManager(database_path=database_path, process_epoch=process_epoch)
         )
 
     @property

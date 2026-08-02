@@ -75,8 +75,7 @@ def apply_audit_migrations(database_path: Path, migrations_root: Path) -> None:
         applied: set[int] = set()
         if _table_exists(connection, "schema_migrations"):
             applied = {
-                int(r[0])
-                for r in connection.execute("SELECT version FROM schema_migrations")
+                int(r[0]) for r in connection.execute("SELECT version FROM schema_migrations")
             }
 
         for path in files:

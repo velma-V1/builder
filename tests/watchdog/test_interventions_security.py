@@ -80,9 +80,7 @@ def test_invalid_requests_fail_closed_and_are_audited(
     field: str,
     cause: str,
 ) -> None:
-    receiver = _receiver(
-        security_db_path, audit_db_path, task_reader, task_writer, clock
-    )
+    receiver = _receiver(security_db_path, audit_db_path, task_reader, task_writer, clock)
     control = WatchdogControl("watchdog-1", AUTH_PROOF, clock)
     request = control.request(
         InterventionCommand.RESTART_SERVICE,
@@ -105,8 +103,7 @@ def test_invalid_requests_fail_closed_and_are_audited(
     assert cause in result.cause
     assert result.audit_seq is None
     assert any(
-        record.op_key == request.idempotency_key
-        for record in AuditWriter(audit_db_path).export()
+        record.op_key == request.idempotency_key for record in AuditWriter(audit_db_path).export()
     )
 
 
@@ -141,9 +138,7 @@ def test_forward_bound_commands_are_inert_and_never_execute(
     task_writer: _OrchestratorStateWriter,
     clock: Clock,
 ) -> None:
-    receiver = _receiver(
-        security_db_path, audit_db_path, task_reader, task_writer, clock
-    )
+    receiver = _receiver(security_db_path, audit_db_path, task_reader, task_writer, clock)
     control = WatchdogControl("watchdog-1", AUTH_PROOF, clock)
     for command in (
         InterventionCommand.RESTORE_APPROVED_STATE,
@@ -174,9 +169,7 @@ def test_unknown_command_is_default_denied(
     task_writer: _OrchestratorStateWriter,
     clock: Clock,
 ) -> None:
-    receiver = _receiver(
-        security_db_path, audit_db_path, task_reader, task_writer, clock
-    )
+    receiver = _receiver(security_db_path, audit_db_path, task_reader, task_writer, clock)
     request = WatchdogControl("watchdog-1", AUTH_PROOF, clock).request(
         InterventionCommand.RESTART_SERVICE,
         "svc-1",
@@ -196,9 +189,7 @@ def test_unknown_task_is_rejected_without_authoritative_write(
     task_writer: _OrchestratorStateWriter,
     clock: Clock,
 ) -> None:
-    receiver = _receiver(
-        security_db_path, audit_db_path, task_reader, task_writer, clock
-    )
+    receiver = _receiver(security_db_path, audit_db_path, task_reader, task_writer, clock)
     result = receiver.intervene(
         WatchdogControl("watchdog-1", AUTH_PROOF, clock).request(
             InterventionCommand.PAUSE_TASK,

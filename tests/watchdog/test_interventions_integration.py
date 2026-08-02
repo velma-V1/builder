@@ -138,13 +138,16 @@ def test_concurrent_duplicate_request_has_one_effect_and_one_audit(
     with ThreadPoolExecutor(max_workers=2) as pool:
         results = tuple(pool.map(receiver.intervene, (request, request)))
     assert all(result.outcome is InterventionOutcome.APPLIED for result in results)
-    assert len(
-        [
-            record
-            for record in AuditWriter(audit_db_path).export()
-            if record.op_key == request.idempotency_key
-        ]
-    ) == 1
+    assert (
+        len(
+            [
+                record
+                for record in AuditWriter(audit_db_path).export()
+                if record.op_key == request.idempotency_key
+            ]
+        )
+        == 1
+    )
 
 
 def test_containment_and_service_restart_use_their_real_interfaces(
@@ -195,8 +198,7 @@ def test_containment_and_service_restart_use_their_real_interfaces(
     assert restarted.outcome is InterventionOutcome.APPLIED
     assert controller.restarts == 1
     restart_records = [
-        record for record in AuditWriter(audit_db_path).export()
-        if record.op_key == "op-restart-1"
+        record for record in AuditWriter(audit_db_path).export() if record.op_key == "op-restart-1"
     ]
     assert [record.record_kind for record in restart_records] == [
         RecordKind.INTENT,

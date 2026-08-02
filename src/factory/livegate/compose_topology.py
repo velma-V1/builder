@@ -112,18 +112,34 @@ def validate_service(
 
     if is_broker:
         if len(nets) < 2:
-            v.append(TopologyViolation(name, "BROKER_NOT_DUAL_HOMED",
-                                       "broker must bridge an internal and an egress network"))
+            v.append(
+                TopologyViolation(
+                    name,
+                    "BROKER_NOT_DUAL_HOMED",
+                    "broker must bridge an internal and an egress network",
+                )
+            )
         if not any(n in internal_networks for n in nets):
-            v.append(TopologyViolation(name, "BROKER_NO_INTERNAL_LEG",
-                                       "broker must retain one internal-network leg"))
+            v.append(
+                TopologyViolation(
+                    name, "BROKER_NO_INTERNAL_LEG", "broker must retain one internal-network leg"
+                )
+            )
     else:
         if len(nets) != 1:
-            v.append(TopologyViolation(name, "WORKER_NOT_SINGLE_HOMED",
-                                       f"worker must attach exactly one network, got {list(nets)}"))
+            v.append(
+                TopologyViolation(
+                    name,
+                    "WORKER_NOT_SINGLE_HOMED",
+                    f"worker must attach exactly one network, got {list(nets)}",
+                )
+            )
         if any(n not in internal_networks for n in nets):
-            v.append(TopologyViolation(name, "WORKER_NET_NOT_INTERNAL",
-                                       "worker network must be marked internal: true"))
+            v.append(
+                TopologyViolation(
+                    name, "WORKER_NET_NOT_INTERNAL", "worker network must be marked internal: true"
+                )
+            )
 
     if service.get("network_mode") == "host":
         v.append(TopologyViolation(name, "HOST_NETWORK_DENIED", "network_mode: host is prohibited"))
@@ -131,12 +147,18 @@ def validate_service(
     for vol in _as_sequence(service.get("volumes")):
         text = vol if isinstance(vol, str) else str(_as_mapping(vol).get("source", ""))
         if any(marker in text for marker in _SOCKET_MARKERS):
-            v.append(TopologyViolation(name, "RUNTIME_SOCKET_DENIED",
-                                       f"container-runtime socket mount denied: {text}"))
+            v.append(
+                TopologyViolation(
+                    name, "RUNTIME_SOCKET_DENIED", f"container-runtime socket mount denied: {text}"
+                )
+            )
 
     if _as_sequence(service.get("ports")):
-        v.append(TopologyViolation(name, "PUBLISHED_PORTS_DENIED",
-                                   "services may not publish ports to the host"))
+        v.append(
+            TopologyViolation(
+                name, "PUBLISHED_PORTS_DENIED", "services may not publish ports to the host"
+            )
+        )
 
     if service.get("read_only") is not True:
         v.append(TopologyViolation(name, "ROOTFS_NOT_READONLY", "read_only: true is required"))
@@ -151,8 +173,11 @@ def validate_service(
 
     sec_opt = tuple(str(s).replace(" ", "") for s in _as_sequence(service.get("security_opt")))
     if not any(s == "no-new-privileges:true" for s in sec_opt):
-        v.append(TopologyViolation(name, "NO_NEW_PRIVS_MISSING",
-                                   "security_opt: no-new-privileges:true is required"))
+        v.append(
+            TopologyViolation(
+                name, "NO_NEW_PRIVS_MISSING", "security_opt: no-new-privileges:true is required"
+            )
+        )
 
     v.extend(_check_limits(name, service))
     return tuple(v)
@@ -172,9 +197,9 @@ def validate_compose(
         svc = _as_mapping(service)
         is_broker = str(name) in broker_services
         broker_seen = broker_seen or is_broker
-        violations.extend(validate_service(
-            str(name), svc, internal_networks=internal, is_broker=is_broker
-        ))
+        violations.extend(
+            validate_service(str(name), svc, internal_networks=internal, is_broker=is_broker)
+        )
     if broker_services and not broker_seen:
         violations.append(
             TopologyViolation("<document>", "BROKER_ABSENT", "declared broker service not found")

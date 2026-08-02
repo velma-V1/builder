@@ -12,7 +12,11 @@ class ProvenanceStep:
 
 
 def build_provenance(
-    *, work_order_id: str, run_id: str, submitted_at: int, worker_reported_version: str = "",
+    *,
+    work_order_id: str,
+    run_id: str,
+    submitted_at: int,
+    worker_reported_version: str = "",
 ) -> tuple[ProvenanceStep, ...]:
     """Build the ordered, immutable provenance chain: order → run → worker → (pending) verification.
 
@@ -23,7 +27,8 @@ def build_provenance(
         ProvenanceStep("work_order", work_order_id),
         ProvenanceStep("run", f"run_id={run_id} submitted_at={submitted_at}"),
         ProvenanceStep(
-            "worker", f"agent_zero version={worker_reported_version or 'UNKNOWN'} "
+            "worker",
+            f"agent_zero version={worker_reported_version or 'UNKNOWN'} "
             "(a managed external worker; its output is an unverified claim until Builder inspects "
             "it)",
         ),

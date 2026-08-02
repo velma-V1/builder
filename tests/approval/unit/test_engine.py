@@ -37,8 +37,11 @@ def _grant(engine: ApprovalEngine, request: ApprovalRequest) -> tuple[ApprovalRe
     record = engine.decide(card.approval_id, OperatorDecision(DecisionKind.GRANT, operator="op"))
     assert isinstance(record, ApprovalRecord)
     fingerprint = action_fingerprint(
-        task_id=request.task_id, tool=request.tool, action=request.action,
-        resource=request.resource, scope=request.scope,
+        task_id=request.task_id,
+        tool=request.tool,
+        action=request.action,
+        resource=request.resource,
+        scope=request.scope,
     )
     return record, fingerprint
 
@@ -129,9 +132,7 @@ def test_expiry_auto_and_swept(
     assert swept.state is ApprovalState.EXPIRED
 
 
-def test_revoke_makes_record_unusable(
-    engine: ApprovalEngine, make_request: RequestFactory
-) -> None:
+def test_revoke_makes_record_unusable(engine: ApprovalEngine, make_request: RequestFactory) -> None:
     record, fingerprint = _grant(engine, make_request(repetition_limit=5))
     engine.revoke(record.approval_id)
     revoked = engine.reader.get_record(record.approval_id)

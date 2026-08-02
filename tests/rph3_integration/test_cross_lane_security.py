@@ -55,10 +55,7 @@ def test_denied_approval_state_and_validated_tool_result_propagate(
     pending = approval_engine.reader.get_record(card.approval_id)
     assert pending is not None
     denied = replace(pending, state=ApprovalState.DENIED)
-    assert (
-        bridge.from_approval(denied, "op-approval-denied").outcome
-        is CrossLaneOutcome.DENIED
-    )
+    assert bridge.from_approval(denied, "op-approval-denied").outcome is CrossLaneOutcome.DENIED
     tool_result = ToolResult("formatter", "1", ValidatedOutput("text", 2, "ok"))
     assert (
         bridge.from_tool_gateway(tool_result, "task-1", "op-tool-ok").outcome
@@ -107,9 +104,7 @@ def test_stale_intervention_and_wir_outage_are_explicit_terminal_results(
     )
     assert stale.outcome is CrossLaneOutcome.DENIED
 
-    def unavailable(
-        _receiver: WatchdogInterventionReceiver, _request: object
-    ) -> object:
+    def unavailable(_receiver: WatchdogInterventionReceiver, _request: object) -> object:
         raise WatchdogError("WIR_UNAVAILABLE", "receiver down")
 
     monkeypatch.setattr(WatchdogInterventionReceiver, "intervene", unavailable)

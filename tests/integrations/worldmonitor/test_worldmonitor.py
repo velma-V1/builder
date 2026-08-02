@@ -54,34 +54,42 @@ class FakeRouter:
         return AiResult(True, "routed summary", "fp-abc", "OLLAMA:qwen3:8b")
 
 
-
-
 def _brokered(
     transport: FakeHttpTransport, *, max_bytes: int = 1_000_000
 ) -> BrokeredWorldMonitorHttp:
     approval = NetworkApproval(
-        approval_id="A1", task_id="T1", destinations=frozenset({_HOST}),
-        protocols=frozenset({"https"}), methods=frozenset({"GET"}),
-        expires_at=10_000, max_total_bytes=max_bytes,
+        approval_id="A1",
+        task_id="T1",
+        destinations=frozenset({_HOST}),
+        protocols=frozenset({"https"}),
+        methods=frozenset({"GET"}),
+        expires_at=10_000,
+        max_total_bytes=max_bytes,
     )
     policy = WorldMonitorNetworkPolicy(task_id="T1", approval=approval, privacy=Privacy.LOCAL_ONLY)
     return BrokeredWorldMonitorHttp(
-        transport, FakeNetworkBackend(), FakeSecretBackend({}), policy, 0)
+        transport, FakeNetworkBackend(), FakeSecretBackend({}), policy, 0
+    )
 
 
 def _adapter(
-    transport: FakeHttpTransport, *, router: FakeRouter | None = None,
+    transport: FakeHttpTransport,
+    *,
+    router: FakeRouter | None = None,
     categories: frozenset[Category] = frozenset({Category.WORLD_BRIEF}),
-    now: int = 2000, brokered: BrokeredWorldMonitorHttp | None = None,
+    now: int = 2000,
+    brokered: BrokeredWorldMonitorHttp | None = None,
 ) -> WorldMonitorAdapter:
     return WorldMonitorAdapter(
-        mode=WorldMonitorMode.LOCAL_REST, base_url=_BASE,
+        mode=WorldMonitorMode.LOCAL_REST,
+        base_url=_BASE,
         brokered=brokered or _brokered(transport),
         capabilities=CapabilitySet(WorldMonitorMode.LOCAL_REST, categories),
         model_router=router or FakeRouter(),
         approved_source_domains=_SOURCE_DOMAINS,
         workspace_url="https://workspace.builder.local/wm",
-        allowed_ui_origins=_UI_ORIGINS, clock=lambda: now,
+        allowed_ui_origins=_UI_ORIGINS,
+        clock=lambda: now,
     )
 
 
@@ -95,7 +103,8 @@ def test_health_states() -> None:
 
 def test_capability_discovery_and_unsupported_denied() -> None:
     transport = rest_transport_for(
-        "/v1/world-brief", rest_response(records_payload(sample_record())))
+        "/v1/world-brief", rest_response(records_payload(sample_record()))
+    )
     adapter = _adapter(transport, categories=frozenset({Category.WORLD_BRIEF}))
     assert adapter.discover_capabilities().supports(Category.WORLD_BRIEF)
     # A category not discovered is denied (fail closed).
@@ -105,7 +114,8 @@ def test_capability_discovery_and_unsupported_denied() -> None:
 
 def test_rest_normalization_preserves_provenance_and_source() -> None:
     transport = rest_transport_for(
-        "/v1/world-brief", rest_response(records_payload(sample_record())))
+        "/v1/world-brief", rest_response(records_payload(sample_record()))
+    )
     result = _adapter(transport).query(WorldMonitorQuery(Category.WORLD_BRIEF))
     assert result.ok and len(result.records) == 1
     rec = result.records[0]
@@ -127,7 +137,8 @@ def test_stale_data_is_marked() -> None:
 def test_duplicate_detection() -> None:
     dup = sample_record()
     transport = rest_transport_for(
-        "/v1/world-brief", rest_response(records_payload(dup, dict(dup))))
+        "/v1/world-brief", rest_response(records_payload(dup, dict(dup)))
+    )
     result = _adapter(transport).query(WorldMonitorQuery(Category.WORLD_BRIEF))
     assert len(result.records) == 1  # deduped by source identity + digest
 
@@ -155,7 +166,8 @@ def test_malicious_source_url_rejected() -> None:
 
 def test_oversized_response_denied() -> None:
     transport = rest_transport_for(
-        "/v1/world-brief", rest_response(records_payload(sample_record())))
+        "/v1/world-brief", rest_response(records_payload(sample_record()))
+    )
     brokered = _brokered(transport, max_bytes=1)  # 1-byte ceiling
     result = _adapter(transport, brokered=brokered).query(WorldMonitorQuery(Category.WORLD_BRIEF))
     assert result.error_code == "RESPONSE_TOO_LARGE"
@@ -166,6 +178,7 @@ def test_redirect_to_unapproved_host_denied() -> None:
 
     def _m(req: HttpRequest) -> bool:
         return "/v1/world-brief" in req.url
+
     resp = HttpResponse(200, {"x-request-id": "r"}, body, final_url="https://evil.example/x")
     transport = FakeHttpTransport((FakeExchange(_m, resp),))
     result = _adapter(transport).query(WorldMonitorQuery(Category.WORLD_BRIEF))
@@ -174,15 +187,21 @@ def test_redirect_to_unapproved_host_denied() -> None:
 
 def test_network_denied_when_host_not_approved() -> None:
     transport = rest_transport_for(
-        "/v1/world-brief", rest_response(records_payload(sample_record())))
+        "/v1/world-brief", rest_response(records_payload(sample_record()))
+    )
     approval = NetworkApproval(
-        approval_id="A1", task_id="T1", destinations=frozenset({"other.example"}),
-        protocols=frozenset({"https"}), methods=frozenset({"GET"}),
-        expires_at=10_000, max_total_bytes=1_000_000,
+        approval_id="A1",
+        task_id="T1",
+        destinations=frozenset({"other.example"}),
+        protocols=frozenset({"https"}),
+        methods=frozenset({"GET"}),
+        expires_at=10_000,
+        max_total_bytes=1_000_000,
     )
     policy = WorldMonitorNetworkPolicy("T1", approval, privacy=Privacy.LOCAL_ONLY)
     brokered = BrokeredWorldMonitorHttp(
-        transport, FakeNetworkBackend(), FakeSecretBackend({}), policy, 0)
+        transport, FakeNetworkBackend(), FakeSecretBackend({}), policy, 0
+    )
     result = _adapter(transport, brokered=brokered).query(WorldMonitorQuery(Category.WORLD_BRIEF))
     assert result.error_code == "NETWORK_DENIED"
     assert transport.sent == []
@@ -196,7 +215,8 @@ def test_mcp_discovery_is_read_only() -> None:
 def test_ai_access_goes_only_through_builder_router() -> None:
     router = FakeRouter()
     transport = rest_transport_for(
-        "/v1/world-brief", rest_response(records_payload(sample_record())))
+        "/v1/world-brief", rest_response(records_payload(sample_record()))
+    )
     adapter = _adapter(transport, router=router)
     result = adapter.request_ai("T1", "summarize", "brief this", privacy=Privacy.LOCAL_ONLY)
     assert result.ok and result.provider_route == "OLLAMA:qwen3:8b"
@@ -215,8 +235,10 @@ def test_ai_access_goes_only_through_builder_router() -> None:
         (UiMessage("delete_everything", 1, "", "https://workspace.builder.local"), "unknown"),
         (UiMessage("open_country", 9, "US", "https://workspace.builder.local"), "version"),
         (UiMessage("open_panel", 1, "https://x.example", "https://workspace.builder.local"), "url"),
-        (UiMessage("open_panel", 1, "authorization=abc",
-                   "https://workspace.builder.local"), "secret"),
+        (
+            UiMessage("open_panel", 1, "authorization=abc", "https://workspace.builder.local"),
+            "secret",
+        ),
     ],
 )
 def test_ui_message_injection_rejected(message: UiMessage, reason: str) -> None:

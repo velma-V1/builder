@@ -52,9 +52,7 @@ class PermissionClass(StrEnum):
 
 
 # Filesystem-mutating classes whose *path* must be canonicalized + contained before any grant.
-WRITE_LIKE_CLASSES = frozenset(
-    {PermissionClass.WRITE, PermissionClass.DELETE}
-)
+WRITE_LIKE_CLASSES = frozenset({PermissionClass.WRITE, PermissionClass.DELETE})
 # Classes that always require a separate approval card (never auto-allowed): Decision B (delete) +
 # real-world/external effects. External/network reach beyond the local envelope.
 APPROVAL_REQUIRED_CLASSES = frozenset(

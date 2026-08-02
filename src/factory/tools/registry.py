@@ -84,9 +84,14 @@ class ToolRegistry:
     ) -> AuditRecord:
         return self._audit.append(
             AuditEvent(
-                op_key=op_key, record_kind=RecordKind.COMPLETION, operation_class=1, actor=actor,
-                action_class=action_class, payload_hash=payload_hash,
-                occurred_at=self.clock.now_iso(), target_ref=target_ref,
+                op_key=op_key,
+                record_kind=RecordKind.COMPLETION,
+                operation_class=1,
+                actor=actor,
+                action_class=action_class,
+                payload_hash=payload_hash,
+                occurred_at=self.clock.now_iso(),
+                target_ref=target_ref,
             )
         )
 
@@ -108,23 +113,34 @@ class ToolRegistry:
         ts = self.clock.now_ts()
         op_key = _new_op_key("register", f"{tool_id}@{version}")
         self._writer.stage_register(
-            tool_id=tool_id, version=version, op_key=op_key,
+            tool_id=tool_id,
+            version=version,
+            op_key=op_key,
             declaration_hash=declaration.canonical_hash(),
             provenance_source=request.provenance.source,
-            provenance_checksum=request.provenance.checksum, license=request.provenance.license,
+            provenance_checksum=request.provenance.checksum,
+            license=request.provenance.license,
             declaration_json=declaration.to_json(),
-            output_schema_json=request.output_schema.to_json(), ts=ts,
+            output_schema_json=request.output_schema.to_json(),
+            ts=ts,
         )
         payload = _payload_hash(tool_id, version, declaration.canonical_hash())
         try:
             audit = self._audit_completion(
-                op_key=op_key, actor=request.actor, action_class="tool.register",
-                payload_hash=payload, target_ref=f"{tool_id}@{version}",
+                op_key=op_key,
+                actor=request.actor,
+                action_class="tool.register",
+                payload_hash=payload,
+                target_ref=f"{tool_id}@{version}",
             )
         except AuditError as exc:
             self._writer.rollback_operation(
-                tool_id=tool_id, version=version, op_key=op_key, verb="register",
-                failure_code="AUDIT_APPEND_FAILED", ts=self.clock.now_ts(),
+                tool_id=tool_id,
+                version=version,
+                op_key=op_key,
+                verb="register",
+                failure_code="AUDIT_APPEND_FAILED",
+                ts=self.clock.now_ts(),
             )
             raise ToolError(
                 "TOOL_AUDIT_FAILED", f"registration failed closed (audit unavailable): {exc}"
@@ -161,8 +177,13 @@ class ToolRegistry:
         if record.state is ToolState.QUARANTINED:
             raise ToolError("TOOL_ALREADY_QUARANTINED", f"tool {tool_id}@{version} already held")
         self._run_transition(
-            tool_id=tool_id, version=version, verb="quarantine", new_state=ToolState.QUARANTINED,
-            actor="cmp-toolgw", action_class="tool.quarantine", detail=reason,
+            tool_id=tool_id,
+            version=version,
+            verb="quarantine",
+            new_state=ToolState.QUARANTINED,
+            actor="cmp-toolgw",
+            action_class="tool.quarantine",
+            detail=reason,
         )
 
     def release(self, tool_id: str, version: str, review_ref: str) -> None:
@@ -170,14 +191,17 @@ class ToolRegistry:
         if record is None:
             raise ToolError("TOOL_NOT_FOUND", f"no tool {tool_id}@{version}")
         if record.state is not ToolState.QUARANTINED:
-            raise ToolError(
-                "TOOL_NOT_QUARANTINED", f"tool {tool_id}@{version} is not quarantined"
-            )
+            raise ToolError("TOOL_NOT_QUARANTINED", f"tool {tool_id}@{version} is not quarantined")
         if not review_ref:
             raise ToolError("TOOL_RELEASE_NEEDS_REVIEW", "release requires an explicit review_ref")
         self._run_transition(
-            tool_id=tool_id, version=version, verb="release", new_state=ToolState.RELEASED,
-            actor="operator", action_class="tool.release", detail=review_ref,
+            tool_id=tool_id,
+            version=version,
+            verb="release",
+            new_state=ToolState.RELEASED,
+            actor="operator",
+            action_class="tool.release",
+            detail=review_ref,
         )
 
     def record_failure(self, tool_id: str, version: str) -> bool:
@@ -212,32 +236,55 @@ class ToolRegistry:
                 )
             else:
                 self._writer.rollback_operation(
-                    tool_id=tool_id, version=version, op_key=intent.op_key, verb=intent.verb,
-                    failure_code="RECONCILE_NO_AUDIT", ts=now,
+                    tool_id=tool_id,
+                    version=version,
+                    op_key=intent.op_key,
+                    verb=intent.verb,
+                    failure_code="RECONCILE_NO_AUDIT",
+                    ts=now,
                 )
 
     # --- internals -------------------------------------------------------------------------------
 
     def _run_transition(
-        self, *, tool_id: str, version: str, verb: str, new_state: ToolState, actor: str,
-        action_class: str, detail: str | None,
+        self,
+        *,
+        tool_id: str,
+        version: str,
+        verb: str,
+        new_state: ToolState,
+        actor: str,
+        action_class: str,
+        detail: str | None,
     ) -> None:
         ts = self.clock.now_ts()
         op_key = _new_op_key(verb, f"{tool_id}@{version}")
         self._writer.stage_transition(
-            tool_id=tool_id, version=version, op_key=op_key, verb=verb, new_state=new_state,
-            ts=ts, detail=detail,
+            tool_id=tool_id,
+            version=version,
+            op_key=op_key,
+            verb=verb,
+            new_state=new_state,
+            ts=ts,
+            detail=detail,
         )
         payload = _payload_hash(tool_id, version, verb, str(new_state))
         try:
             audit = self._audit_completion(
-                op_key=op_key, actor=actor, action_class=action_class, payload_hash=payload,
+                op_key=op_key,
+                actor=actor,
+                action_class=action_class,
+                payload_hash=payload,
                 target_ref=f"{tool_id}@{version}",
             )
         except AuditError as exc:
             self._writer.rollback_operation(
-                tool_id=tool_id, version=version, op_key=op_key, verb=verb,
-                failure_code="AUDIT_APPEND_FAILED", ts=self.clock.now_ts(),
+                tool_id=tool_id,
+                version=version,
+                op_key=op_key,
+                verb=verb,
+                failure_code="AUDIT_APPEND_FAILED",
+                ts=self.clock.now_ts(),
             )
             raise ToolError(
                 "TOOL_AUDIT_FAILED", f"{verb} failed closed (audit unavailable): {exc}"

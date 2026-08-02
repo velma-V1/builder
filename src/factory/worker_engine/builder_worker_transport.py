@@ -165,9 +165,7 @@ class BuilderWorkerTransport:
 
         if self._is_cancelled():
             seq += 1
-            events.append(
-                self._emit(work_order.work_order_id, seq, AgentZeroEventType.CANCELLED)
-            )
+            events.append(self._emit(work_order.work_order_id, seq, AgentZeroEventType.CANCELLED))
             return events
 
         if self.workspace_path is None:
@@ -193,7 +191,9 @@ class BuilderWorkerTransport:
             seq += 1
             events.append(
                 self._emit(
-                    work_order.work_order_id, seq, AgentZeroEventType.FAILED,
+                    work_order.work_order_id,
+                    seq,
+                    AgentZeroEventType.FAILED,
                     reason=f"model call failed: {model_result.reason}",
                 )
             )
@@ -207,16 +207,23 @@ class BuilderWorkerTransport:
         seq += 1
         events.append(
             self._emit(
-                work_order.work_order_id, seq, AgentZeroEventType.ARTIFACT_PRODUCED,
+                work_order.work_order_id,
+                seq,
+                AgentZeroEventType.ARTIFACT_PRODUCED,
                 artifact_path=f"analysis/{work_order.task_id}.txt",
-                content_digest=analysis_digest, media_type="text/plain",
+                content_digest=analysis_digest,
+                media_type="text/plain",
             )
         )
         seq += 1
         events.append(
             self._emit(
-                work_order.work_order_id, seq, AgentZeroEventType.EVIDENCE_ATTACHED,
-                kind="analysis", detail=model_result.output, content_digest=analysis_digest,
+                work_order.work_order_id,
+                seq,
+                AgentZeroEventType.EVIDENCE_ATTACHED,
+                kind="analysis",
+                detail=model_result.output,
+                content_digest=analysis_digest,
             )
         )
         seq += 1
@@ -235,14 +242,20 @@ class BuilderWorkerTransport:
         target_path = select_target_path(work_order.instructions, work_order.task_id)
         authority = PathAuthority(workspace_path)
         authorization = authority.evaluate(
-            target_path, operation="write", allowed=list(work_order.allowed_path_globs),
-            forbidden=(), read_only=(), active_exclusive_paths=(),
+            target_path,
+            operation="write",
+            allowed=list(work_order.allowed_path_globs),
+            forbidden=(),
+            read_only=(),
+            active_exclusive_paths=(),
         )
         if not authorization.allowed:
             seq += 1
             events.append(
                 self._emit(
-                    work_order.work_order_id, seq, AgentZeroEventType.FAILED,
+                    work_order.work_order_id,
+                    seq,
+                    AgentZeroEventType.FAILED,
                     reason=f"target path denied: {authorization.reason}",
                 )
             )
@@ -258,9 +271,7 @@ class BuilderWorkerTransport:
 
         if self._is_cancelled():
             seq += 1
-            events.append(
-                self._emit(work_order.work_order_id, seq, AgentZeroEventType.CANCELLED)
-            )
+            events.append(self._emit(work_order.work_order_id, seq, AgentZeroEventType.CANCELLED))
             return events
 
         prompt = _build_write_prompt(
@@ -280,7 +291,9 @@ class BuilderWorkerTransport:
             seq += 1
             events.append(
                 self._emit(
-                    work_order.work_order_id, seq, AgentZeroEventType.FAILED,
+                    work_order.work_order_id,
+                    seq,
+                    AgentZeroEventType.FAILED,
                     reason=f"model call failed: {model_result.reason}",
                 )
             )
@@ -291,7 +304,9 @@ class BuilderWorkerTransport:
             seq += 1
             events.append(
                 self._emit(
-                    work_order.work_order_id, seq, AgentZeroEventType.FAILED,
+                    work_order.work_order_id,
+                    seq,
+                    AgentZeroEventType.FAILED,
                     reason="model output did not contain the expected content markers",
                 )
             )
@@ -299,9 +314,7 @@ class BuilderWorkerTransport:
 
         if self._is_cancelled():
             seq += 1
-            events.append(
-                self._emit(work_order.work_order_id, seq, AgentZeroEventType.CANCELLED)
-            )
+            events.append(self._emit(work_order.work_order_id, seq, AgentZeroEventType.CANCELLED))
             return events
 
         absolute_target.parent.mkdir(parents=True, exist_ok=True)
@@ -319,15 +332,22 @@ class BuilderWorkerTransport:
         seq += 1
         events.append(
             self._emit(
-                work_order.work_order_id, seq, AgentZeroEventType.PATCH_PROPOSED,
-                target_path=target_path, diff_text=diff_text, content_digest=digest,
+                work_order.work_order_id,
+                seq,
+                AgentZeroEventType.PATCH_PROPOSED,
+                target_path=target_path,
+                diff_text=diff_text,
+                content_digest=digest,
             )
         )
         seq += 1
         events.append(
             self._emit(
-                work_order.work_order_id, seq, AgentZeroEventType.EVIDENCE_ATTACHED,
-                kind="model_route", detail=model_result.provider_route,
+                work_order.work_order_id,
+                seq,
+                AgentZeroEventType.EVIDENCE_ATTACHED,
+                kind="model_route",
+                detail=model_result.provider_route,
                 content_digest=model_result.model_fingerprint,
             )
         )

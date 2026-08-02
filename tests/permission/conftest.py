@@ -95,8 +95,12 @@ def make_authority(project_root: Path) -> AuthorityFactory:
         task_id: str = "task-1",
         autonomy_level: str = "L2-supervised",
         allowed_classes: frozenset[PermissionClass] = frozenset(
-            {PermissionClass.READ, PermissionClass.WRITE, PermissionClass.EXECUTE,
-             PermissionClass.DELETE}
+            {
+                PermissionClass.READ,
+                PermissionClass.WRITE,
+                PermissionClass.EXECUTE,
+                PermissionClass.DELETE,
+            }
         ),
         allowed_paths: tuple[str, ...] = ("src/**", "README.md"),
         forbidden_paths: tuple[str, ...] = (),

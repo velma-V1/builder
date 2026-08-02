@@ -84,7 +84,10 @@ class FakeModelRouter:
     script: dict[str, AgentZeroModelResult] = field(default_factory=dict)
     default: AgentZeroModelResult = field(
         default_factory=lambda: AgentZeroModelResult(
-            ok=False, output="", model_fingerprint="fake", provider_route="fake",
+            ok=False,
+            output="",
+            model_fingerprint="fake",
+            provider_route="fake",
             reason="no scripted response for this prompt",
         )
     )

@@ -12,9 +12,13 @@ from factory.ui_studio.errors import UIStudioError, UIStudioErrorCode
 from factory.ui_studio.models import StateContract, StateOwner
 
 #: Contracts tagged with one of these owners describe frontend-local state — never authoritative.
-_NON_AUTHORITATIVE_OWNERS = frozenset({
-    StateOwner.XSTATE_WORKFLOW, StateOwner.TANSTACK_QUERY_SNAPSHOT, StateOwner.ZUSTAND_PRESENTATION,
-})
+_NON_AUTHORITATIVE_OWNERS = frozenset(
+    {
+        StateOwner.XSTATE_WORKFLOW,
+        StateOwner.TANSTACK_QUERY_SNAPSHOT,
+        StateOwner.ZUSTAND_PRESENTATION,
+    }
+)
 
 
 def validate_state_contract(contract: StateContract) -> None:

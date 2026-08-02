@@ -43,7 +43,7 @@ AGENT_ZERO_MANIFEST = AgentZeroManifest(
     attribution="Agent Zero © its authors; used as an external managed-worker dependency",
     commercial_use_status="UNRESOLVED — no commercial-use right claimed; requires legal review",
     supported_integration_modes=(AgentZeroIntegrationMode.MANAGED_WORKER,),
-    required_domains=frozenset(),   # populated per approved deployment; empty = none approved yet
+    required_domains=frozenset(),  # populated per approved deployment; empty = none approved yet
     required_ports=(),
     compatibility_version="0.1-integration",
 )

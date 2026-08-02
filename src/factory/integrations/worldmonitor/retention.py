@@ -7,11 +7,11 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True, slots=True)
 class RetentionPolicy:
-    raw_cache_ttl_s: int = 3600          # raw upstream payloads: short-lived cache
-    normalized_ttl_s: int = 86_400       # normalized records: bounded
-    alert_retention_s: int = 604_800     # alerts: one week
+    raw_cache_ttl_s: int = 3600  # raw upstream payloads: short-lived cache
+    normalized_ttl_s: int = 86_400  # normalized records: bounded
+    alert_retention_s: int = 604_800  # alerts: one week
     provenance_retention_s: int = 2_592_000  # provenance: 30 days (audit)
-    retain_model_io: bool = False        # prompts/outputs are NOT retained unless policy allows
+    retain_model_io: bool = False  # prompts/outputs are NOT retained unless policy allows
     store_secrets_in_cache: bool = False  # never
 
     def is_expired(self, age_s: int, *, kind: str, user_pinned: bool = False) -> bool:

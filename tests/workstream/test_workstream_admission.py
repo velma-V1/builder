@@ -20,6 +20,7 @@ def test_path_prefix_overlap_all_arcs() -> None:
     assert _path_prefix_overlap("src/a", "src/a/b")  # containment
     assert not _path_prefix_overlap("src/a", "src/b")  # disjoint, both non-empty
 
+
 pytestmark = pytest.mark.security
 
 _BASE = "baseline-0"

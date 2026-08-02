@@ -106,8 +106,11 @@ def event(
     work_order_id: str, sequence: int, event_type: AgentZeroEventType, **payload: str
 ) -> AgentZeroEvent:
     return AgentZeroEvent(
-        work_order_id=work_order_id, sequence=sequence, event_type=event_type,
-        occurred_at=1000 + sequence, payload=payload,
+        work_order_id=work_order_id,
+        sequence=sequence,
+        event_type=event_type,
+        occurred_at=1000 + sequence,
+        payload=payload,
     )
 
 
@@ -115,10 +118,20 @@ def full_success_stream(work_order_id: str = "wo-1") -> tuple[AgentZeroEvent, ..
     return (
         event(work_order_id, 0, AgentZeroEventType.STARTED),
         event(work_order_id, 1, AgentZeroEventType.PROGRESS, detail="scanning"),
-        event(work_order_id, 2, AgentZeroEventType.PATCH_PROPOSED, target_path="src/example.py",
-              content_digest="a" * 64),
-        event(work_order_id, 3, AgentZeroEventType.EVIDENCE_ATTACHED, kind="test_run",
-              detail="pytest passed"),
+        event(
+            work_order_id,
+            2,
+            AgentZeroEventType.PATCH_PROPOSED,
+            target_path="src/example.py",
+            content_digest="a" * 64,
+        ),
+        event(
+            work_order_id,
+            3,
+            AgentZeroEventType.EVIDENCE_ATTACHED,
+            kind="test_run",
+            detail="pytest passed",
+        ),
         event(work_order_id, 4, AgentZeroEventType.COMPLETED),
     )
 

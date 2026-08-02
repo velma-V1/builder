@@ -26,9 +26,7 @@ def _adapter(transport: FakeAgentZeroTransport) -> AgentZeroAdapter:
 
 
 def test_success_run_produces_success_result_with_patches_and_evidence() -> None:
-    transport = FakeAgentZeroTransport(
-        (ScriptedRun("run-1", events=full_success_stream("wo-1")),)
-    )
+    transport = FakeAgentZeroTransport((ScriptedRun("run-1", events=full_success_stream("wo-1")),))
     adapter = _adapter(transport)
     order = work_order(work_order_id="wo-1")
     run_id = adapter.submit(order)
@@ -41,9 +39,7 @@ def test_success_run_produces_success_result_with_patches_and_evidence() -> None
 
 
 def test_failure_run_produces_failure_result() -> None:
-    transport = FakeAgentZeroTransport(
-        (ScriptedRun("run-1", events=full_failure_stream("wo-1")),)
-    )
+    transport = FakeAgentZeroTransport((ScriptedRun("run-1", events=full_failure_stream("wo-1")),))
     adapter = _adapter(transport)
     order = work_order(work_order_id="wo-1")
     run_id = adapter.submit(order)
@@ -98,12 +94,23 @@ def test_crash_mid_stream_preserves_partial_patches_and_flags_incomplete() -> No
     # Worker proposed a patch, then the transport failed (simulated crash) before a terminal event.
     partial = (
         event("wo-1", 0, AgentZeroEventType.STARTED),
-        event("wo-1", 1, AgentZeroEventType.PATCH_PROPOSED, target_path="src/x.py",
-              content_digest="b" * 64),
+        event(
+            "wo-1",
+            1,
+            AgentZeroEventType.PATCH_PROPOSED,
+            target_path="src/x.py",
+            content_digest="b" * 64,
+        ),
     )
     transport = FakeAgentZeroTransport(
-        (ScriptedRun("run-1", events=partial, poll_raises=TransportFailure("worker process died"),
-                     poll_raises_after_calls=1),)
+        (
+            ScriptedRun(
+                "run-1",
+                events=partial,
+                poll_raises=TransportFailure("worker process died"),
+                poll_raises_after_calls=1,
+            ),
+        )
     )
     adapter = _adapter(transport)
     order = work_order(work_order_id="wo-1")

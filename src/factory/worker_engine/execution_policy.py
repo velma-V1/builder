@@ -134,8 +134,9 @@ class ExecutionPolicy:
         ):
             required_mode, rule = policy_input.task_policy_minimum, _TASK_POLICY_FLOOR_RULE
         if policy_input.repository_policy_minimum > required_mode:
-            required_mode, rule = policy_input.repository_policy_minimum, (
-                _REPOSITORY_POLICY_FLOOR_RULE
+            required_mode, rule = (
+                policy_input.repository_policy_minimum,
+                (_REPOSITORY_POLICY_FLOOR_RULE),
             )
 
         # The worker's requested mode can only ever push the outcome *up*, never down: taking the

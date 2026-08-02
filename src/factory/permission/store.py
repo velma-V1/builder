@@ -39,9 +39,7 @@ _EXPECTED_MIGRATION_HASHES: Mapping[str, str] = {
 
 _PERMISSION_WRITE_TABLES = frozenset({"permission_grants", "permission_intents"})
 
-_WRITE_ACTIONS = frozenset(
-    {sqlite3.SQLITE_INSERT, sqlite3.SQLITE_UPDATE, sqlite3.SQLITE_DELETE}
-)
+_WRITE_ACTIONS = frozenset({sqlite3.SQLITE_INSERT, sqlite3.SQLITE_UPDATE, sqlite3.SQLITE_DELETE})
 
 _WRITER_DENIED_ACTIONS = frozenset(
     {

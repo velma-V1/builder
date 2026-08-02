@@ -27,9 +27,7 @@ _EXPECTED_MIGRATION_HASHES: Mapping[str, str] = {
 }
 
 _INTERVENTION_WRITE_TABLES = frozenset({"watchdog_intervention_journal"})
-_WRITE_ACTIONS = frozenset(
-    {sqlite3.SQLITE_INSERT, sqlite3.SQLITE_UPDATE, sqlite3.SQLITE_DELETE}
-)
+_WRITE_ACTIONS = frozenset({sqlite3.SQLITE_INSERT, sqlite3.SQLITE_UPDATE, sqlite3.SQLITE_DELETE})
 _WRITER_DENIED_ACTIONS = frozenset(
     {
         sqlite3.SQLITE_CREATE_INDEX,
@@ -56,11 +54,7 @@ def _intervention_writer_authorizer(
 ) -> int:
     del arg2, db_name, trigger_name
     if action in _WRITE_ACTIONS:
-        return (
-            sqlite3.SQLITE_OK
-            if arg1 in _INTERVENTION_WRITE_TABLES
-            else sqlite3.SQLITE_DENY
-        )
+        return sqlite3.SQLITE_OK if arg1 in _INTERVENTION_WRITE_TABLES else sqlite3.SQLITE_DENY
     if action in _WRITER_DENIED_ACTIONS:
         return sqlite3.SQLITE_DENY
     return sqlite3.SQLITE_OK
@@ -77,8 +71,7 @@ def apply_watchdog_migration(database_path: Path, migrations_root: Path) -> None
         applied: set[int] = set()
         if _table_exists(connection, "schema_migrations"):
             applied = {
-                int(row[0])
-                for row in connection.execute("SELECT version FROM schema_migrations")
+                int(row[0]) for row in connection.execute("SELECT version FROM schema_migrations")
             }
         for path in files:
             match = _MIGRATION_FILENAME.match(path.name)
@@ -133,9 +126,7 @@ def _row_to_record(row: sqlite3.Row) -> InterventionRecord:
         failure_code=None if row["failure_code"] is None else str(row["failure_code"]),
         created_ts=int(row["created_ts"]),
         updated_ts=int(row["updated_ts"]),
-        completed_ts=(
-            None if row["completed_ts"] is None else int(row["completed_ts"])
-        ),
+        completed_ts=(None if row["completed_ts"] is None else int(row["completed_ts"])),
     )
 
 

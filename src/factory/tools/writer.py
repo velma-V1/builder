@@ -36,9 +36,18 @@ class _ToolWriter:
         return connection
 
     def stage_register(
-        self, *, tool_id: str, version: str, op_key: str, declaration_hash: str,
-        provenance_source: str, provenance_checksum: str, license: str, declaration_json: str,
-        output_schema_json: str, ts: int,
+        self,
+        *,
+        tool_id: str,
+        version: str,
+        op_key: str,
+        declaration_hash: str,
+        provenance_source: str,
+        provenance_checksum: str,
+        license: str,
+        declaration_json: str,
+        output_schema_json: str,
+        ts: int,
     ) -> None:
         connection = self._connect()
         try:
@@ -54,8 +63,16 @@ class _ToolWriter:
                 "declaration_hash, provenance_source, provenance_checksum, license, failure_count, "
                 "created_ts, updated_ts) "
                 "VALUES (?, ?, 'REGISTERED', 'PENDING', NULL, ?, ?, ?, ?, 0, ?, ?)",
-                (tool_id, version, declaration_hash, provenance_source, provenance_checksum,
-                 license, ts, ts),
+                (
+                    tool_id,
+                    version,
+                    declaration_hash,
+                    provenance_source,
+                    provenance_checksum,
+                    license,
+                    ts,
+                    ts,
+                ),
             )
             connection.execute(
                 "INSERT INTO tool_declarations (tool_id, version, declaration_json, "
@@ -70,8 +87,15 @@ class _ToolWriter:
             connection.close()
 
     def stage_transition(
-        self, *, tool_id: str, version: str, op_key: str, verb: str, new_state: ToolState,
-        ts: int, detail: str | None = None,
+        self,
+        *,
+        tool_id: str,
+        version: str,
+        op_key: str,
+        verb: str,
+        new_state: ToolState,
+        ts: int,
+        detail: str | None = None,
     ) -> None:
         connection = self._connect()
         try:
@@ -114,8 +138,10 @@ class _ToolWriter:
                 (op_key,),
             ).fetchone()
             verb = None if intent is None else str(intent["requested_action"])
-            detail = None if intent is None or intent["quarantine_state"] is None else str(
-                intent["quarantine_state"]
+            detail = (
+                None
+                if intent is None or intent["quarantine_state"] is None
+                else str(intent["quarantine_state"])
             )
             connection.execute(
                 "UPDATE tool_registry SET commit_state = 'COMMITTED', prior_state = NULL, "

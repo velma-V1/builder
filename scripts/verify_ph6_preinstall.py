@@ -49,9 +49,7 @@ def verify_admission_cap_and_independence() -> VerificationResult:
     from factory.workstream import AdmissionController, AdmissionOutcome, WorkstreamContract
 
     def ws(i: int, scope: str, contracts: tuple[str, ...] = ()) -> WorkstreamContract:
-        return WorkstreamContract(
-            f"W{i}", "o", (scope,), (), (), (), contracts, "g", "base-0"
-        )
+        return WorkstreamContract(f"W{i}", "o", (scope,), (), (), (), contracts, "g", "base-0")
 
     ctrl = AdmissionController(max_active=3)
     active = [ws(1, "src/a/**"), ws(2, "src/b/**"), ws(3, "src/c/**")]
@@ -63,7 +61,8 @@ def verify_admission_cap_and_independence() -> VerificationResult:
     independent = ctrl.admit(ws(7, "src/z/**"), [ws(1, "src/a/**")], "base-0").admitted
     ok = cap and overlap and shared and independent
     return VerificationResult(
-        "Admission: <=3 cap + independence (not path-disjointness alone)", ok,
+        "Admission: <=3 cap + independence (not path-disjointness alone)",
+        ok,
         f"cap={cap}; overlap_denied={overlap}; shared_denied={shared}; independent_ok={independent}",
     )
 
@@ -87,7 +86,10 @@ def verify_lane_lifecycle() -> VerificationResult:
     inconsistent = False
     try:
         r = machine.transition(
-            Lane("l3", "W1", LaneState.READY, "wt-3"), LaneState.ACTIVE, cause="c", actor="a",
+            Lane("l3", "W1", LaneState.READY, "wt-3"),
+            LaneState.ACTIVE,
+            cause="c",
+            actor="a",
             task_state="PAUSED",
         )
         _ = r
@@ -95,7 +97,8 @@ def verify_lane_lifecycle() -> VerificationResult:
         inconsistent = exc.code == "LANE_TASK_INCONSISTENT"
     ok = legal and lane.state is LaneState.ACTIVE and illegal and inconsistent
     return VerificationResult(
-        "Lane lifecycle: legal transitions + illegal/inconsistent fail closed", ok,
+        "Lane lifecycle: legal transitions + illegal/inconsistent fail closed",
+        ok,
         f"illegal={illegal}; task_inconsistent={inconsistent}",
     )
 
@@ -106,15 +109,19 @@ def verify_conflict_and_baseline() -> VerificationResult:
 
     detector = ConflictDetector()
     conflict = bool(
-        detector.detect([
-            ChangeManifest("W1", symbols=frozenset({"foo"})),
-            ChangeManifest("W2", symbols=frozenset({"foo"})),
-        ])
+        detector.detect(
+            [
+                ChangeManifest("W1", symbols=frozenset({"foo"})),
+                ChangeManifest("W2", symbols=frozenset({"foo"})),
+            ]
+        )
     )
-    independent = detector.is_independent([
-        ChangeManifest("W1", files=frozenset({"a.py"})),
-        ChangeManifest("W2", files=frozenset({"b.py"})),
-    ])
+    independent = detector.is_independent(
+        [
+            ChangeManifest("W1", files=frozenset({"a.py"})),
+            ChangeManifest("W2", files=frozenset({"b.py"})),
+        ]
+    )
     tracker = BaselineTracker()
     tracker.record("s1", "commit-a")
     drift = tracker.has_drifted("s1", "commit-b")
@@ -125,7 +132,8 @@ def verify_conflict_and_baseline() -> VerificationResult:
         immutable = exc.code == "BASELINE_IMMUTABLE"
     ok = conflict and independent and drift and immutable
     return VerificationResult(
-        "Conflict detection beyond files + immutable baseline drift", ok,
+        "Conflict detection beyond files + immutable baseline drift",
+        ok,
         f"conflict={conflict}; independent={independent}; drift={drift}; immutable={immutable}",
     )
 
@@ -152,13 +160,19 @@ def verify_scheduler_quarantine() -> VerificationResult:
     fc2.record("W2", sig)
     transient_excluded = fc2.count("W2") == 2 and not fc2.is_quarantined("W2")
     sched = WorkstreamScheduler()
-    checkpointed = sched.interrupt(
-        requester_priority=9, holder_priority=1, non_preemptible=False,
-        checkpoint_within_deadline=True,
-    ) is InterruptOutcome.CHECKPOINTED_PAUSE
+    checkpointed = (
+        sched.interrupt(
+            requester_priority=9,
+            holder_priority=1,
+            non_preemptible=False,
+            checkpoint_within_deadline=True,
+        )
+        is InterruptOutcome.CHECKPOINTED_PAUSE
+    )
     ok = quarantined and transient_excluded and checkpointed
     return VerificationResult(
-        "Scheduler: 3-failure quarantine + checkpointed interruption", ok,
+        "Scheduler: 3-failure quarantine + checkpointed interruption",
+        ok,
         f"quarantined={quarantined}; transient_excluded={transient_excluded}; checkpointed={checkpointed}",
     )
 
@@ -173,15 +187,25 @@ def verify_coordinator_never_edits_source() -> VerificationResult:
     from factory.workstream.conflict import ChangeManifest
 
     coord = IntegrationCoordinator()
-    report = coord.integrate([
-        WorkstreamResult("W1", True, "base", "a1", ChangeManifest("W1", files=frozenset({"s.py"}))),
-        WorkstreamResult("W2", True, "base", "a2", ChangeManifest("W2", files=frozenset({"s.py"}))),
-    ])
+    report = coord.integrate(
+        [
+            WorkstreamResult(
+                "W1", True, "base", "a1", ChangeManifest("W1", files=frozenset({"s.py"}))
+            ),
+            WorkstreamResult(
+                "W2", True, "base", "a2", ChangeManifest("W2", files=frozenset({"s.py"}))
+            ),
+        ]
+    )
     blocked = report.verdict is IntegrationVerdict.BLOCKED_CONFLICTS
-    remediation = bool(report.remediation) and report.remediation[0].owning_workstream in {"W1", "W2"}
+    remediation = bool(report.remediation) and report.remediation[0].owning_workstream in {
+        "W1",
+        "W2",
+    }
     ok = blocked and remediation and COORDINATOR_EDITS_SOURCE is False
     return VerificationResult(
-        "Integration coordinator assigns remediation and never edits source", ok,
+        "Integration coordinator assigns remediation and never edits source",
+        ok,
         f"blocked={blocked}; remediation={remediation}; edits_source={COORDINATOR_EDITS_SOURCE}",
     )
 
@@ -202,7 +226,8 @@ def verify_simulated_three_workstream_demo() -> VerificationResult:
         and r.coordinator_edits_source is False
     )
     return VerificationResult(
-        "Simulated three-workstream demonstration (IP-3) integrates via fakes", ok,
+        "Simulated three-workstream demonstration (IP-3) integrates via fakes",
+        ok,
         f"admitted={r.admitted}; fourth_denied={r.fourth_denied}; verdict={r.integration_verdict}",
     )
 
@@ -210,15 +235,26 @@ def verify_simulated_three_workstream_demo() -> VerificationResult:
 def verify_tests_pass_with_coverage() -> VerificationResult:
     result = subprocess.run(
         [
-            sys.executable, "-m", "pytest", "tests/workstream", "tests/integration", "-q",
-            "--cov=src/factory/workstream", "--cov=src/factory/integration",
-            "--cov-branch", "--cov-fail-under=95",
+            sys.executable,
+            "-m",
+            "pytest",
+            "tests/workstream",
+            "tests/integration",
+            "-q",
+            "--cov=src/factory/workstream",
+            "--cov=src/factory/integration",
+            "--cov-branch",
+            "--cov-fail-under=95",
         ],
-        capture_output=True, text=True, cwd=ROOT, timeout=900,
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        timeout=900,
     )
     summary = (result.stdout.strip().split("\n") or ["?"])[-1]
     return VerificationResult(
-        "PH-6 tests pass with >=95% branch coverage", result.returncode == 0,
+        "PH-6 tests pass with >=95% branch coverage",
+        result.returncode == 0,
         f"exit {result.returncode}; {summary}",
     )
 
@@ -226,25 +262,45 @@ def verify_tests_pass_with_coverage() -> VerificationResult:
 def verify_ruff() -> VerificationResult:
     result = subprocess.run(
         [
-            sys.executable, "-m", "ruff", "check",
-            "src/factory/workstream", "src/factory/integration",
-            "tests/workstream", "tests/integration",
+            sys.executable,
+            "-m",
+            "ruff",
+            "check",
+            "src/factory/workstream",
+            "src/factory/integration",
+            "tests/workstream",
+            "tests/integration",
         ],
-        capture_output=True, text=True, cwd=ROOT, timeout=900,
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        timeout=900,
     )
-    return VerificationResult("Ruff clean (PH-6 src + tests)", result.returncode == 0, f"exit {result.returncode}")
+    return VerificationResult(
+        "Ruff clean (PH-6 src + tests)", result.returncode == 0, f"exit {result.returncode}"
+    )
 
 
 def verify_mypy() -> VerificationResult:
     result = subprocess.run(
         [
-            sys.executable, "-m", "mypy",
-            "src/factory/workstream", "src/factory/integration",
-            "tests/workstream", "tests/integration", "--strict",
+            sys.executable,
+            "-m",
+            "mypy",
+            "src/factory/workstream",
+            "src/factory/integration",
+            "tests/workstream",
+            "tests/integration",
+            "--strict",
         ],
-        capture_output=True, text=True, cwd=ROOT, timeout=900,
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        timeout=900,
     )
-    return VerificationResult("mypy --strict clean (PH-6)", result.returncode == 0, f"exit {result.returncode}")
+    return VerificationResult(
+        "mypy --strict clean (PH-6)", result.returncode == 0, f"exit {result.returncode}"
+    )
 
 
 def verify_evidence_present() -> VerificationResult:

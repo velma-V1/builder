@@ -66,7 +66,9 @@ def normalize_record(
         is_stale = (now - observed_at) > ttl_s if ttl_s > 0 else False
         freshness = WorldMonitorFreshness(
             Freshness.STALE if is_stale else Freshness.FRESH,
-            observed_at=observed_at, fetched_at=now, ttl_s=ttl_s,
+            observed_at=observed_at,
+            fetched_at=now,
+            ttl_s=ttl_s,
         )
 
     # Confidence only when the source supplied a numeric value; never invented.
@@ -94,7 +96,9 @@ def normalize_record(
         model_fingerprint=model_fingerprint,
         confidence=confidence,
         provenance_chain=build_provenance(
-            source, fetched_at=now, provider_route=provider_route,
+            source,
+            fetched_at=now,
+            provider_route=provider_route,
             model_fingerprint=model_fingerprint,
         ),
     )

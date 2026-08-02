@@ -29,21 +29,15 @@ def test_real_permission_results_propagate_allow_deny_and_approval_required(
 ) -> None:
     authority = _authority(tmp_path)
     allowed = permission_engine.decide(
-        ActionRequest(
-            "task-1", "reader", "read", PermissionClass.READ, "repo", "inspect"
-        ),
+        ActionRequest("task-1", "reader", "read", PermissionClass.READ, "repo", "inspect"),
         authority,
     )
     requires = permission_engine.decide(
-        ActionRequest(
-            "task-1", "fileop", "delete", PermissionClass.DELETE, "repo", "cleanup"
-        ),
+        ActionRequest("task-1", "fileop", "delete", PermissionClass.DELETE, "repo", "cleanup"),
         authority,
     )
     denied = permission_engine.decide(
-        ActionRequest(
-            "task-1", "writer", "write", PermissionClass.WRITE, "repo", "modify"
-        ),
+        ActionRequest("task-1", "writer", "write", PermissionClass.WRITE, "repo", "modify"),
         authority,
     )
     assert allowed.decision is DecisionKind.ALLOW
@@ -64,18 +58,14 @@ def test_duplicate_pure_denial_is_deterministic_and_conflict_fails_closed(
 ) -> None:
     authority = _authority(tmp_path)
     denied = permission_engine.decide(
-        ActionRequest(
-            "task-1", "writer", "write", PermissionClass.WRITE, "repo", "modify"
-        ),
+        ActionRequest("task-1", "writer", "write", PermissionClass.WRITE, "repo", "modify"),
         authority,
     )
     first = bridge.from_permission(denied, "op-conflict")
     assert bridge.from_permission(denied, "op-conflict") == first
 
     allowed = permission_engine.decide(
-        ActionRequest(
-            "task-1", "reader", "read", PermissionClass.READ, "repo", "inspect"
-        ),
+        ActionRequest("task-1", "reader", "read", PermissionClass.READ, "repo", "inspect"),
         authority,
     )
     conflict = bridge.from_permission(allowed, "op-conflict")

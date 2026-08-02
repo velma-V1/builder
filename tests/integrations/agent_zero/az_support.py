@@ -38,9 +38,14 @@ def approval(
     host: str = APPROVED_HOST, *, task_id: str = "T1", max_bytes: int = 1_000_000
 ) -> NetworkApproval:
     return NetworkApproval(
-        approval_id="AZ-A1", task_id=task_id, destinations=frozenset({host}),
-        protocols=frozenset({"https"}), methods=frozenset({"GET", "POST"}),
-        expires_at=10_000, max_total_bytes=max_bytes, follow_redirects=True,
+        approval_id="AZ-A1",
+        task_id=task_id,
+        destinations=frozenset({host}),
+        protocols=frozenset({"https"}),
+        methods=frozenset({"GET", "POST"}),
+        expires_at=10_000,
+        max_total_bytes=max_bytes,
+        follow_redirects=True,
     )
 
 
