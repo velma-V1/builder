@@ -119,7 +119,7 @@ def test_run_api_never_imports_the_writer(run_api: ModuleType) -> None:
 
 
 def test_expected_versions_are_the_complete_ascending_set() -> None:
-    assert expected_migration_versions(MIGRATIONS_ROOT) == (1, 2, 3, 4, 5)
+    assert expected_migration_versions(MIGRATIONS_ROOT) == (1, 2, 3, 4, 5, 6, 7)
 
 
 def test_gapped_history_does_not_equal_expected(tmp_path: Path) -> None:
@@ -133,7 +133,7 @@ def test_gapped_history_does_not_equal_expected(tmp_path: Path) -> None:
 
 def test_future_version_history_does_not_equal_expected(tmp_path: Path) -> None:
     db = _db_with_recorded_versions(tmp_path, 999999)
-    assert applied_migration_versions(db) == (1, 2, 3, 4, 5, 999999)
+    assert applied_migration_versions(db) == (1, 2, 3, 4, 5, 6, 7, 999999)
     assert applied_migration_versions(db) != expected_migration_versions(MIGRATIONS_ROOT)
 
 
@@ -171,7 +171,7 @@ def test_startup_rejects_unexpected_future_version(
         schema_check.require_current_schema_or_exit(db, MIGRATIONS_ROOT, _SETUP_COMMAND)
     message = str(excinfo.value)
     assert "does not match" in message
-    assert "1,2,3,4,5,999999" in message
+    assert "1,2,3,4,5,6,7,999999" in message
     assert "setup_api_database.py" in message
 
 
