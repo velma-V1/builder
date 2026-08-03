@@ -96,11 +96,13 @@ class OpenAICompatibleAdapterCore:
         if isinstance(models, list):
             for entry in models:
                 if isinstance(entry, dict) and isinstance(entry.get("id"), str):
-                    out.append(DiscoveredModel(
-                        provider=config.provider,
-                        model_id=str(entry["id"]),
-                        capability=ProviderCapability(frozenset({Capability.CHAT})),
-                    ))
+                    out.append(
+                        DiscoveredModel(
+                            provider=config.provider,
+                            model_id=str(entry["id"]),
+                            capability=ProviderCapability(frozenset({Capability.CHAT})),
+                        )
+                    )
         return tuple(out)
 
     def chat(
@@ -124,13 +126,21 @@ class OpenAICompatibleAdapterCore:
         body_obj.update(dict(request.extra_body))
         url = f"{config.base_url}/chat/completions"
         response = brokered.request(
-            "POST", url, body=json.dumps(body_obj).encode("utf-8"),
+            "POST",
+            url,
+            body=json.dumps(body_obj).encode("utf-8"),
             headers={"Content-Type": "application/json"},
         )
         if response.status != 200:
             code = map_http_status(response.status)
-            return CoreChatResult(False, "", (), ProviderResponseMetadata(response.request_id),
-                                   error_code=code, reason=f"HTTP {response.status}")
+            return CoreChatResult(
+                False,
+                "",
+                (),
+                ProviderResponseMetadata(response.request_id),
+                error_code=code,
+                reason=f"HTTP {response.status}",
+            )
 
         data = _parse_json(response, brokered)
         returned_model = str(data.get("model", ""))

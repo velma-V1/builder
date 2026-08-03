@@ -41,7 +41,9 @@ def test_query_contract_with_non_positive_staleness_is_incomplete() -> None:
 
 def test_presentation_contract_smuggling_backend_shaped_field_is_denied() -> None:
     contract = DataContract(
-        name="sneaky", owner=StateOwner.ZUSTAND_PRESENTATION, query_key=(),
+        name="sneaky",
+        owner=StateOwner.ZUSTAND_PRESENTATION,
+        query_key=(),
         snapshot_shape={"server_state": "string"},
     )
     with pytest.raises(UIStudioError) as excinfo:
@@ -51,7 +53,9 @@ def test_presentation_contract_smuggling_backend_shaped_field_is_denied() -> Non
 
 def test_presentation_contract_with_ui_only_fields_is_valid() -> None:
     contract = DataContract(
-        name="fine", owner=StateOwner.ZUSTAND_PRESENTATION, query_key=(),
+        name="fine",
+        owner=StateOwner.ZUSTAND_PRESENTATION,
+        query_key=(),
         snapshot_shape={"collapsed": "boolean"},
     )
     validate_data_contract(contract)  # must not raise

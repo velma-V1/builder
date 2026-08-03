@@ -59,9 +59,20 @@ def test_crash_before_audit_rolls_enqueue_back(
     # S1+S2 staged, then "crash" (no S3 audit, no S4 commit).
     op_key = _new_op_key("enqueue", "apr-crash")
     engine._writer.stage_enqueue(
-        approval_id="apr-crash", op_key=op_key, task_id="t", tool="sh", action="w", resource=None,
-        scope="r", purpose="p", consequences="c", autonomy_level="L2", repetition_limit=1,
-        requires_confirmation=False, expires_at=2_000_000, ts=1_000_000,
+        approval_id="apr-crash",
+        op_key=op_key,
+        task_id="t",
+        tool="sh",
+        action="w",
+        resource=None,
+        scope="r",
+        purpose="p",
+        consequences="c",
+        autonomy_level="L2",
+        repetition_limit=1,
+        requires_confirmation=False,
+        expires_at=2_000_000,
+        ts=1_000_000,
     )
     staged = engine.reader.get_record("apr-crash")
     assert staged is not None and staged.commit_state is CommitState.PENDING
@@ -74,15 +85,31 @@ def test_crash_after_audit_rolls_enqueue_forward(
 ) -> None:
     op_key = _new_op_key("enqueue", "apr-fwd")
     engine._writer.stage_enqueue(
-        approval_id="apr-fwd", op_key=op_key, task_id="t", tool="sh", action="w", resource=None,
-        scope="r", purpose="p", consequences="c", autonomy_level="L2", repetition_limit=1,
-        requires_confirmation=False, expires_at=2_000_000, ts=1_000_000,
+        approval_id="apr-fwd",
+        op_key=op_key,
+        task_id="t",
+        tool="sh",
+        action="w",
+        resource=None,
+        scope="r",
+        purpose="p",
+        consequences="c",
+        autonomy_level="L2",
+        repetition_limit=1,
+        requires_confirmation=False,
+        expires_at=2_000_000,
+        ts=1_000_000,
     )
     # the durable completion audit that S3 wrote before the crash
     engine._audit.append(
         AuditEvent(
-            op_key=op_key, record_kind=RecordKind.COMPLETION, operation_class=1, actor="a",
-            action_class="approval.enqueue", payload_hash="ph", occurred_at="t",
+            op_key=op_key,
+            record_kind=RecordKind.COMPLETION,
+            operation_class=1,
+            actor="a",
+            action_class="approval.enqueue",
+            payload_hash="ph",
+            occurred_at="t",
         )
     )
     engine.reconcile_startup()
@@ -98,8 +125,12 @@ def test_crash_before_audit_rolls_transition_back_to_prior_state(
     # stage a consume (S1+S2) then "crash" before its audit.
     op_key = _new_op_key("consume", record.approval_id)
     engine._writer.stage_transition(
-        approval_id=record.approval_id, op_key=op_key, verb="consume",
-        new_state=ApprovalState.GRANTED, ts=1_000_050, increment_use=True,
+        approval_id=record.approval_id,
+        op_key=op_key,
+        verb="consume",
+        new_state=ApprovalState.GRANTED,
+        ts=1_000_050,
+        increment_use=True,
     )
     mid = engine.reader.get_record(record.approval_id)
     assert mid is not None and mid.commit_state is CommitState.PENDING and mid.uses_consumed == 1
@@ -111,9 +142,7 @@ def test_crash_before_audit_rolls_transition_back_to_prior_state(
     assert restored.uses_consumed == 0  # the staged use was undone
 
 
-def test_reconcile_is_idempotent(
-    engine: ApprovalEngine, make_request: RequestFactory
-) -> None:
+def test_reconcile_is_idempotent(engine: ApprovalEngine, make_request: RequestFactory) -> None:
     _grant(engine, make_request())
     engine.reconcile_startup()
     engine.reconcile_startup()  # a second pass over now-terminal intents is a safe no-op
@@ -223,8 +252,19 @@ def test_stage_on_unmigrated_store_fails_closed(tmp_path: Path) -> None:
     writer = _ApprovalWriter(database_path=empty)
     with pytest.raises(ApprovalError) as exc:
         writer.stage_enqueue(
-            approval_id="a", op_key="k", task_id="t", tool="sh", action="w", resource=None,
-            scope="r", purpose="p", consequences="c", autonomy_level="L2", repetition_limit=1,
-            requires_confirmation=False, expires_at=2, ts=1,
+            approval_id="a",
+            op_key="k",
+            task_id="t",
+            tool="sh",
+            action="w",
+            resource=None,
+            scope="r",
+            purpose="p",
+            consequences="c",
+            autonomy_level="L2",
+            repetition_limit=1,
+            requires_confirmation=False,
+            expires_at=2,
+            ts=1,
         )
     assert exc.value.code == "APPROVAL_STAGE_FAILED"

@@ -15,20 +15,31 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from factory.approval import apply_security_migrations
+from factory.audit import apply_audit_migrations
 from factory.orchestrator.store.runtime_state import apply_migrations
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 _DEFAULT_MIGRATIONS_ROOT = _REPO_ROOT / "migrations" / "runtime"
 _DEFAULT_DATABASE_PATH = _REPO_ROOT / "runtime.db"
+_DEFAULT_SECURITY_MIGRATIONS_ROOT = _REPO_ROOT / "migrations" / "security"
+_DEFAULT_AUDIT_MIGRATIONS_ROOT = _REPO_ROOT / "migrations" / "audit"
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-path", type=Path, default=_DEFAULT_DATABASE_PATH)
     parser.add_argument("--migrations-root", type=Path, default=_DEFAULT_MIGRATIONS_ROOT)
+    parser.add_argument("--security-database-path", type=Path)
+    parser.add_argument("--audit-database-path", type=Path)
     args = parser.parse_args()
 
     apply_migrations(args.database_path, args.migrations_root)
+    if (args.security_database_path is None) != (args.audit_database_path is None):
+        parser.error("security and audit database paths must be supplied together")
+    if args.security_database_path is not None and args.audit_database_path is not None:
+        apply_security_migrations(args.security_database_path, _DEFAULT_SECURITY_MIGRATIONS_ROOT)
+        apply_audit_migrations(args.audit_database_path, _DEFAULT_AUDIT_MIGRATIONS_ROOT)
     print(f"Schema applied at {args.database_path}")
 
 

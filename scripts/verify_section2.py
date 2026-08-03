@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import shutil
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -290,24 +291,40 @@ def verify_partial_migration_prevention() -> VerificationResult:
 
 
 def verify_git_commits() -> VerificationResult:
-    result = subprocess.run(
-        ["git", "log", "--oneline", "-10"],  # noqa: S607
+    git = shutil.which("git")
+    if git is None:
+        return VerificationResult(
+            name="Git history includes T2.1-T2.5 boundary commits",
+            passed=False,
+            detail="git executable is unavailable",
+        )
+    result = subprocess.run(  # noqa: S603 - executable resolved to an absolute system path
+        [
+            git,
+            "log",
+            "--format=%H%x09%s",
+            "--",
+            "src/factory/orchestrator",
+            "src/factory/memory",
+            "migrations/runtime/0001_state.sql",
+            "migrations/runtime/0002_leases.sql",
+            "migrations/runtime/0003_memory.sql",
+        ],
         capture_output=True,
         text=True,
     )
-    commits = result.stdout.strip().split("\n")
-    # Look for meaningful commits related to orchestrator implementation
+    commits = result.stdout.strip().splitlines()
     keywords = {"state", "runtime", "journal", "reconciliation", "lease", "scheduler", "memory"}
-    found_commits = 0
-    for commit in commits:
-        commit_lower = commit.lower()
-        if any(kw in commit_lower for kw in keywords):
-            found_commits += 1
-    passed = found_commits >= 4
+    boundary_commits = {
+        line.split("\t", 1)[0]
+        for line in commits
+        if "\t" in line and any(keyword in line.lower() for keyword in keywords)
+    }
+    passed = result.returncode == 0 and len(boundary_commits) >= 5
     return VerificationResult(
         name="Git history includes T2.1-T2.5 boundary commits",
         passed=passed,
-        detail=f"Found {found_commits}/5+ meaningful task commits in recent history",
+        detail=f"Found {len(boundary_commits)}/5+ scoped boundary commits in reachable history",
     )
 
 

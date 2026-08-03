@@ -74,7 +74,11 @@ class StateIntegration:
 
         if result.failure_cause is None and result.exit_code == 0:
             return self._apply(
-                task_id, current, TaskState.VERIFYING, cause="worker_success", actor=actor,
+                task_id,
+                current,
+                TaskState.VERIFYING,
+                cause="worker_success",
+                actor=actor,
                 idempotency_key=idem,
             )
 

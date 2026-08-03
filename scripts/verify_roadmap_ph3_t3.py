@@ -38,7 +38,9 @@ def verify_migration_and_schema() -> VerificationResult:
         "requires_confirmation",
         "operation_class INTEGER NOT NULL CHECK (operation_class IN (1, 2, 3))",
     )
-    return VerificationResult("Approval migration: records + queue + intents (XSC §3.1 shape)", ok, detail)
+    return VerificationResult(
+        "Approval migration: records + queue + intents (XSC §3.1 shape)", ok, detail
+    )
 
 
 def verify_migration_sha_pinning() -> VerificationResult:
@@ -83,7 +85,8 @@ def verify_sole_writer_and_reader() -> VerificationResult:
     ok = writer_ok and reader_ok and init_ok and not_exported
     return VerificationResult(
         "Private sole-writer + read-only reader (writer not exported)",
-        ok, f"writer={wdetail}; reader={rdetail}; not_exported={not_exported}",
+        ok,
+        f"writer={wdetail}; reader={rdetail}; not_exported={not_exported}",
     )
 
 
@@ -101,7 +104,9 @@ def verify_engine() -> VerificationResult:
         "APPROVAL_SECURITY_VIOLATION",
         "APPROVAL_AUDIT_CHAIN_INVALID",
     )
-    return VerificationResult("Engine: full lifecycle + Class-1 + reconcile + fail-closed", ok, detail)
+    return VerificationResult(
+        "Engine: full lifecycle + Class-1 + reconcile + fail-closed", ok, detail
+    )
 
 
 def verify_tests_exist() -> VerificationResult:
@@ -118,19 +123,30 @@ def verify_tests_exist() -> VerificationResult:
     present = [f for f in files if Path(f).exists()]
     return VerificationResult(
         "Approval test files (unit/store/security/failure-path/integration)",
-        len(present) == len(files), f"{len(present)}/{len(files)} present",
+        len(present) == len(files),
+        f"{len(present)}/{len(files)} present",
     )
 
 
 def verify_tests_pass_with_coverage() -> VerificationResult:
     result = subprocess.run(
-        [sys.executable, "-m", "pytest", "tests/approval", "-q",
-         "--cov=src/factory/approval", "--cov-branch", "--cov-fail-under=95"],
-        capture_output=True, text=True,
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "tests/approval",
+            "-q",
+            "--cov=src/factory/approval",
+            "--cov-branch",
+            "--cov-fail-under=95",
+        ],
+        capture_output=True,
+        text=True,
     )
     summary = (result.stdout.strip().split("\n") or ["?"])[-1]
     return VerificationResult(
-        "Approval tests pass with >=95% branch coverage", result.returncode == 0,
+        "Approval tests pass with >=95% branch coverage",
+        result.returncode == 0,
         f"exit {result.returncode}; {summary}",
     )
 
@@ -138,17 +154,23 @@ def verify_tests_pass_with_coverage() -> VerificationResult:
 def verify_ruff() -> VerificationResult:
     result = subprocess.run(
         [sys.executable, "-m", "ruff", "check", "src/factory/approval", "tests/approval"],
-        capture_output=True, text=True,
+        capture_output=True,
+        text=True,
     )
-    return VerificationResult("Ruff clean (approval src + tests)", result.returncode == 0, f"exit {result.returncode}")
+    return VerificationResult(
+        "Ruff clean (approval src + tests)", result.returncode == 0, f"exit {result.returncode}"
+    )
 
 
 def verify_mypy() -> VerificationResult:
     result = subprocess.run(
         [sys.executable, "-m", "mypy", "src/factory/approval", "tests/approval", "--strict"],
-        capture_output=True, text=True,
+        capture_output=True,
+        text=True,
     )
-    return VerificationResult("mypy --strict clean (approval)", result.returncode == 0, f"exit {result.returncode}")
+    return VerificationResult(
+        "mypy --strict clean (approval)", result.returncode == 0, f"exit {result.returncode}"
+    )
 
 
 def main() -> int:
@@ -178,7 +200,9 @@ def main() -> int:
     print("=" * 80 + "\n")
 
     if passed == total:
-        print("RPH3-T3 gate: PASS (approval domain). NOT PROM-RPH3; NOT implementation of other tasks.\n")
+        print(
+            "RPH3-T3 gate: PASS (approval domain). NOT PROM-RPH3; NOT implementation of other tasks.\n"
+        )
         return 0
     print("RPH3-T3 gate: INCOMPLETE — fix failures above.\n")
     return 1

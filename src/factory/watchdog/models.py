@@ -186,9 +186,7 @@ class ServiceController(Protocol):
 def task_state_hash(record: TaskRuntimeRecord | None) -> str:
     if record is None:
         return hashlib.sha256(b"missing").hexdigest()
-    canonical = _SEP.join(
-        (record.task_id, str(record.current_state), str(record.sequence))
-    )
+    canonical = _SEP.join((record.task_id, str(record.current_state), str(record.sequence)))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 

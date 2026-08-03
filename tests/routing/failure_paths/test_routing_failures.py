@@ -92,7 +92,9 @@ def test_fallback_denied_admission_yields_no_new_record() -> None:
     seeded = router.execute(_req()).record
     assert seeded is not None
     oversized = RouteRequest(
-        "t1", "s1", TaskType.HARD_CODING,
+        "t1",
+        "s1",
+        TaskType.HARD_CODING,
         ResourceProfile(ResourceClass.GPU_HEAVY, 999999, 999999, 1, 100),
     )
     outcome = router.fallback(seeded.record_id, oversized, substitute_route_key="OLLAMA:qwen3:14b")
@@ -109,7 +111,9 @@ def test_fallback_substitute_that_also_fails_is_recorded() -> None:
     failed = router.execute(_req()).record
     assert failed is not None
     heavy = RouteRequest(
-        "t1", "s1", TaskType.DISPATCH,
+        "t1",
+        "s1",
+        TaskType.DISPATCH,
         ResourceProfile(ResourceClass.GPU_LIGHT, 1000, 1000, 1, 100),
     )
     outcome = router.fallback(failed.record_id, heavy, substitute_route_key="OLLAMA:qwen3:14b")

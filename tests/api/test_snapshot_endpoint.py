@@ -27,9 +27,7 @@ _ROUTE = "/api/tasks/snapshot"
 def test_known_workstream_returns_200_with_exact_task_snapshot_shape(
     writer: _OrchestratorStateWriter, client: TestClient
 ) -> None:
-    writer.create_task(
-        task_id="TASK-001", project_id="P", contract_version=1, workstream_id="ws-1"
-    )
+    writer.create_task(task_id="TASK-001", project_id="P", contract_version=1, workstream_id="ws-1")
     response = client.get(_ROUTE, params={"workstream": "ws-1"})
     assert response.status_code == 200
     body = response.json()
@@ -44,12 +42,8 @@ def test_known_workstream_returns_200_with_exact_task_snapshot_shape(
 def test_known_workstream_returns_only_its_assigned_tasks(
     writer: _OrchestratorStateWriter, client: TestClient
 ) -> None:
-    writer.create_task(
-        task_id="TASK-A", project_id="P", contract_version=1, workstream_id="ws-1"
-    )
-    writer.create_task(
-        task_id="TASK-B", project_id="P", contract_version=1, workstream_id="ws-2"
-    )
+    writer.create_task(task_id="TASK-A", project_id="P", contract_version=1, workstream_id="ws-1")
+    writer.create_task(task_id="TASK-B", project_id="P", contract_version=1, workstream_id="ws-2")
     writer.create_task(task_id="TASK-C", project_id="P", contract_version=1)  # unassigned
 
     response = client.get(_ROUTE, params={"workstream": "ws-1"})
@@ -179,9 +173,7 @@ def test_unexpected_mapping_layer_exception_returns_controlled_503_json(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     # A row must actually reach the mapping step for it to raise; an empty result never calls it.
-    writer.create_task(
-        task_id="TASK-ANY", project_id="P", contract_version=1, workstream_id="ws-1"
-    )
+    writer.create_task(task_id="TASK-ANY", project_id="P", contract_version=1, workstream_id="ws-1")
 
     # Any mapping-layer failure — not just ValueError — must be caught by the same boundary.
     def _explode(record: object) -> None:
@@ -198,3 +190,6 @@ def test_request_validation_errors_are_unaffected_by_the_503_boundary(client: Te
     response = client.get(_ROUTE)
     assert response.status_code == 400
     assert response.headers["content-type"].startswith("application/json")
+
+
+pytestmark = pytest.mark.loopback

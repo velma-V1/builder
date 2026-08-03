@@ -19,11 +19,7 @@ def decide_high_risk_admission(
 ) -> HighRiskDecision:
     if watchdog_available or risk_class < 5:
         return HighRiskDecision.ALLOW
-    return (
-        HighRiskDecision.PAUSE_EXISTING
-        if already_running
-        else HighRiskDecision.BLOCK_NEW
-    )
+    return HighRiskDecision.PAUSE_EXISTING if already_running else HighRiskDecision.BLOCK_NEW
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,14 +33,10 @@ class WatchdogProcess:
         return self.thresholds.observe(sample)
 
     @staticmethod
-    def intervention_for(
-        state: HealthState, *, high_risk: bool
-    ) -> InterventionCommand | None:
+    def intervention_for(state: HealthState, *, high_risk: bool) -> InterventionCommand | None:
         if state is HealthState.CRITICAL_CONTAINMENT:
             return InterventionCommand.CONTAIN_TASK
-        if state is HealthState.PAUSE or (
-            state is HealthState.REDUCED_MONITORING and high_risk
-        ):
+        if state is HealthState.PAUSE or (state is HealthState.REDUCED_MONITORING and high_risk):
             return InterventionCommand.PAUSE_TASK
         return None
 

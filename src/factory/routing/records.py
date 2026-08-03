@@ -97,9 +97,7 @@ class ExecutionLedger:
         return tuple(r for r in self._store.all() if r.task_id == task_id)
 
     def latest_for_stage(self, task_id: str, stage_id: str) -> ExecutionRecord | None:
-        matches = [
-            r for r in self._store.all() if r.task_id == task_id and r.stage_id == stage_id
-        ]
+        matches = [r for r in self._store.all() if r.task_id == task_id and r.stage_id == stage_id]
         return matches[-1] if matches else None
 
     def next_attempt(self, task_id: str, stage_id: str) -> int:

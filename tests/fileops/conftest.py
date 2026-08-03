@@ -63,9 +63,7 @@ def _dbs(tmp_path: Path) -> tuple[Path, Path]:
 @pytest.fixture
 def permission_engine(_dbs: tuple[Path, Path], clock: FakeClock) -> PermissionEngine:
     security, audit = _dbs
-    return PermissionEngine(
-        security_database_path=security, audit_database_path=audit, clock=clock
-    )
+    return PermissionEngine(security_database_path=security, audit_database_path=audit, clock=clock)
 
 
 @pytest.fixture
@@ -76,24 +74,30 @@ def approval_engine(_dbs: tuple[Path, Path], clock: FakeClock) -> ApprovalEngine
 
 @pytest.fixture
 def service(
-    permission_engine: PermissionEngine, approval_engine: ApprovalEngine,
-    _dbs: tuple[Path, Path], clock: FakeClock,
+    permission_engine: PermissionEngine,
+    approval_engine: ApprovalEngine,
+    _dbs: tuple[Path, Path],
+    clock: FakeClock,
 ) -> FileOpService:
     _security, audit = _dbs
     return FileOpService(
-        permission_engine=permission_engine, approval_engine=approval_engine,
-        audit_database_path=audit, clock=clock,
+        permission_engine=permission_engine,
+        approval_engine=approval_engine,
+        audit_database_path=audit,
+        clock=clock,
     )
 
 
 @pytest.fixture
 def authority(project_root: Path) -> TaskAuthority:
     return TaskAuthority(
-        task_id="task-1", autonomy_level="L2-supervised",
+        task_id="task-1",
+        autonomy_level="L2-supervised",
         allowed_classes=frozenset(
             {PermissionClass.READ, PermissionClass.WRITE, PermissionClass.DELETE}
         ),
-        project_root=str(project_root), allowed_paths=("src/**", "README.md"),
+        project_root=str(project_root),
+        allowed_paths=("src/**", "README.md"),
         read_only_paths=("README.md",),
     )
 
@@ -105,8 +109,13 @@ def write_grant(
     def _grant(resource: str) -> PermissionGrant:
         decision = permission_engine.decide(
             ActionRequest(
-                task_id="task-1", tool="fs", action="write", permission_class=PermissionClass.WRITE,
-                scope="src", purpose="edit", resource=resource,
+                task_id="task-1",
+                tool="fs",
+                action="write",
+                permission_class=PermissionClass.WRITE,
+                scope="src",
+                purpose="edit",
+                resource=resource,
             ),
             authority,
         )

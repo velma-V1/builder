@@ -25,9 +25,7 @@ class QuarantinedStaging:
 
     __slots__ = ("_approved_scope", "_files", "_project_root", "_promoted", "_staging_id")
 
-    def __init__(
-        self, staging_id: str, project_root: Path, approved_scope: Sequence[str]
-    ) -> None:
+    def __init__(self, staging_id: str, project_root: Path, approved_scope: Sequence[str]) -> None:
         self._staging_id = staging_id
         self._project_root = project_root
         self._approved_scope = tuple(approved_scope)
@@ -46,9 +44,7 @@ class QuarantinedStaging:
     def inspect(self, secret_values: Sequence[str] = ()) -> InspectionResult:
         return inspect(self._files, self._project_root, self._approved_scope, secret_values)
 
-    def promote(
-        self, *, authorized: bool, secret_values: Sequence[str] = ()
-    ) -> PromotionResult:
+    def promote(self, *, authorized: bool, secret_values: Sequence[str] = ()) -> PromotionResult:
         """Promote staged output only when inspection is clean AND promotion is authorized."""
         result = self.inspect(secret_values)
         if not result.clean:

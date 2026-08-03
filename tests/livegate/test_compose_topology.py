@@ -74,8 +74,7 @@ def test_document_with_no_services_flagged() -> None:
 
 
 def test_declared_broker_absent_flagged() -> None:
-    doc = {"networks": {"factory-internal": {"internal": True}},
-           "services": {"w": _worker()}}
+    doc = {"networks": {"factory-internal": {"internal": True}}, "services": {"w": _worker()}}
     codes = {v.code for v in validate_compose(doc, broker_services=frozenset({"broker"}))}
     assert "BROKER_ABSENT" in codes
 

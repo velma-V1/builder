@@ -50,13 +50,9 @@ def test_heartbeat_uses_monotonic_time_and_rejects_replay() -> None:
     with pytest.raises(WatchdogError, match="HEARTBEAT_REPLAY"):
         monitor.observe(heartbeat, now_monotonic=1_000_001.0)
     with pytest.raises(WatchdogError, match="HEARTBEAT_UNAUTHENTICATED"):
-        monitor.observe(
-            replace(heartbeat, sequence=2, auth_token=FORGED_PROOF), 1_000_001.0
-        )
+        monitor.observe(replace(heartbeat, sequence=2, auth_token=FORGED_PROOF), 1_000_001.0)
     with pytest.raises(WatchdogError, match="HEARTBEAT_FROM_FUTURE"):
-        monitor.observe(
-            replace(heartbeat, sequence=2, monotonic_ts=1_000_002.0), 1_000_001.0
-        )
+        monitor.observe(replace(heartbeat, sequence=2, monotonic_ts=1_000_002.0), 1_000_001.0)
 
 
 def test_wall_clock_rollback_cannot_fabricate_a_stall() -> None:
@@ -81,8 +77,7 @@ def test_thresholds_stage_and_recover_with_hysteresis() -> None:
 def test_missing_sensor_enters_reduced_monitoring_without_fabrication() -> None:
     machine = ThresholdStateMachine(ThresholdPolicy(1, 2, 3, 1))
     assert (
-        machine.observe(SensorSample(0, None, "sensor-missing"))
-        is HealthState.REDUCED_MONITORING
+        machine.observe(SensorSample(0, None, "sensor-missing")) is HealthState.REDUCED_MONITORING
     )
     assert machine.observe(SensorSample(1, True, "restored")) is HealthState.REDUCED_MONITORING
     assert machine.observe(SensorSample(2, True, "restored")) is HealthState.NORMAL
@@ -113,13 +108,9 @@ def test_process_is_not_auto_launched_and_selects_deterministic_interventions() 
         is InterventionCommand.PAUSE_TASK
     )
     assert process.intervention_for(HealthState.WARNING, high_risk=True) is None
+    assert process.degradation_route(HealthState.REDUCED_MONITORING) is DegradationRoute.SAFE_MODE
     assert (
-        process.degradation_route(HealthState.REDUCED_MONITORING)
-        is DegradationRoute.SAFE_MODE
-    )
-    assert (
-        process.degradation_route(HealthState.CRITICAL_CONTAINMENT)
-        is DegradationRoute.QUARANTINE
+        process.degradation_route(HealthState.CRITICAL_CONTAINMENT) is DegradationRoute.QUARANTINE
     )
     assert process.degradation_route(HealthState.NORMAL) is DegradationRoute.CONTINUE
 

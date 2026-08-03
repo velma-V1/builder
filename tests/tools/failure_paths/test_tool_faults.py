@@ -43,9 +43,16 @@ class _FixedClock:
 
 def _stage_register(registry: ToolRegistry, tool_id: str, version: str, op_key: str) -> None:
     registry._writer.stage_register(
-        tool_id=tool_id, version=version, op_key=op_key, declaration_hash="dh",
-        provenance_source="s", provenance_checksum="c", license="MIT", declaration_json="{}",
-        output_schema_json="{}", ts=1_000_000,
+        tool_id=tool_id,
+        version=version,
+        op_key=op_key,
+        declaration_hash="dh",
+        provenance_source="s",
+        provenance_checksum="c",
+        license="MIT",
+        declaration_json="{}",
+        output_schema_json="{}",
+        ts=1_000_000,
     )
 
 
@@ -62,8 +69,13 @@ def test_crash_after_audit_rolls_register_forward(registry: ToolRegistry) -> Non
     _stage_register(registry, "t", "1", op_key)
     registry._audit.append(
         AuditEvent(
-            op_key=op_key, record_kind=RecordKind.COMPLETION, operation_class=1, actor="a",
-            action_class="tool.register", payload_hash="ph", occurred_at="t",
+            op_key=op_key,
+            record_kind=RecordKind.COMPLETION,
+            operation_class=1,
+            actor="a",
+            action_class="tool.register",
+            payload_hash="ph",
+            occurred_at="t",
         )
     )
     registry.reconcile_startup()
@@ -77,8 +89,13 @@ def test_crash_before_audit_rolls_transition_back(
     register_tool()
     op_key = _new_op_key("quarantine", "formatter@1.0")
     registry._writer.stage_transition(
-        tool_id="formatter", version="1.0", op_key=op_key, verb="quarantine",
-        new_state=ToolState.QUARANTINED, ts=1_000_050, detail="x",
+        tool_id="formatter",
+        version="1.0",
+        op_key=op_key,
+        verb="quarantine",
+        new_state=ToolState.QUARANTINED,
+        ts=1_000_050,
+        detail="x",
     )
     registry.reconcile_startup()
     record = registry.reader.get_record("formatter", "1.0")
@@ -100,7 +117,8 @@ def test_register_fails_closed_when_audit_unavailable(
     empty_audit = tmp_path / "empty.db"
     sqlite3.connect(str(empty_audit)).close()
     registry = ToolRegistry(
-        security_database_path=security_db_path, audit_database_path=empty_audit,
+        security_database_path=security_db_path,
+        audit_database_path=empty_audit,
         clock=_FixedClock(),
     )
     request = RegistrationRequest(
@@ -172,8 +190,12 @@ def test_writer_faults_fail_closed(tmp_path: Path) -> None:
     writer = _ToolWriter(database_path=db)
     with pytest.raises(ToolError) as exc:
         writer.stage_transition(
-            tool_id="ghost", version="1", op_key="k", verb="quarantine",
-            new_state=ToolState.QUARANTINED, ts=1,
+            tool_id="ghost",
+            version="1",
+            op_key="k",
+            verb="quarantine",
+            new_state=ToolState.QUARANTINED,
+            ts=1,
         )
     assert exc.value.code == "TOOL_NOT_FOUND"
     broken = sqlite3.connect(str(db))

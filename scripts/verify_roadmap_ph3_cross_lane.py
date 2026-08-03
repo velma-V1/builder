@@ -51,9 +51,7 @@ def verify_real_interfaces() -> VerificationResult:
         "from factory.tools import ToolResult",
         "WatchdogInterventionReceiver",
     )
-    return VerificationResult(
-        "Consumes accepted Lane B public result interfaces", ok, detail
-    )
+    return VerificationResult("Consumes accepted Lane B public result interfaces", ok, detail)
 
 
 def verify_fail_closed() -> VerificationResult:

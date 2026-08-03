@@ -44,8 +44,13 @@ def test_audit_completion_seq_present_and_absent(audit_db_path: Path) -> None:
     assert audit_completion_seq(audit_db_path, "no-such-op") is None
     AuditWriter(database_path=audit_db_path).append(
         AuditEvent(
-            op_key="op-1", record_kind=RecordKind.COMPLETION, operation_class=1, actor="a",
-            action_class="approval.enqueue", payload_hash="p", occurred_at="t",
+            op_key="op-1",
+            record_kind=RecordKind.COMPLETION,
+            operation_class=1,
+            actor="a",
+            action_class="approval.enqueue",
+            payload_hash="p",
+            occurred_at="t",
         )
     )
     assert audit_completion_seq(audit_db_path, "op-1") == 1

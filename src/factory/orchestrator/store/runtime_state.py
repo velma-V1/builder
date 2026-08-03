@@ -48,8 +48,10 @@ _EXPECTED_MIGRATION_HASHES: Mapping[str, str] = {
     "0004_workstream_membership.sql": (
         "0274e9f2933b543277a4c50e556f8cc87762a69291e6b882d173c89811c4dc5f"
     ),
-    "0005_task_requests.sql": (
-        "a68ca07b5c48d494fc42e714828e6c54c3e13f9415b247db1965690b7aa65bc8"
+    "0005_task_requests.sql": ("a68ca07b5c48d494fc42e714828e6c54c3e13f9415b247db1965690b7aa65bc8"),
+    "0006_worker_runs.sql": ("38d36efe4cdbb2397da486271dce79d40fc88a737cca9fc6c8883f6134e0ba71"),
+    "0007_verification_promotion.sql": (
+        "f0f8441120ae50e2732ccb7e3d74899a897b70db33ded820e36ed26697458556"
     ),
 }
 
@@ -67,9 +69,7 @@ def _parse_migration_filename(path: Path) -> int:
     """
     match = _MIGRATION_FILENAME.match(path.name)
     if not match:
-        raise OrchestratorError(
-            "MIGRATION_MALFORMED", f"malformed migration filename: {path.name}"
-        )
+        raise OrchestratorError("MIGRATION_MALFORMED", f"malformed migration filename: {path.name}")
     return int(match.group(1))
 
 
@@ -238,6 +238,12 @@ _SELECT_TASKS_BY_WORKSTREAM_SQL = (
     "SELECT task_id, project_id, contract_version, current_state, sequence, updated_at, "
     "workstream_id FROM tasks WHERE workstream_id = ? ORDER BY updated_at ASC, task_id ASC"
 )
+# Placeholder count is filled in at call time (`?` repeated once per requested state).
+_SELECT_TASKS_BY_STATES_SQL_TEMPLATE = (
+    "SELECT task_id, project_id, contract_version, current_state, sequence, updated_at, "
+    "workstream_id FROM tasks WHERE current_state IN ({placeholders}) "
+    "ORDER BY updated_at ASC, task_id ASC"
+)
 _SELECT_EVENTS_BY_TASK_SQL = (
     "SELECT task_id, sequence, prev_state, new_state, cause, actor, accepted, "
     "occurred_at, linked_reference, idempotency_key FROM task_state_events "
@@ -275,6 +281,9 @@ class OrchestratorStateReader(Protocol):
     def get_events(self, task_id: str) -> tuple[StateTransitionEvent, ...]: ...
     def list_tasks_by_workstream(self, workstream_id: str) -> tuple[TaskRuntimeRecord, ...]: ...
     def get_task_request(self, task_id: str) -> TaskRequestRecord | None: ...
+    def list_tasks_by_states(
+        self, states: frozenset[TaskState]
+    ) -> tuple[TaskRuntimeRecord, ...]: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -309,9 +318,7 @@ class SQLiteOrchestratorStateReader:
         """
         connection = _connect_readonly(self.database_path)
         try:
-            rows = connection.execute(
-                _SELECT_TASKS_BY_WORKSTREAM_SQL, (workstream_id,)
-            ).fetchall()
+            rows = connection.execute(_SELECT_TASKS_BY_WORKSTREAM_SQL, (workstream_id,)).fetchall()
         finally:
             connection.close()
         return tuple(_row_to_task(row) for row in rows)
@@ -324,6 +331,26 @@ class SQLiteOrchestratorStateReader:
         finally:
             connection.close()
         return None if row is None else _row_to_task_request(row)
+
+    def list_tasks_by_states(self, states: frozenset[TaskState]) -> tuple[TaskRuntimeRecord, ...]:
+        """Every task currently in any of ``states``, across all workstreams (Phase 3B).
+
+        Used by the Worker Engine to discover claimable QUEUED tasks and, at startup, every
+        non-terminal in-flight task for crash reconciliation. ``states`` must be non-empty; the
+        placeholder count in the generated SQL is exactly ``len(states)`` value markers (``?``),
+        never state text itself -- every bound value is still passed through the parameterized
+        query, so this remains injection-free despite the dynamic placeholder count.
+        """
+        if not states:
+            return ()
+        connection = _connect_readonly(self.database_path)
+        try:
+            placeholders = ",".join("?" * len(states))
+            sql = _SELECT_TASKS_BY_STATES_SQL_TEMPLATE.format(placeholders=placeholders)
+            rows = connection.execute(sql, tuple(state.value for state in states)).fetchall()
+        finally:
+            connection.close()
+        return tuple(_row_to_task(row) for row in rows)
 
 
 def _insert_genesis_task_row(

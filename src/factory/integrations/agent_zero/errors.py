@@ -16,17 +16,17 @@ from enum import StrEnum
 class AgentZeroErrorCode(StrEnum):
     # Capability / tool surface
     CAPABILITY_UNAVAILABLE = "CAPABILITY_UNAVAILABLE"  # not discovered/supported → denied
-    TOOL_DENIED = "TOOL_DENIED"                         # tool not explicitly granted for this order
+    TOOL_DENIED = "TOOL_DENIED"  # tool not explicitly granted for this order
 
     # Trust boundaries (network / secret / model / sandbox)
-    NETWORK_DENIED = "NETWORK_DENIED"                   # broker refused
+    NETWORK_DENIED = "NETWORK_DENIED"  # broker refused
     SECRET_UNAVAILABLE = "SECRET_UNAVAILABLE"  # noqa: S105 - error code; secret lease missing
     MODEL_AUTHORITY_VIOLATION = "MODEL_AUTHORITY_VIOLATION"  # attempted to bypass Builder router
-    DOCKER_SOCKET_DENIED = "DOCKER_SOCKET_DENIED"       # host container-runtime socket requested
-    PATH_DENIED = "PATH_DENIED"                         # PathAuthority rejected a proposed path
+    DOCKER_SOCKET_DENIED = "DOCKER_SOCKET_DENIED"  # host container-runtime socket requested
+    PATH_DENIED = "PATH_DENIED"  # PathAuthority rejected a proposed path
 
     # Authority Agent Zero must never hold
-    DIRECT_MAIN_DENIED = "DIRECT_MAIN_DENIED"           # attempted to target the main branch
+    DIRECT_MAIN_DENIED = "DIRECT_MAIN_DENIED"  # attempted to target the main branch
     MERGE_AUTHORITY_DENIED = "MERGE_AUTHORITY_DENIED"
     APPROVAL_AUTHORITY_DENIED = "APPROVAL_AUTHORITY_DENIED"
     PROMOTION_AUTHORITY_DENIED = "PROMOTION_AUTHORITY_DENIED"
@@ -37,14 +37,14 @@ class AgentZeroErrorCode(StrEnum):
     # Execution lifecycle
     TIMED_OUT = "TIMED_OUT"
     CANCELLED = "CANCELLED"
-    UNAVAILABLE = "UNAVAILABLE"                         # crash / transport unreachable
+    UNAVAILABLE = "UNAVAILABLE"  # crash / transport unreachable
 
     # Event stream / result integrity
     MALFORMED_RESULT = "MALFORMED_RESULT"
     INCOMPLETE_RESULT = "INCOMPLETE_RESULT"
-    DUPLICATE_EVENT = "DUPLICATE_EVENT"                 # same sequence, conflicting content
-    OUT_OF_ORDER_EVENT = "OUT_OF_ORDER_EVENT"           # sequence regressed
-    MISSING_SEQUENCE = "MISSING_SEQUENCE"               # a gap in the sequence was detected
+    DUPLICATE_EVENT = "DUPLICATE_EVENT"  # same sequence, conflicting content
+    OUT_OF_ORDER_EVENT = "OUT_OF_ORDER_EVENT"  # sequence regressed
+    MISSING_SEQUENCE = "MISSING_SEQUENCE"  # a gap in the sequence was detected
 
     # Compatibility / update
     COMPATIBILITY_REJECTED = "COMPATIBILITY_REJECTED"

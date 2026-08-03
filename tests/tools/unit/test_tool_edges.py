@@ -70,8 +70,15 @@ def test_terminate_tree_with_executor_is_noop(gateway: ToolGateway) -> None:
 def test_lookup_inflight_record_is_none(registry: ToolRegistry) -> None:
     op_key = _new_op_key("register", "t@1")
     registry._writer.stage_register(
-        tool_id="t", version="1", op_key=op_key, declaration_hash="dh", provenance_source="s",
-        provenance_checksum="c", license="MIT", declaration_json="{}", output_schema_json="{}",
+        tool_id="t",
+        version="1",
+        op_key=op_key,
+        declaration_hash="dh",
+        provenance_source="s",
+        provenance_checksum="c",
+        license="MIT",
+        declaration_json="{}",
+        output_schema_json="{}",
         ts=1_000_000,
     )
     record = registry.reader.get_record("t", "1")
@@ -104,8 +111,15 @@ def test_writer_stage_register_and_rollback_faults(tmp_path: Path) -> None:
     writer = _ToolWriter(database_path=db)
     with pytest.raises(ToolError) as exc:
         writer.stage_register(
-            tool_id="t", version="1", op_key="k", declaration_hash="d", provenance_source="s",
-            provenance_checksum="c", license="MIT", declaration_json="{}", output_schema_json="{}",
+            tool_id="t",
+            version="1",
+            op_key="k",
+            declaration_hash="d",
+            provenance_source="s",
+            provenance_checksum="c",
+            license="MIT",
+            declaration_json="{}",
+            output_schema_json="{}",
             ts=1,
         )
     assert exc.value.code == "TOOL_STAGE_FAILED"

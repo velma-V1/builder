@@ -15,9 +15,22 @@ reconciliation covers task/journal consistency only — not the full 01M §20 re
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from typing import Protocol
 
-from factory.orchestrator.models import ReconciliationOutcome, TaskState
-from factory.orchestrator.store.runtime_state import OrchestratorStateReader
+from factory.orchestrator.models import (
+    ReconciliationOutcome,
+    StateTransitionEvent,
+    TaskRuntimeRecord,
+    TaskState,
+)
+
+
+class ReconciliationReader(Protocol):
+    """Minimum read boundary needed to replay authoritative task state."""
+
+    def get_task(self, task_id: str) -> TaskRuntimeRecord | None: ...
+    def get_events(self, task_id: str) -> tuple[StateTransitionEvent, ...]: ...
+
 
 # Verbatim from recovery-journal-spec.md "Reconciliation mapping" (applied only when replay is
 # consistent; a replay mismatch overrides to QUARANTINED).
@@ -38,7 +51,7 @@ _RECONCILIATION_MAP: Mapping[TaskState, ReconciliationOutcome] = {
 }
 
 
-def _replay_state(reader: OrchestratorStateReader, task_id: str) -> TaskState | None:
+def _replay_state(reader: ReconciliationReader, task_id: str) -> TaskState | None:
     """Fold the accepted events for a task, in order, to reconstruct its authoritative state."""
     replayed: TaskState | None = None
     for event in reader.get_events(task_id):
@@ -48,7 +61,7 @@ def _replay_state(reader: OrchestratorStateReader, task_id: str) -> TaskState | 
 
 
 def reconcile_startup(
-    reader: OrchestratorStateReader, task_ids: Sequence[str]
+    reader: ReconciliationReader, task_ids: Sequence[str]
 ) -> Mapping[str, ReconciliationOutcome]:
     """Assign exactly one ReconciliationOutcome to each task; never silently resume.
 

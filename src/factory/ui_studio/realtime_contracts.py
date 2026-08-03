@@ -145,7 +145,11 @@ class SnapshotReconciliationResult:
 
 
 def reconcile_snapshot(
-    channel: str, *, local_last_sequence: int, backend_snapshot_sequence: int, buffer: ReplayBuffer,
+    channel: str,
+    *,
+    local_last_sequence: int,
+    backend_snapshot_sequence: int,
+    buffer: ReplayBuffer,
 ) -> SnapshotReconciliationResult:
     """Decide whether the local sequence can be caught up via replay or needs a full snapshot."""
     if backend_snapshot_sequence <= local_last_sequence:
@@ -156,7 +160,10 @@ def reconcile_snapshot(
         buffer.events_since(local_last_sequence)
     except UIStudioError:
         return SnapshotReconciliationResult(
-            channel, False, backend_snapshot_sequence, True,
+            channel,
+            False,
+            backend_snapshot_sequence,
+            True,
             "replay window exceeded; full snapshot resync required",
         )
     return SnapshotReconciliationResult(
@@ -205,7 +212,10 @@ class RestartReconstructionPlan:
 
 
 def plan_restart_reconstruction(
-    channel: str, *, persisted_last_sequence: int | None, buffer: ReplayBuffer,
+    channel: str,
+    *,
+    persisted_last_sequence: int | None,
+    buffer: ReplayBuffer,
 ) -> RestartReconstructionPlan:
     """Decide how a client rebuilds state after a full restart. Never invents a starting point."""
     if persisted_last_sequence is None:
@@ -216,7 +226,10 @@ def plan_restart_reconstruction(
         buffer.events_since(persisted_last_sequence)
     except UIStudioError:
         return RestartReconstructionPlan(
-            channel, False, persisted_last_sequence, True,
+            channel,
+            False,
+            persisted_last_sequence,
+            True,
             "persisted cursor is older than the retained replay window",
         )
     return RestartReconstructionPlan(

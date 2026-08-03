@@ -6,7 +6,13 @@ Factory is a standalone, local-first AI software-production system designed to b
 
 ## Status
 
-**Full architecture, all planning resolutions (R1–R5 and the autonomy, deletion, and Windows-native decisions), and a complete pre-implementation planning system are recorded. Section 1 (Requirements & Contracts) is implemented and verified — `PASS` (96.85% coverage, ruff/mypy clean). Section 2 (Orchestrator: Task Queue & State Machine) is implemented and verified — `PASS` (100% tests, ruff/mypy clean, PROM-PH2 exit gate passed).**
+**Phase 3B worker verification, explicit approval, promotion/rollback, lifecycle/API integration,
+and dashboard controls are implemented on the draft Phase 3B branch, but the branch is not yet
+merge-ready. Complete Linux verification and the required native-Windows launcher and junction
+gates pass for implementation commit `8c05e6c`; the subsequent evidence-only commit does not alter
+the tested code. The six previously reported blockers have focused regression coverage, but a fresh
+independent review of the final PR head remains required. The branch remains draft PR #18; no merge,
+deployment, release, or protected-ref promotion occurred.**
 
 Continue to the next phase:
 
@@ -19,12 +25,12 @@ Continue to the next phase:
 
 The system is intentionally planned in locked sections before code is written. This prevents architecture drift, conflicting parallel edits, unverifiable completion claims, and uncontrolled autonomy.
 
-## Quick start (Phase 3A — task intake, no Agent Zero yet)
+## Quick start (Phase 3B — local verification and operator-controlled promotion)
 
-Phase 3A adds a one-command launcher and a desktop-operated task-intake dashboard. It does
-**not** activate Agent Zero, Ollama execution, or any approve/reject/promotion flow — those are
-later phases. All settings (WSL distribution, repository path, ports, browser auto-open) live in
-one place: [`config/builder.yaml`](config/builder.yaml).
+The launcher retains Phase 3A intake. With migrated security and audit databases configured, the
+orchestrator additionally exposes Phase 3B evidence/manifest review, explicit bound approval,
+approve/reject, and promotion status. Agent Zero and real external services remain disabled unless
+separately configured; approval is never inferred.
 
 **From Linux/WSL2 directly:**
 

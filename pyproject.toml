@@ -31,11 +31,13 @@ packages = ["src/factory"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 addopts = "-ra --strict-markers --strict-config"
 markers = [
   "security: adversarial security behavior",
   "failure_path: controlled failure and rollback behavior",
   "windows: Windows-specific path behavior",
+  "loopback: requires permission to bind a local loopback socket",
 ]
 
 [tool.coverage.run]
@@ -50,7 +52,7 @@ skip_covered = true
 [tool.mypy]
 python_version = "3.12"
 strict = true
-packages = ["factory.contracts"]
+packages = ["factory"]
 warn_unreachable = true
 
 [[tool.mypy.overrides]]

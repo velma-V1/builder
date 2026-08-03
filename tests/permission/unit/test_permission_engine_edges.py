@@ -79,11 +79,20 @@ def test_revalidate_fingerprint_mismatch_is_false(
 ) -> None:
     grant = _issue(engine, make_request, make_authority)
     tampered = PermissionGrant(
-        grant_id=grant.grant_id, task_id=grant.task_id, tool=grant.tool, action=grant.action,
-        permission_class=grant.permission_class, resource=grant.resource, scope=grant.scope,
-        purpose=grant.purpose, grant_fingerprint="different-fingerprint",
-        expires_at=grant.expires_at, state=grant.state, commit_state=grant.commit_state,
-        created_ts=grant.created_ts, updated_ts=grant.updated_ts,
+        grant_id=grant.grant_id,
+        task_id=grant.task_id,
+        tool=grant.tool,
+        action=grant.action,
+        permission_class=grant.permission_class,
+        resource=grant.resource,
+        scope=grant.scope,
+        purpose=grant.purpose,
+        grant_fingerprint="different-fingerprint",
+        expires_at=grant.expires_at,
+        state=grant.state,
+        commit_state=grant.commit_state,
+        created_ts=grant.created_ts,
+        updated_ts=grant.updated_ts,
     )
     assert engine.revalidate(tampered, engine.clock.now_ts()) is False
 
@@ -102,6 +111,10 @@ def test_stage_transition_sqlite_error_fails_closed(security_db_path: Path) -> N
     writer = _PermissionWriter(database_path=security_db_path)
     with pytest.raises(PermissionError) as exc:
         writer.stage_transition(
-            grant_id="g1", op_key="k", verb="revoke", new_state=PermissionState.REVOKED, ts=2,
+            grant_id="g1",
+            op_key="k",
+            verb="revoke",
+            new_state=PermissionState.REVOKED,
+            ts=2,
         )
     assert exc.value.code == "PERMISSION_STAGE_FAILED"

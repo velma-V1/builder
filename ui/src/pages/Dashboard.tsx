@@ -15,6 +15,7 @@ import { useCancelTask } from "@/queries/useCancelTask";
 import { useTaskDetail } from "@/queries/useTaskDetail";
 import { useOrchestratorHealth } from "@/queries/useOrchestratorHealth";
 import { TaskSubmissionForm } from "@/components/TaskSubmissionForm";
+import { Phase3BControls } from "@/components/Phase3BControls";
 
 // Mirrors the exact set of states with a legal edge to STOPPING in
 // src/factory/orchestrator/state/transitions.py's ALLOWED_TRANSITIONS, plus QUEUED (which the
@@ -83,14 +84,17 @@ function TaskDetailsPanel({ taskId }: { taskId: string }): JSX.Element {
   if (isLoading) return <p>Loading task details…</p>;
   if (!data) return <p role="status">Task details unavailable.</p>;
   return (
-    <dl>
-      <dt>Task</dt>
-      <dd>{data.task_id}</dd>
-      <dt>State</dt>
-      <dd>{data.state}</dd>
-      <dt>Description</dt>
-      <dd>{data.description}</dd>
-    </dl>
+    <>
+      <dl>
+        <dt>Task</dt>
+        <dd>{data.task_id}</dd>
+        <dt>State</dt>
+        <dd>{data.state}</dd>
+        <dt>Description</dt>
+        <dd>{data.description}</dd>
+      </dl>
+      <Phase3BControls taskId={taskId} state={data.state} />
+    </>
   );
 }
 

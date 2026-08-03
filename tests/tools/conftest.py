@@ -49,8 +49,15 @@ class FakeClock:
 
 
 DEFAULT_LIMITS = ResourceLimits(
-    wall_clock_s=60, idle_s=10, cpu_s=30, ram_mb=512, storage_mb=100,
-    max_processes=4, max_files=100, max_output_bytes=4096, max_download_bytes=0,
+    wall_clock_s=60,
+    idle_s=10,
+    cpu_s=30,
+    ram_mb=512,
+    storage_mb=100,
+    max_processes=4,
+    max_files=100,
+    max_output_bytes=4096,
+    max_download_bytes=0,
 )
 
 
@@ -92,28 +99,42 @@ def permission_engine(
 
 @pytest.fixture
 def gateway(
-    registry: ToolRegistry, permission_engine: PermissionEngine, audit_db_path: Path,
+    registry: ToolRegistry,
+    permission_engine: PermissionEngine,
+    audit_db_path: Path,
     clock: FakeClock,
 ) -> ToolGateway:
     return ToolGateway(
-        registry=registry, permission_engine=permission_engine, audit_database_path=audit_db_path,
-        default_limits=DEFAULT_LIMITS, clock=clock,
+        registry=registry,
+        permission_engine=permission_engine,
+        audit_database_path=audit_db_path,
+        default_limits=DEFAULT_LIMITS,
+        clock=clock,
     )
 
 
 @pytest.fixture
 def make_declaration() -> DeclFactory:
     def _make(
-        *, tool_id: str = "formatter", version: str = "1.0",
+        *,
+        tool_id: str = "formatter",
+        version: str = "1.0",
         capabilities: tuple[str, ...] = ("format",),
         permission_classes: tuple[str, ...] = ("EXECUTE",),
-        environment: str = "wsl2", resource_profile: str = "light",
+        environment: str = "wsl2",
+        resource_profile: str = "light",
         failure_behavior: str = "fail-closed",
     ) -> ToolDeclaration:
         return ToolDeclaration(
-            tool_id=tool_id, version=version, capabilities=capabilities, inputs=("file",),
-            outputs=("text",), side_effects=(), permission_classes=permission_classes,
-            environment=environment, resource_profile=resource_profile,
+            tool_id=tool_id,
+            version=version,
+            capabilities=capabilities,
+            inputs=("file",),
+            outputs=("text",),
+            side_effects=(),
+            permission_classes=permission_classes,
+            environment=environment,
+            resource_profile=resource_profile,
             failure_behavior=failure_behavior,
         )
 
@@ -125,7 +146,9 @@ def register_tool(
     registry: ToolRegistry, make_declaration: DeclFactory
 ) -> Callable[..., ToolDeclaration]:
     def _register(
-        *, tool_id: str = "formatter", version: str = "1.0",
+        *,
+        tool_id: str = "formatter",
+        version: str = "1.0",
         output_schema: OutputSchema | None = None,
     ) -> ToolDeclaration:
         declaration = make_declaration(tool_id=tool_id, version=version)
@@ -149,13 +172,20 @@ def execute_grant(
 ) -> Callable[..., PermissionGrant]:
     def _grant(*, task_id: str = "task-1", tool: str = "formatter") -> PermissionGrant:
         authority = TaskAuthority(
-            task_id=task_id, autonomy_level="L2-supervised",
-            allowed_classes=frozenset({PermissionClass.EXECUTE}), project_root="sandbox-root",
+            task_id=task_id,
+            autonomy_level="L2-supervised",
+            allowed_classes=frozenset({PermissionClass.EXECUTE}),
+            project_root="sandbox-root",
         )
         decision = permission_engine.decide(
             ActionRequest(
-                task_id=task_id, tool=tool, action="run", permission_class=PermissionClass.EXECUTE,
-                scope="exec", purpose="run a tool", resource=None,
+                task_id=task_id,
+                tool=tool,
+                action="run",
+                permission_class=PermissionClass.EXECUTE,
+                scope="exec",
+                purpose="run a tool",
+                resource=None,
             ),
             authority,
         )

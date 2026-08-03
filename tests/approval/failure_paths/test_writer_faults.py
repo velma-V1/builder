@@ -19,7 +19,10 @@ def test_stage_transition_on_missing_record_raises(security_db_path: Path) -> No
     writer = _ApprovalWriter(database_path=security_db_path)
     with pytest.raises(ApprovalError) as exc:
         writer.stage_transition(
-            approval_id="absent", op_key="k", verb="grant", new_state=ApprovalState.GRANTED,
+            approval_id="absent",
+            op_key="k",
+            verb="grant",
+            new_state=ApprovalState.GRANTED,
             ts=1_000_000,
         )
     assert exc.value.code == "APPROVAL_NOT_FOUND"
@@ -35,7 +38,11 @@ def test_stage_transition_on_broken_store_fails_closed(tmp_path: Path) -> None:
     writer = _ApprovalWriter(database_path=db)
     with pytest.raises(ApprovalError) as exc:
         writer.stage_transition(
-            approval_id="x", op_key="k", verb="grant", new_state=ApprovalState.GRANTED, ts=1,
+            approval_id="x",
+            op_key="k",
+            verb="grant",
+            new_state=ApprovalState.GRANTED,
+            ts=1,
         )
     assert exc.value.code == "APPROVAL_STAGE_FAILED"
 
@@ -64,6 +71,10 @@ def test_rollback_on_broken_store_fails_closed(tmp_path: Path) -> None:
     writer = _ApprovalWriter(database_path=db)
     with pytest.raises(ApprovalError) as exc:
         writer.rollback_operation(
-            approval_id="x", op_key="k", verb="enqueue", failure_code="F", ts=1,
+            approval_id="x",
+            op_key="k",
+            verb="enqueue",
+            failure_code="F",
+            ts=1,
         )
     assert exc.value.code == "APPROVAL_ROLLBACK_FAILED"

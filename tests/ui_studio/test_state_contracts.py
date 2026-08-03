@@ -29,7 +29,10 @@ def test_illegal_transition_returns_none() -> None:
 
 def test_transition_referencing_undeclared_state_is_denied() -> None:
     contract = StateContract(
-        name="bad", owner=StateOwner.XSTATE_WORKFLOW, states=("a", "b"), events=("go",),
+        name="bad",
+        owner=StateOwner.XSTATE_WORKFLOW,
+        states=("a", "b"),
+        events=("go",),
         legal_transitions=(("a", "go", "c"),),  # "c" was never declared
     )
     with pytest.raises(UIStudioError) as excinfo:
@@ -39,7 +42,10 @@ def test_transition_referencing_undeclared_state_is_denied() -> None:
 
 def test_transition_referencing_undeclared_event_is_denied() -> None:
     contract = StateContract(
-        name="bad", owner=StateOwner.XSTATE_WORKFLOW, states=("a", "b"), events=("go",),
+        name="bad",
+        owner=StateOwner.XSTATE_WORKFLOW,
+        states=("a", "b"),
+        events=("go",),
         legal_transitions=(("a", "ghost_event", "b"),),
     )
     with pytest.raises(UIStudioError) as excinfo:
@@ -50,7 +56,10 @@ def test_transition_referencing_undeclared_event_is_denied() -> None:
 def test_frontend_owned_contract_cannot_claim_to_be_authoritative() -> None:
     contract = StateContract(
         name="authoritative_task_state",  # name itself claims authority
-        owner=StateOwner.XSTATE_WORKFLOW, states=("a",), events=(), legal_transitions=(),
+        owner=StateOwner.XSTATE_WORKFLOW,
+        states=("a",),
+        events=(),
+        legal_transitions=(),
     )
     with pytest.raises(UIStudioError) as excinfo:
         validate_state_contract(contract)
@@ -59,7 +68,10 @@ def test_frontend_owned_contract_cannot_claim_to_be_authoritative() -> None:
 
 def test_backend_authoritative_contract_may_use_the_authoritative_name() -> None:
     contract = StateContract(
-        name="authoritative_task_state", owner=StateOwner.BACKEND_AUTHORITATIVE,
-        states=("a",), events=(), legal_transitions=(),
+        name="authoritative_task_state",
+        owner=StateOwner.BACKEND_AUTHORITATIVE,
+        states=("a",),
+        events=(),
+        legal_transitions=(),
     )
     validate_state_contract(contract)  # must not raise

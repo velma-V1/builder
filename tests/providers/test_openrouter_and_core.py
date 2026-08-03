@@ -37,7 +37,10 @@ def _adapter(
 ) -> OpenRouterAdapter:
     resolver = StaticResolver(g if g is not None else grant(expected_upstream="openai"))
     return openrouter_adapter(
-        transport, net or network_backend(), sec or secret_backend(), resolver,
+        transport,
+        net or network_backend(),
+        sec or secret_backend(),
+        resolver,
     )
 
 
@@ -98,8 +101,14 @@ def test_strict_route_requires_explicit_upstream() -> None:
 
 @pytest.mark.parametrize(
     ("status", "code"),
-    [(401, "AUTH_UNAVAILABLE"), (403, "AUTH_UNAVAILABLE"), (404, "MODEL_MISSING"),
-     (429, "RATE_LIMITED"), (500, "RUNTIME_UNAVAILABLE"), (503, "RUNTIME_UNAVAILABLE")],
+    [
+        (401, "AUTH_UNAVAILABLE"),
+        (403, "AUTH_UNAVAILABLE"),
+        (404, "MODEL_MISSING"),
+        (429, "RATE_LIMITED"),
+        (500, "RUNTIME_UNAVAILABLE"),
+        (503, "RUNTIME_UNAVAILABLE"),
+    ],
 )
 def test_http_errors_map_and_never_succeed(status: int, code: str) -> None:
     transport = transport_for("chat/completions", json_response({"error": "x"}, status=status))
@@ -133,7 +142,10 @@ def test_local_only_task_is_refused() -> None:
 def test_no_cloud_grant_is_refused() -> None:
     transport = transport_for("chat/completions", json_response(chat_ok(_MODEL, provider="openai")))
     result = openrouter_adapter(
-        transport, network_backend(), secret_backend(), StaticResolver(None),
+        transport,
+        network_backend(),
+        secret_backend(),
+        StaticResolver(None),
     ).execute(call(route_key=f"OPENROUTER:{_MODEL}"))
     assert result.status is ExecutionStatus.RUNTIME_UNAVAILABLE
     assert result.error_code == "NETWORK_DENIED"
@@ -150,6 +162,7 @@ def test_unapproved_model_rejected_discovery_is_not_approval() -> None:
 def test_missing_credential_is_secret_unavailable() -> None:
     # secret backend has no material for ref R1
     from factory.secret.fake_backend import FakeSecretBackend
+
     transport = transport_for("chat/completions", json_response(chat_ok(_MODEL, provider="openai")))
     adapter = _adapter(transport, sec=FakeSecretBackend({}))
     result = adapter.execute(call(route_key=f"OPENROUTER:{_MODEL}"))
@@ -175,12 +188,15 @@ def test_response_over_byte_ceiling_denied() -> None:
 
 def test_redirect_to_unapproved_host_denied() -> None:
     redirected = HttpResponse(
-        200, {"x-request-id": "r"}, json.dumps(chat_ok(_MODEL, provider="openai")).encode(),
+        200,
+        {"x-request-id": "r"},
+        json.dumps(chat_ok(_MODEL, provider="openai")).encode(),
         final_url="https://evil.example/api/v1/chat/completions",
     )
 
     def _m(req: HttpRequest) -> bool:
         return "chat/completions" in req.url
+
     transport = FakeHttpTransport((FakeExchange(_m, redirected),))
     result = _adapter(transport).execute(call(route_key=f"OPENROUTER:{_MODEL}"))
     assert result.error_code == "NETWORK_DENIED"
@@ -188,7 +204,8 @@ def test_redirect_to_unapproved_host_denied() -> None:
 
 def test_tool_calls_extracted() -> None:
     transport = transport_for(
-        "chat/completions", json_response(chat_ok(_MODEL, provider="openai", tools=["search"])),
+        "chat/completions",
+        json_response(chat_ok(_MODEL, provider="openai", tools=["search"])),
     )
     result = _adapter(transport).execute(call(route_key=f"OPENROUTER:{_MODEL}"))
     assert result.tool_calls == ("search",)

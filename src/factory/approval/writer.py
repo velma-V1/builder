@@ -129,9 +129,7 @@ class _ApprovalWriter:
             ).fetchone()
             if current is None:
                 connection.rollback()
-                raise ApprovalError(
-                    "APPROVAL_NOT_FOUND", f"no approval record for {approval_id}"
-                )
+                raise ApprovalError("APPROVAL_NOT_FOUND", f"no approval record for {approval_id}")
             connection.execute(
                 "INSERT INTO approval_intents (op_key, operation_class, domain, target_ref, "
                 "requested_action, status, reconciliation_state, created_ts, updated_ts) "
@@ -157,9 +155,7 @@ class _ApprovalWriter:
             connection.commit()
         except sqlite3.Error as exc:
             connection.rollback()
-            raise ApprovalError(
-                "APPROVAL_STAGE_FAILED", f"{verb} stage failed: {exc}"
-            ) from exc
+            raise ApprovalError("APPROVAL_STAGE_FAILED", f"{verb} stage failed: {exc}") from exc
         finally:
             connection.close()
 

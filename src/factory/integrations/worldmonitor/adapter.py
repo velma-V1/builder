@@ -96,7 +96,10 @@ class WorldMonitorAdapter:
 
     def normalize(self, raw: Mapping[str, object], category: Category) -> IntelligenceRecord:
         return normalize_record(
-            raw, category=category, now=self._clock(), ttl_s=self._retention.normalized_ttl_s,
+            raw,
+            category=category,
+            now=self._clock(),
+            ttl_s=self._retention.normalized_ttl_s,
             approved_source_domains=self._approved_source_domains,
         )
 
@@ -118,6 +121,9 @@ class WorldMonitorAdapter:
         """The ONLY way WorldMonitor obtains AI: hand a capability request to the Builder router."""
         return self._router.request(
             AiCapabilityRequest(
-                task_id=task_id, capability=capability, prompt=prompt, privacy=privacy,
+                task_id=task_id,
+                capability=capability,
+                prompt=prompt,
+                privacy=privacy,
             )
         )

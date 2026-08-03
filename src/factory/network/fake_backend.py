@@ -18,9 +18,7 @@ from factory.network.models import (
     NetworkRequest,
 )
 
-_ALLOWED_HOST = frozenset(
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-"
-)
+_ALLOWED_HOST = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-")
 
 # Names that resolve to host/orchestration infrastructure and must not be reachable by default.
 _INFRA_HOSTNAMES = frozenset({"localhost", "host.docker.internal", "metadata.google.internal"})

@@ -82,12 +82,14 @@ def test_crash_recovery_marks_stale(journal: sqlite3.Connection) -> None:
     # Restart under a new epoch: recovery query finds the orphaned RUNNING row.
     orphans = journal.execute(
         "SELECT task_id, attempt_seq FROM execution_journal "
-        "WHERE status='RUNNING' AND process_epoch != ?", (8,),
+        "WHERE status='RUNNING' AND process_epoch != ?",
+        (8,),
     ).fetchall()
     assert orphans == [("T1", 1)]
     journal.execute(
         "UPDATE execution_journal SET status='STALE', updated_at_ms=2 "
-        "WHERE status='RUNNING' AND process_epoch != ?", (8,),
+        "WHERE status='RUNNING' AND process_epoch != ?",
+        (8,),
     )
     remaining = journal.execute(
         "SELECT COUNT(*) FROM execution_journal WHERE status='RUNNING'"

@@ -62,8 +62,12 @@ def inspect(
         )
         try:
             result = authority.evaluate(
-                staged.path, operation="write", allowed=list(approved_scope),
-                forbidden=[], read_only=[], active_exclusive_paths=[],
+                staged.path,
+                operation="write",
+                allowed=list(approved_scope),
+                forbidden=[],
+                read_only=[],
+                active_exclusive_paths=[],
             )
         except ContractError as exc:  # pragma: no cover - evaluate normalizes internally
             findings.append(InspectionFinding(FindingKind.PATH_ESCAPE, staged.path, str(exc)))

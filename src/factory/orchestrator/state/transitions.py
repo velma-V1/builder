@@ -4,6 +4,14 @@
 source document and this code can be diffed directly. `TransitionPolicy` is a pure, stateless
 decision function; it applies no transition and touches no storage. No client may invent a
 transition (01L §3.1) — every writer consults this before applying a state change.
+
+Phase 3B additive extension (explicitly specified lifecycle: ``AWAITING_APPROVAL -> PROMOTING ->
+COMPLETE``, with ``REJECTED`` as an approval-denied terminal outcome):
+``AWAITING_APPROVAL`` gained two new legal edges, ``PROMOTING`` and ``REJECTED``; ``PROMOTING`` is
+a new key with edges to ``COMPLETE`` (promotion succeeded) and ``FAILED`` (promotion failed —
+composes with the *already-legal* ``FAILED -> ROLLED_BACK`` edge for automatic rollback, so no new
+edge was needed there). ``REJECTED`` has no outgoing edges (a sink, like ``CANCELLED``) since
+nothing was promoted yet when a task is rejected. Every other row is untouched.
 """
 
 from __future__ import annotations
@@ -41,6 +49,8 @@ ALLOWED_TRANSITIONS: Mapping[TaskState, frozenset[TaskState]] = {
             TaskState.VERIFYING,
             TaskState.BLOCKED,
             TaskState.STOPPING,
+            TaskState.PROMOTING,
+            TaskState.REJECTED,
         }
     ),
     TaskState.VERIFYING: frozenset(
@@ -66,6 +76,7 @@ ALLOWED_TRANSITIONS: Mapping[TaskState, frozenset[TaskState]] = {
     ),
     TaskState.QUARANTINED: frozenset({TaskState.BLOCKED, TaskState.FAILED, TaskState.STOPPING}),
     TaskState.STOPPING: frozenset({TaskState.CANCELLED}),
+    TaskState.PROMOTING: frozenset({TaskState.COMPLETE, TaskState.FAILED}),
     TaskState.COMPLETE: frozenset({TaskState.ROLLED_BACK}),
     TaskState.FAILED: frozenset({TaskState.ROLLED_BACK}),
 }

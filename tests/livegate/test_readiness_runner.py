@@ -84,7 +84,8 @@ def test_build_report_is_not_ready_when_sqlite_below_floor(monkeypatch: pytest.M
     below_floor_version = (3, 50, 4)
     original_evaluate = runner.evaluate_sqlite_compliance
     monkeypatch.setattr(
-        runner, "evaluate_sqlite_compliance",
+        runner,
+        "evaluate_sqlite_compliance",
         lambda: original_evaluate(version=below_floor_version),
     )
     report = runner.build_report()
@@ -97,7 +98,8 @@ def test_build_report_is_ready_for_sqlite_when_at_floor(monkeypatch: pytest.Monk
     # Symmetric case: an engine that meets the floor must not block readiness on this gate.
     original_evaluate = runner.evaluate_sqlite_compliance
     monkeypatch.setattr(
-        runner, "evaluate_sqlite_compliance",
+        runner,
+        "evaluate_sqlite_compliance",
         lambda: original_evaluate(version=(3, 51, 3)),
     )
     report = runner.build_report()

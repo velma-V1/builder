@@ -716,3 +716,25 @@ the PH-6 simulated workstream core, demonstrated end-to-end against the PH-4/PH-
   isolation unmodified; no merge, no promotion. `PROM-PH6 := NOT_AUTHORIZED`.
 - **Next:** await operator decision on installation + live validation (PH-4/PH-5/PH-6 live gates) or
   integration/merge; PREINSTALLATION for PH-4/PH-5/PH-6 is COMPLETE.
+
+### Phase 3B worker verify/promote implementation - 2026-08-02
+
+#### Status: `IMPLEMENTED CANDIDATE — INDEPENDENT REVIEW PENDING`
+
+- **Linux and native-Windows tested implementation commit:** `8c05e6c` after milestone commits `0c65b21`,
+  `3ebdedd`, `41056d6`, `9eca3db`, `f91bace`, `6f1392e`, validation repair `c25bb4c`, and launcher
+  portability repair `475c528`, and six-blocker remediation `8c05e6c`.
+- **Delivered:** independent verification; append-only evidence/manifests; explicit approval binding;
+  serialized promotion and rollback; restart reconciliation; lifecycle API; Phase 3B dashboard.
+- **Current PASS evidence:** Linux collection 1747; restricted suite 1660 passed with 87 explicitly
+  classified environment skips; loopback 85/85 outside the restricted socket sandbox; Section 1
+  324 passed and 1 native-Windows skip at 96.86% branch coverage; Ruff format/lint; mypy 307 files;
+  lockfile; frontend typecheck/lint/45 tests/build; Section 2 18/18; RPH3 10/10; PH-4 10/10; focused lifecycle and
+  failure-path tests.
+- **Native-Windows evidence:** at exact implementation commit `8c05e6c`, the focused launcher,
+  creation-flag, process-group, and bounded cleanup gate passed 8/8 and both junction escape gates
+  passed 2/2. No required platform check remains environment-blocked.
+- **Review status:** the six earlier findings have focused remediation and regression coverage. A
+  fresh independent review of the final evidence-only PR head remains required.
+- **Boundary:** draft PR #18 was pushed; no merge, deploy, release, or protected-ref promotion was
+  performed.

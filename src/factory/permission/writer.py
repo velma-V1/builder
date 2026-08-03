@@ -156,9 +156,7 @@ class _PermissionWriter:
         try:
             connection.execute("BEGIN IMMEDIATE")
             if verb == "issue":
-                connection.execute(
-                    "DELETE FROM permission_grants WHERE grant_id = ?", (grant_id,)
-                )
+                connection.execute("DELETE FROM permission_grants WHERE grant_id = ?", (grant_id,))
             else:
                 connection.execute(
                     "UPDATE permission_grants SET state = prior_state, commit_state = 'COMMITTED', "

@@ -114,17 +114,28 @@ def run_simulated_ip3() -> SimulatedIP3Report:
         sandbox_ids.append(handle.sandbox_id)
         decision = router.route(
             RouteRequest(
-                contract.workstream_id, "s1", TaskType.ROUTINE_CODING,
+                contract.workstream_id,
+                "s1",
+                TaskType.ROUTINE_CODING,
                 ResourceProfile(ResourceClass.GPU_LIGHT, 1000, 1000, 1, 100),
             )
         )
         routes.append(decision.selected.route_key)
 
-        lane = Lane(f"lane-{index}", contract.workstream_id, LaneState.PROPOSED, checkout_id,
-                    handle.sandbox_id, decision.selected.route_key)
+        lane = Lane(
+            f"lane-{index}",
+            contract.workstream_id,
+            LaneState.PROPOSED,
+            checkout_id,
+            handle.sandbox_id,
+            decision.selected.route_key,
+        )
         for target in (
-            LaneState.APPROVED, LaneState.READY, LaneState.ACTIVE,
-            LaneState.VERIFICATION, LaneState.HANDOFF,
+            LaneState.APPROVED,
+            LaneState.READY,
+            LaneState.ACTIVE,
+            LaneState.VERIFICATION,
+            LaneState.HANDOFF,
         ):
             lane = lanes_machine.transition(lane, target, cause="advance", actor="scheduler")
         lanes.append(lane)

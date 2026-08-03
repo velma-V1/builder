@@ -34,6 +34,8 @@ LEGAL: frozenset[tuple[TaskState, TaskState]] = frozenset(
         (TaskState.AWAITING_APPROVAL, TaskState.VERIFYING),
         (TaskState.AWAITING_APPROVAL, TaskState.BLOCKED),
         (TaskState.AWAITING_APPROVAL, TaskState.STOPPING),
+        (TaskState.AWAITING_APPROVAL, TaskState.PROMOTING),
+        (TaskState.AWAITING_APPROVAL, TaskState.REJECTED),
         (TaskState.VERIFYING, TaskState.COMPLETE),
         (TaskState.VERIFYING, TaskState.RUNNING),
         (TaskState.VERIFYING, TaskState.AWAITING_APPROVAL),
@@ -53,6 +55,8 @@ LEGAL: frozenset[tuple[TaskState, TaskState]] = frozenset(
         (TaskState.QUARANTINED, TaskState.FAILED),
         (TaskState.QUARANTINED, TaskState.STOPPING),
         (TaskState.STOPPING, TaskState.CANCELLED),
+        (TaskState.PROMOTING, TaskState.COMPLETE),
+        (TaskState.PROMOTING, TaskState.FAILED),
         (TaskState.COMPLETE, TaskState.ROLLED_BACK),
         (TaskState.FAILED, TaskState.ROLLED_BACK),
     }
@@ -84,16 +88,24 @@ def test_allowed_transitions_table_matches_documented_legal_set() -> None:
     assert flattened == set(LEGAL)
 
 
-def test_terminal_states_are_the_three_documented() -> None:
+def test_terminal_states_are_the_four_documented() -> None:
+    # Phase 3B added REJECTED (approval-denied terminal outcome) to the original three.
     assert (
-        frozenset({TaskState.CANCELLED, TaskState.COMPLETE, TaskState.ROLLED_BACK})
+        frozenset(
+            {
+                TaskState.CANCELLED,
+                TaskState.COMPLETE,
+                TaskState.ROLLED_BACK,
+                TaskState.REJECTED,
+            }
+        )
         == TERMINAL_STATES
     )
 
 
 def test_truly_terminal_states_have_no_outgoing_transitions() -> None:
-    # CANCELLED and ROLLED_BACK are sinks; COMPLETE legally goes only to ROLLED_BACK.
+    # CANCELLED, ROLLED_BACK, and REJECTED are sinks; COMPLETE legally goes only to ROLLED_BACK.
     policy = TransitionPolicy()
-    for sink in (TaskState.CANCELLED, TaskState.ROLLED_BACK):
+    for sink in (TaskState.CANCELLED, TaskState.ROLLED_BACK, TaskState.REJECTED):
         for new in TaskState:
             assert not policy.is_legal(sink, new)

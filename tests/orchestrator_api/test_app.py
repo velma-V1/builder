@@ -6,6 +6,8 @@ No approve/reject route exists -- confirmed absent, not merely untested.
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
+from typing import cast
 
 import pytest
 from starlette.applications import Starlette
@@ -15,7 +17,12 @@ from factory.orchestrator.store.runtime_state import (
     SQLiteOrchestratorStateReader,
     _OrchestratorStateWriter,
 )
-from factory.orchestrator_api import TaskOperatorService, create_app
+from factory.orchestrator_api import (
+    OperatorSession,
+    Phase3BLifecycleService,
+    TaskOperatorService,
+    create_app,
+)
 
 _SUBMIT_ROUTE = "/api/orchestrator/tasks"
 
@@ -51,9 +58,7 @@ def test_submit_repeat_idempotency_key_returns_200_same_task(client: TestClient)
 @pytest.mark.parametrize(
     "missing_field", ["project_ref", "workstream_id", "description", "idempotency_key"]
 )
-def test_submit_missing_required_field_returns_400(
-    client: TestClient, missing_field: str
-) -> None:
+def test_submit_missing_required_field_returns_400(client: TestClient, missing_field: str) -> None:
     body = _submit_body()
     del body[missing_field]
     response = client.post(_SUBMIT_ROUTE, json=body)
@@ -191,20 +196,92 @@ def test_submit_route_rejects_other_methods(client: TestClient, method: str) -> 
     assert response.status_code == 405
 
 
-def test_no_approve_route_exists(client: TestClient) -> None:
+def test_approve_route_fails_closed_when_phase3b_is_not_configured(client: TestClient) -> None:
     task_id = client.post(_SUBMIT_ROUTE, json=_submit_body(idempotency_key="no-approve")).json()[
         "task_id"
     ]
-    response = client.post(f"{_SUBMIT_ROUTE}/{task_id}/approve")
-    assert response.status_code == 404
+    response = client.post(
+        f"{_SUBMIT_ROUTE}/{task_id}/approve",
+        json={
+            "approval_id": "apr-test",
+            "operator": "operator",
+            "confirmed_destructive": True,
+        },
+    )
+    assert response.status_code == 503
 
 
-def test_no_reject_route_exists(client: TestClient) -> None:
+def test_reject_route_fails_closed_when_phase3b_is_not_configured(client: TestClient) -> None:
     task_id = client.post(_SUBMIT_ROUTE, json=_submit_body(idempotency_key="no-reject")).json()[
         "task_id"
     ]
-    response = client.post(f"{_SUBMIT_ROUTE}/{task_id}/reject")
-    assert response.status_code == 404
+    response = client.post(
+        f"{_SUBMIT_ROUTE}/{task_id}/reject",
+        json={"approval_id": "apr-test", "operator": "operator", "reason": "declined"},
+    )
+    assert response.status_code == 503
+
+
+def test_approval_routes_require_runtime_session_credential(
+    service: TaskOperatorService,
+) -> None:
+    client = TestClient(
+        create_app(
+            service=service,
+            operator_session=OperatorSession(credential="runtime-secret", operator="alice"),
+        )
+    )
+
+    missing = client.post(
+        f"{_SUBMIT_ROUTE}/task/approve",
+        json={"approval_id": "apr", "confirmed_destructive": True},
+    )
+    wrong = client.post(
+        f"{_SUBMIT_ROUTE}/task/reject",
+        headers={"authorization": "Bearer wrong"},
+        json={"approval_id": "apr", "reason": "no"},
+    )
+
+    assert missing.status_code == 401
+    assert wrong.status_code == 401
+
+
+def test_authenticated_operator_identity_is_derived_server_side(
+    writer: _OrchestratorStateWriter, reader: SQLiteOrchestratorStateReader
+) -> None:
+    operators: list[str] = []
+
+    class FakePhase3B:
+        def approve(
+            self, approval_id: str, *, operator: str, confirmed_destructive: bool
+        ) -> SimpleNamespace:
+            operators.append(operator)
+            return SimpleNamespace(outcome=SimpleNamespace(value="PROMOTED"))
+
+    service = TaskOperatorService(
+        writer=writer,
+        reader=reader,
+        phase3b=cast(Phase3BLifecycleService, FakePhase3B()),
+    )
+    client = TestClient(
+        create_app(
+            service=service,
+            operator_session=OperatorSession(credential="runtime-secret", operator="alice"),
+        )
+    )
+
+    response = client.post(
+        f"{_SUBMIT_ROUTE}/task/approve",
+        headers={"authorization": "Bearer runtime-secret"},
+        json={
+            "approval_id": "apr",
+            "operator": "attacker-controlled",
+            "confirmed_destructive": True,
+        },
+    )
+
+    assert response.status_code == 200
+    assert operators == ["alice"]
 
 
 def test_forced_unexpected_failure_returns_controlled_503(
@@ -219,3 +296,6 @@ def test_forced_unexpected_failure_returns_controlled_503(
     body_text = response.text
     for leak in ("Traceback", "RuntimeError", ".py", "/home/"):
         assert leak not in body_text
+
+
+pytestmark = pytest.mark.loopback

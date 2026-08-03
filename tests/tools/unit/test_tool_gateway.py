@@ -33,8 +33,10 @@ class _Exec:
 
 def _call(**kw: object) -> ToolCall:
     return ToolCall(
-        tool_id=str(kw.get("tool_id", "formatter")), version=str(kw.get("version", "1.0")),
-        args=(), task_id="task-1",
+        tool_id=str(kw.get("tool_id", "formatter")),
+        version=str(kw.get("version", "1.0")),
+        args=(),
+        task_id="task-1",
         requested_limits=kw.get("requested_limits"),  # type: ignore[arg-type]
     )
 
@@ -57,11 +59,10 @@ def test_no_executor_fails_closed(
     assert result.reason_code == "NO_SANDBOX_EXECUTOR"
 
 
-def test_unregistered_denied(
-    gateway: ToolGateway, execute_grant: GrantFactory
-) -> None:
-    result = gateway.invoke(_call(tool_id="ghost"), execute_grant(tool="ghost"),
-                            executor=_Exec(b"{}"))
+def test_unregistered_denied(gateway: ToolGateway, execute_grant: GrantFactory) -> None:
+    result = gateway.invoke(
+        _call(tool_id="ghost"), execute_grant(tool="ghost"), executor=_Exec(b"{}")
+    )
     assert isinstance(result, Denial)
     assert result.reason_code == "TOOL_NOT_REGISTERED"
 
@@ -76,7 +77,9 @@ def test_grant_bound_to_other_tool_denied(
 
 
 def test_revoked_grant_denied_toctou(
-    gateway: ToolGateway, register_tool: RegisterTool, execute_grant: GrantFactory,
+    gateway: ToolGateway,
+    register_tool: RegisterTool,
+    execute_grant: GrantFactory,
     permission_engine: PermissionEngine,
 ) -> None:
     register_tool()
@@ -92,8 +95,15 @@ def test_limit_increase_routes_to_approval(
 ) -> None:
     register_tool()
     over = ResourceLimits(
-        wall_clock_s=99999, idle_s=10, cpu_s=30, ram_mb=512, storage_mb=100,
-        max_processes=4, max_files=100, max_output_bytes=4096, max_download_bytes=0,
+        wall_clock_s=99999,
+        idle_s=10,
+        cpu_s=30,
+        ram_mb=512,
+        storage_mb=100,
+        max_processes=4,
+        max_files=100,
+        max_output_bytes=4096,
+        max_download_bytes=0,
     )
     result = gateway.invoke(_call(requested_limits=over), execute_grant(), executor=_Exec(b"{}"))
     assert isinstance(result, Denial)
@@ -101,7 +111,9 @@ def test_limit_increase_routes_to_approval(
 
 
 def test_output_validation_rejects_oversized(
-    gateway: ToolGateway, registry: ToolRegistry, register_tool: RegisterTool,
+    gateway: ToolGateway,
+    registry: ToolRegistry,
+    register_tool: RegisterTool,
     execute_grant: GrantFactory,
 ) -> None:
     register_tool(output_schema=OutputSchema(kind="text", max_bytes=4, required_keys=()))
@@ -122,8 +134,15 @@ def test_output_validation_rejects_missing_keys(
 def test_enforce_limits_within_and_over(gateway: ToolGateway) -> None:
     assert gateway.enforce_limits(None).within_limits is True
     over = ResourceLimits(
-        wall_clock_s=1, idle_s=1, cpu_s=1, ram_mb=1, storage_mb=1, max_processes=1, max_files=1,
-        max_output_bytes=99999, max_download_bytes=0,
+        wall_clock_s=1,
+        idle_s=1,
+        cpu_s=1,
+        ram_mb=1,
+        storage_mb=1,
+        max_processes=1,
+        max_files=1,
+        max_output_bytes=99999,
+        max_download_bytes=0,
     )
     assert gateway.enforce_limits(over).within_limits is False
 

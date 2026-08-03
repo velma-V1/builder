@@ -92,7 +92,8 @@ def verify_durable_schema_pinned() -> VerificationResult:
 
     problems = validate_manifest(ROOT)
     return VerificationResult(
-        "Durable schema is SHA-256 pinned + unapplied", not problems,
+        "Durable schema is SHA-256 pinned + unapplied",
+        not problems,
         "ok" if not problems else f"problems={list(problems)}",
     )
 
@@ -122,7 +123,8 @@ def verify_adapter_contract_parity() -> VerificationResult:
     non_adapter = structural_parity_violations(object())
     ok = ollama_v == () and aider_v == () and bool(non_adapter)
     return VerificationResult(
-        "Fakes are structural drop-ins for the live adapter contract", ok,
+        "Fakes are structural drop-ins for the live adapter contract",
+        ok,
         f"ollama={len(ollama_v)}; aider={len(aider_v)}; rejects_non_adapter={bool(non_adapter)}",
     )
 
@@ -133,16 +135,23 @@ def verify_discovery_output_ignored() -> VerificationResult:
         return VerificationResult("Discovery output path is git-ignored", False, "git not found")
     result = subprocess.run(  # noqa: S603 - fixed args, resolved absolute git
         [git, "check-ignore", ".livegate-out/readiness.json"],
-        capture_output=True, text=True, cwd=ROOT,
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
     )
     ok = result.returncode == 0 and ".livegate-out" in result.stdout
-    return VerificationResult("Discovery output path is git-ignored", ok, f"exit {result.returncode}")
+    return VerificationResult(
+        "Discovery output path is git-ignored", ok, f"exit {result.returncode}"
+    )
 
 
 def verify_tests_pass() -> VerificationResult:
     result = subprocess.run(
         [sys.executable, "-m", "pytest", "tests/livegate", "-q"],
-        capture_output=True, text=True, cwd=ROOT, timeout=900,
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        timeout=900,
     )
     tail = result.stdout.strip().splitlines()[-1] if result.stdout.strip() else "no output"
     return VerificationResult("livegate tests pass", result.returncode == 0, tail)
@@ -151,23 +160,43 @@ def verify_tests_pass() -> VerificationResult:
 def verify_ruff() -> VerificationResult:
     result = subprocess.run(
         [
-            sys.executable, "-m", "ruff", "check",
-            "src/factory/livegate", "tests/livegate", "scripts/live_gate",
+            sys.executable,
+            "-m",
+            "ruff",
+            "check",
+            "src/factory/livegate",
+            "tests/livegate",
+            "scripts/live_gate",
         ],
-        capture_output=True, text=True, cwd=ROOT, timeout=900,
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        timeout=900,
     )
-    return VerificationResult("Ruff clean (livegate)", result.returncode == 0, f"exit {result.returncode}")
+    return VerificationResult(
+        "Ruff clean (livegate)", result.returncode == 0, f"exit {result.returncode}"
+    )
 
 
 def verify_mypy() -> VerificationResult:
     result = subprocess.run(
         [
-            sys.executable, "-m", "mypy",
-            "src/factory/livegate", "tests/livegate", "scripts/live_gate", "--strict",
+            sys.executable,
+            "-m",
+            "mypy",
+            "src/factory/livegate",
+            "tests/livegate",
+            "scripts/live_gate",
+            "--strict",
         ],
-        capture_output=True, text=True, cwd=ROOT, timeout=900,
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        timeout=900,
     )
-    return VerificationResult("mypy --strict clean (livegate)", result.returncode == 0, f"exit {result.returncode}")
+    return VerificationResult(
+        "mypy --strict clean (livegate)", result.returncode == 0, f"exit {result.returncode}"
+    )
 
 
 def verify_evidence_present() -> VerificationResult:

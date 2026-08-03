@@ -114,7 +114,8 @@ class SafeMode:
         """Read-only integrity inspection (mutates no authoritative state)."""
         verdict = self._validator.verify_chain()
         return InspectionResult(
-            target=target, valid=verdict.valid,
+            target=target,
+            valid=verdict.valid,
             detail="audit chain verified" if verdict.valid else f"break: {verdict.break_class}",
         )
 
@@ -158,9 +159,14 @@ class SafeMode:
         ).hexdigest()
         return self._audit.append(
             AuditEvent(
-                op_key=op_key, record_kind=RecordKind.COMPLETION, operation_class=1,
-                actor="cmp-diag", action_class="safemode.repair", payload_hash=payload,
-                occurred_at=self.clock.now_iso(), target_ref=action.target,
+                op_key=op_key,
+                record_kind=RecordKind.COMPLETION,
+                operation_class=1,
+                actor="cmp-diag",
+                action_class="safemode.repair",
+                payload_hash=payload,
+                occurred_at=self.clock.now_iso(),
+                target_ref=action.target,
             )
         )
 

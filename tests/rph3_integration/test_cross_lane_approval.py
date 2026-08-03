@@ -51,10 +51,7 @@ def test_real_approval_required_expired_and_replay_results_propagate(
         OperatorDecision(DecisionKind.GRANT, "operator", confirmed_destructive=True),
     )
     assert isinstance(granted, ApprovalRecord)
-    assert (
-        bridge.from_approval(granted, "op-approval-granted").outcome
-        is CrossLaneOutcome.HEALTHY
-    )
+    assert bridge.from_approval(granted, "op-approval-granted").outcome is CrossLaneOutcome.HEALTHY
     clock.advance(11)
     expired = bridge.from_approval(granted, "op-approval-expired")
     assert expired.outcome is CrossLaneOutcome.DENIED

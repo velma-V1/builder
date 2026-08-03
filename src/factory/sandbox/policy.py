@@ -22,9 +22,7 @@ _PROHIBITED: tuple[tuple[str, str, str], ...] = (
 
 def evaluate_spec(spec: SandboxSpec) -> tuple[PolicyViolation, ...]:
     violations: list[PolicyViolation] = [
-        PolicyViolation(code, detail)
-        for attr, code, detail in _PROHIBITED
-        if getattr(spec, attr)
+        PolicyViolation(code, detail) for attr, code, detail in _PROHIBITED if getattr(spec, attr)
     ]
     if spec.run_as_root or spec.uid == 0:
         violations.append(
@@ -40,9 +38,7 @@ def evaluate_spec(spec: SandboxSpec) -> tuple[PolicyViolation, ...]:
             PolicyViolation("CAPS_NOT_DROPPED_DENIED", "all capabilities must be dropped")
         )
     if not spec.no_new_privileges:
-        violations.append(
-            PolicyViolation("NO_NEW_PRIVS_DENIED", "no-new-privileges must be set")
-        )
+        violations.append(PolicyViolation("NO_NEW_PRIVS_DENIED", "no-new-privileges must be set"))
     if spec.published_ports:
         violations.append(
             PolicyViolation(

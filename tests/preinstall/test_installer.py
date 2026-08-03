@@ -15,8 +15,11 @@ class _Spy:
 
 def _mutating_step(spy: _Spy, **over: object) -> InstallStep:
     base: dict[str, object] = dict(
-        step_id="upgrade", description="upgrade sqlite", mutating=True,
-        rollback="downgrade", action=spy.action,
+        step_id="upgrade",
+        description="upgrade sqlite",
+        mutating=True,
+        rollback="downgrade",
+        action=spy.action,
     )
     base.update(over)
     return InstallStep(**base)  # type: ignore[arg-type]
@@ -24,7 +27,7 @@ def _mutating_step(spy: _Spy, **over: object) -> InstallStep:
 
 def test_default_run_is_dry_run_and_mutates_nothing() -> None:
     spy = _Spy()
-    report = Installer("x", (_mutating_step(spy),)).run()   # no apply flag
+    report = Installer("x", (_mutating_step(spy),)).run()  # no apply flag
     assert not report.applied
     assert not report.mutated
     assert spy.calls == 0

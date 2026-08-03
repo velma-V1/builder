@@ -67,46 +67,59 @@ class FakeRenderer:
         if template.template_id in self.fail_template_ids:
             raise RenderFailure(f"render failed for template {template.template_id!r}")
 
-        source_files = tuple(
-            SourceFileRef(
-                path=f"ui/src/pages/{page}.tsx",
-                content_digest=content_digest(template.template_id, "page", page),
-                purpose="page",
+        source_files = (
+            tuple(
+                SourceFileRef(
+                    path=f"ui/src/pages/{page}.tsx",
+                    content_digest=content_digest(template.template_id, "page", page),
+                    purpose="page",
+                )
+                for page in template.pages
             )
-            for page in template.pages
-        ) + tuple(
-            SourceFileRef(
-                path=f"ui/src/widgets/{widget}.tsx",
-                content_digest=content_digest(template.template_id, "widget", widget),
-                purpose="widget",
+            + tuple(
+                SourceFileRef(
+                    path=f"ui/src/widgets/{widget}.tsx",
+                    content_digest=content_digest(template.template_id, "widget", widget),
+                    purpose="widget",
+                )
+                for widget in template.widgets
             )
-            for widget in template.widgets
-        ) + (
-            SourceFileRef(
-                path=f"ui/src/tokens/{template.template_id}.tokens.json",
-                content_digest=_tokens_digest(request.tokens),
-                purpose="tokens",
-            ),
+            + (
+                SourceFileRef(
+                    path=f"ui/src/tokens/{template.template_id}.tokens.json",
+                    content_digest=_tokens_digest(request.tokens),
+                    purpose="tokens",
+                ),
+            )
         )
 
-        tests = tuple(
-            TestInventoryItem("vitest", f"{page}.test.tsx", covers=page) for page in template.pages
-        ) + tuple(
-            TestInventoryItem("testing-library", f"{widget}.render.test.tsx", covers=widget)
-            for widget in template.widgets
-        ) + (
-            TestInventoryItem("playwright", f"{template.template_id}.e2e.spec.ts",
-                               covers=template.template_id),
-            TestInventoryItem("axe-core", f"{template.template_id}.a11y.spec.ts",
-                               covers=template.template_id),
+        tests = (
+            tuple(
+                TestInventoryItem("vitest", f"{page}.test.tsx", covers=page)
+                for page in template.pages
+            )
+            + tuple(
+                TestInventoryItem("testing-library", f"{widget}.render.test.tsx", covers=widget)
+                for widget in template.widgets
+            )
+            + (
+                TestInventoryItem(
+                    "playwright", f"{template.template_id}.e2e.spec.ts", covers=template.template_id
+                ),
+                TestInventoryItem(
+                    "axe-core", f"{template.template_id}.a11y.spec.ts", covers=template.template_id
+                ),
+            )
         )
 
-        evidence = EvidenceBundle((
-            EvidenceItem(
-                "render_plan",
-                f"deterministic fake render produced {len(source_files)} source file(s) and "
-                f"{len(tests)} test(s) for template {template.template_id!r}; no build tool "
-                "invoked",
-            ),
-        ))
+        evidence = EvidenceBundle(
+            (
+                EvidenceItem(
+                    "render_plan",
+                    f"deterministic fake render produced {len(source_files)} source file(s) and "
+                    f"{len(tests)} test(s) for template {template.template_id!r}; no build tool "
+                    "invoked",
+                ),
+            )
+        )
         return RenderResult(source_files, tests, evidence, BuildStatus.DRY_RUN_OK)

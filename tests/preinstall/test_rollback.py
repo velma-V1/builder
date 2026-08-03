@@ -6,10 +6,12 @@ from factory.preinstall.rollback import RollbackPlan, Step
 
 
 def test_complete_plan_has_no_gaps() -> None:
-    plan = RollbackPlan((
-        Step("s1", "read state", mutating=False),
-        Step("s2", "upgrade lib", mutating=True, rollback="downgrade lib", capture_before=True),
-    ))
+    plan = RollbackPlan(
+        (
+            Step("s1", "read state", mutating=False),
+            Step("s2", "upgrade lib", mutating=True, rollback="downgrade lib", capture_before=True),
+        )
+    )
     assert plan.is_complete
     assert plan.incompleteness() == ()
 

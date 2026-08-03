@@ -140,9 +140,7 @@ class AuditValidator:
         prev_hash = GENESIS_ANCHOR
         for rec in records:
             if rec.predecessor_hash != prev_hash:
-                return _broken(
-                    BreakClass.REORDER, rec.sequence, "predecessor_hash does not chain"
-                )
+                return _broken(BreakClass.REORDER, rec.sequence, "predecessor_hash does not chain")
             prev_hash = rec.record_hash
 
         # 6) Truncation: compare the actual tip against an externally-remembered head.

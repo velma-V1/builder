@@ -22,6 +22,18 @@ MIGRATION_SHA256 = {
     "migrations/runtime/0003_memory.sql": (
         "65e0a4d16b84a49b205b1f2e48c91e11ae6dc48e9c179e318da3026283e10587"
     ),
+    "migrations/runtime/0004_workstream_membership.sql": (
+        "0274e9f2933b543277a4c50e556f8cc87762a69291e6b882d173c89811c4dc5f"
+    ),
+    "migrations/runtime/0005_task_requests.sql": (
+        "a68ca07b5c48d494fc42e714828e6c54c3e13f9415b247db1965690b7aa65bc8"
+    ),
+    "migrations/runtime/0006_worker_runs.sql": (
+        "38d36efe4cdbb2397da486271dce79d40fc88a737cca9fc6c8883f6134e0ba71"
+    ),
+    "migrations/runtime/0007_verification_promotion.sql": (
+        "f0f8441120ae50e2732ccb7e3d74899a897b70db33ded820e36ed26697458556"
+    ),
     "migrations/security/0001_security_spine.sql": (
         "099ae959d6f06c6b944925af151d8fa8dd2b65fdffd63660cf2a4355b7878a51"
     ),

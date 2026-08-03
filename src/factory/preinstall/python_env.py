@@ -22,7 +22,11 @@ class PythonKind(StrEnum):
 
 # Markers that identify a uv-managed standalone interpreter (python-build-standalone under uv).
 _UV_MARKERS = (
-    "/uv/python", "/uv/tools", "\\uv\\python", "share/uv/python", "python-build-standalone",
+    "/uv/python",
+    "/uv/tools",
+    "\\uv\\python",
+    "share/uv/python",
+    "python-build-standalone",
 )
 # Distro interpreters live under the system prefixes.
 _DISTRO_PREFIXES = ("/usr/bin/", "/usr/local/bin/", "/bin/", "/usr/lib/")

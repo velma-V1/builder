@@ -74,9 +74,7 @@ def test_head_and_export(writer: AuditWriter, make_event: EventFactory) -> None:
 def test_class3_intent_then_completion_two_records(
     writer: AuditWriter, make_event: EventFactory
 ) -> None:
-    intent = writer.append(
-        make_event("op-c3", record_kind=RecordKind.INTENT, operation_class=3)
-    )
+    intent = writer.append(make_event("op-c3", record_kind=RecordKind.INTENT, operation_class=3))
     completion = writer.append(
         make_event("op-c3", record_kind=RecordKind.COMPLETION, operation_class=3)
     )

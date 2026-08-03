@@ -14,21 +14,21 @@ from factory.routing.models import ExecutionStatus
 
 
 class ProviderErrorCode(StrEnum):
-    AUTH_UNAVAILABLE = "AUTH_UNAVAILABLE"          # 401 / 403
-    MODEL_MISSING = "MODEL_MISSING"                # 404
-    TIMED_OUT = "TIMED_OUT"                        # 408 / transport timeout
-    PROVIDER_CONFLICT = "PROVIDER_CONFLICT"        # 409
-    RATE_LIMITED = "RATE_LIMITED"                  # 429
-    RUNTIME_UNAVAILABLE = "RUNTIME_UNAVAILABLE"    # 5xx / transport failure
-    MALFORMED_OUTPUT = "MALFORMED_OUTPUT"          # bad JSON / schema
+    AUTH_UNAVAILABLE = "AUTH_UNAVAILABLE"  # 401 / 403
+    MODEL_MISSING = "MODEL_MISSING"  # 404
+    TIMED_OUT = "TIMED_OUT"  # 408 / transport timeout
+    PROVIDER_CONFLICT = "PROVIDER_CONFLICT"  # 409
+    RATE_LIMITED = "RATE_LIMITED"  # 429
+    RUNTIME_UNAVAILABLE = "RUNTIME_UNAVAILABLE"  # 5xx / transport failure
+    MALFORMED_OUTPUT = "MALFORMED_OUTPUT"  # bad JSON / schema
     CAPABILITY_UNAVAILABLE = "CAPABILITY_UNAVAILABLE"  # unsupported feature
     RETURNED_MODEL_MISMATCH = "RETURNED_MODEL_MISMATCH"  # server returned a different model
-    PROVIDER_MISMATCH = "PROVIDER_MISMATCH"        # unexpected upstream provider
-    HIDDEN_FALLBACK = "HIDDEN_FALLBACK"            # provider silently substituted
-    NETWORK_DENIED = "NETWORK_DENIED"              # broker refused
+    PROVIDER_MISMATCH = "PROVIDER_MISMATCH"  # unexpected upstream provider
+    HIDDEN_FALLBACK = "HIDDEN_FALLBACK"  # provider silently substituted
+    NETWORK_DENIED = "NETWORK_DENIED"  # broker refused
     SECRET_UNAVAILABLE = "SECRET_UNAVAILABLE"  # noqa: S105 - error code, not a secret
-    RESPONSE_TOO_LARGE = "RESPONSE_TOO_LARGE"      # exceeded byte ceiling
-    OUTPUT_URL_DENIED = "OUTPUT_URL_DENIED"        # output referenced an unapproved URL/domain
+    RESPONSE_TOO_LARGE = "RESPONSE_TOO_LARGE"  # exceeded byte ceiling
+    OUTPUT_URL_DENIED = "OUTPUT_URL_DENIED"  # output referenced an unapproved URL/domain
 
 
 class ProviderError(Exception):

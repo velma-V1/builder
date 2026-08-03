@@ -62,14 +62,17 @@ class IntegrationCoordinator:
                 for c in conflicts
             )
             return IntegrationReport(
-                IntegrationVerdict.BLOCKED_CONFLICTS, remediation=remediation, conflicts=conflicts,
+                IntegrationVerdict.BLOCKED_CONFLICTS,
+                remediation=remediation,
+                conflicts=conflicts,
                 detail="conflicts detected before integration",
             )
 
         # (4) Clean: combine already-approved commits (simulated Promotion/Integration Service).
         promoted = tuple(sorted(r.workstream_id for r in results))
         return IntegrationReport(
-            IntegrationVerdict.INTEGRATED, promoted=promoted,
+            IntegrationVerdict.INTEGRATED,
+            promoted=promoted,
             detail="baselines consistent; no conflicts; local gates passed",
         )
 

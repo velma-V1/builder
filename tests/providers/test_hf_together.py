@@ -38,31 +38,51 @@ _TG = "meta-llama/Llama-3-70B"
 
 def _hf(transport: FakeHttpTransport, g: HostedGrant) -> HuggingFaceAdapter:
     config = ProviderConfiguration(
-        Provider.HUGGING_FACE, "https://router.huggingface.co/v1", "HF_TOKEN",
+        Provider.HUGGING_FACE,
+        "https://router.huggingface.co/v1",
+        "HF_TOKEN",
         frozenset({"router.huggingface.co"}),
     )
     return HuggingFaceAdapter(
-        config, OpenAICompatibleAdapterCore(), transport, network_backend(),
-        secret_backend(), StaticResolver(g), frozenset({_HF}), clock=lambda: 0,
+        config,
+        OpenAICompatibleAdapterCore(),
+        transport,
+        network_backend(),
+        secret_backend(),
+        StaticResolver(g),
+        frozenset({_HF}),
+        clock=lambda: 0,
     )
 
 
 def _together(transport: FakeHttpTransport, g: HostedGrant) -> TogetherAdapter:
     config = ProviderConfiguration(
-        Provider.TOGETHER, "https://api.together.xyz/v1", "TOGETHER_API_KEY",
+        Provider.TOGETHER,
+        "https://api.together.xyz/v1",
+        "TOGETHER_API_KEY",
         frozenset({"api.together.xyz"}),
     )
     return TogetherAdapter(
-        config, OpenAICompatibleAdapterCore(), transport, network_backend(),
-        secret_backend(), StaticResolver(g), frozenset({_TG}), clock=lambda: 0,
+        config,
+        OpenAICompatibleAdapterCore(),
+        transport,
+        network_backend(),
+        secret_backend(),
+        StaticResolver(g),
+        frozenset({_TG}),
+        clock=lambda: 0,
     )
 
 
 @pytest.mark.parametrize("selector", ["", "auto", "fastest", "cheapest"])
 def test_hf_strict_forbids_auto_selection(selector: str) -> None:
     transport = transport_for("chat/completions", json_response(chat_ok(_HF)))
-    g = grant(host="router.huggingface.co", secret_name="HF_TOKEN",  # noqa: S106 - secret name/ref, not a value
-              expected_upstream=selector, strict_upstream=True)
+    g = grant(
+        host="router.huggingface.co",
+        secret_name="HF_TOKEN",  # noqa: S106 - secret name/ref, not a value
+        expected_upstream=selector,
+        strict_upstream=True,
+    )
     result = _hf(transport, g).execute(call(route_key=f"HUGGING_FACE:{_HF}"))
     assert result.error_code == "CAPABILITY_UNAVAILABLE"
 
@@ -83,8 +103,12 @@ def test_hf_provider_mismatch_rejected() -> None:
 
 def test_together_serverless_success_and_endpoint_identity() -> None:
     transport = transport_for("chat/completions", json_response(chat_ok(_TG)))
-    g = grant(host="api.together.xyz", secret_name="TOGETHER_API_KEY",  # noqa: S106 - secret name/ref, not a value
-              strict_upstream=False, endpoint_identity="serverless:together")
+    g = grant(
+        host="api.together.xyz",
+        secret_name="TOGETHER_API_KEY",  # noqa: S106 - secret name/ref, not a value
+        strict_upstream=False,
+        endpoint_identity="serverless:together",
+    )
     result = _together(transport, g).execute(call(route_key=f"TOGETHER:{_TG}"))
     assert result.status is ExecutionStatus.SUCCEEDED
     assert result.fingerprint is not None
@@ -93,8 +117,12 @@ def test_together_serverless_success_and_endpoint_identity() -> None:
 
 def test_together_dedicated_endpoint_identity_preserved() -> None:
     transport = transport_for("chat/completions", json_response(chat_ok(_TG)))
-    g = grant(host="api.together.xyz", secret_name="TOGETHER_API_KEY",  # noqa: S106 - secret name/ref, not a value
-              strict_upstream=False, endpoint_identity="dedicated:ep-123")
+    g = grant(
+        host="api.together.xyz",
+        secret_name="TOGETHER_API_KEY",  # noqa: S106 - secret name/ref, not a value
+        strict_upstream=False,
+        endpoint_identity="dedicated:ep-123",
+    )
     result = _together(transport, g).execute(call(route_key=f"TOGETHER:{_TG}"))
     assert result.fingerprint is not None
     assert result.fingerprint.endpoint_identity == "dedicated:ep-123"
@@ -104,17 +132,28 @@ def test_core_capability_enforcement_for_unsupported_feature() -> None:
     # Directly exercise the core's capability gate (tools requested but not advertised).
     core = OpenAICompatibleAdapterCore()
     config = ProviderConfiguration(
-        Provider.TOGETHER, "https://api.together.xyz/v1", "TOGETHER_API_KEY",
+        Provider.TOGETHER,
+        "https://api.together.xyz/v1",
+        "TOGETHER_API_KEY",
         frozenset({"api.together.xyz"}),
     )
     transport = transport_for("chat/completions", json_response(chat_ok(_TG)))
     g = grant(host="api.together.xyz", secret_name="TOGETHER_API_KEY", strict_upstream=False)  # noqa: S106 - secret name/ref, not a value
-    brokered = BrokeredHttp(transport, BrokeredContext(
-        task_id="T1", privacy=Privacy.CLOUD_ALLOWED, network=network_backend(),
-        approval=g.approval, secret=secret_backend(), secret_ref=g.secret_ref, now=0,
-    ))
+    brokered = BrokeredHttp(
+        transport,
+        BrokeredContext(
+            task_id="T1",
+            privacy=Privacy.CLOUD_ALLOWED,
+            network=network_backend(),
+            approval=g.approval,
+            secret=secret_backend(),
+            secret_ref=g.secret_ref,
+            now=0,
+        ),
+    )
     chat = ChatRequest(
-        model=_TG, messages=(ChatMessage("user", "hi"),),
+        model=_TG,
+        messages=(ChatMessage("user", "hi"),),
         require=frozenset({Capability.TOOLS}),
         advertised=ProviderCapability(frozenset({Capability.CHAT})),
     )

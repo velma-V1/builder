@@ -16,7 +16,7 @@ class UIStudioErrorCode(StrEnum):
     # Requirements / compilation
     REQUIREMENT_UNPARSEABLE = "REQUIREMENT_UNPARSEABLE"
     TEMPLATE_UNKNOWN = "TEMPLATE_UNKNOWN"
-    COMPONENT_UNKNOWN = "COMPONENT_UNKNOWN"          # not in the component registry → denied
+    COMPONENT_UNKNOWN = "COMPONENT_UNKNOWN"  # not in the component registry → denied
     PAGE_UNKNOWN = "PAGE_UNKNOWN"
     WIDGET_UNKNOWN = "WIDGET_UNKNOWN"
 
@@ -41,11 +41,11 @@ class UIStudioErrorCode(StrEnum):
     RENDER_FAILED = "RENDER_FAILED"
     RENDER_TIMED_OUT = "RENDER_TIMED_OUT"
     PREVIEW_TRANSITION_ILLEGAL = "PREVIEW_TRANSITION_ILLEGAL"
-    ARTIFACT_INCOMPLETE = "ARTIFACT_INCOMPLETE"       # missing a required artifact section
+    ARTIFACT_INCOMPLETE = "ARTIFACT_INCOMPLETE"  # missing a required artifact section
     UNRESOLVED_RISK_UNACKNOWLEDGED = "UNRESOLVED_RISK_UNACKNOWLEDGED"
 
     # Activation boundary
-    INSTALL_DENIED = "INSTALL_DENIED"                 # any attempt to install/activate is refused
+    INSTALL_DENIED = "INSTALL_DENIED"  # any attempt to install/activate is refused
 
 
 class UIStudioError(Exception):

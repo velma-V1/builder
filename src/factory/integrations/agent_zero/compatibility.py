@@ -29,24 +29,35 @@ def check_compatibility(
     reported = _parse(worker_reported_version)
     if contract is None:
         return CompatibilityReport(
-            builder_contract_version, worker_reported_version, compatible=False,
+            builder_contract_version,
+            worker_reported_version,
+            compatible=False,
             reason="builder_contract_version is unparseable (internal defect)",
         )
     if reported is None:
         return CompatibilityReport(
-            builder_contract_version, worker_reported_version, compatible=False,
+            builder_contract_version,
+            worker_reported_version,
+            compatible=False,
             reason="worker_reported_version is unparseable",
         )
     if reported[0] != contract[0]:
         return CompatibilityReport(
-            builder_contract_version, worker_reported_version, compatible=False,
+            builder_contract_version,
+            worker_reported_version,
+            compatible=False,
             reason=f"major version mismatch: builder={contract[0]} worker={reported[0]}",
         )
     if reported > contract:
         return CompatibilityReport(
-            builder_contract_version, worker_reported_version, compatible=False,
+            builder_contract_version,
+            worker_reported_version,
+            compatible=False,
             reason="worker reports a version newer than Builder's pinned contract",
         )
     return CompatibilityReport(
-        builder_contract_version, worker_reported_version, compatible=True, reason="compatible",
+        builder_contract_version,
+        worker_reported_version,
+        compatible=True,
+        reason="compatible",
     )

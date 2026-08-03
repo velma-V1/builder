@@ -39,8 +39,6 @@ def test_incomplete_stream_reports_heartbeat_loss() -> None:
 def test_cancel_before_any_event() -> None:
     token = CancelToken()
     token.cancel()
-    result = TaskExecutor().execute(
-        "TASK-001", [_out(b"should-not-run")], cancel_token=token
-    )
+    result = TaskExecutor().execute("TASK-001", [_out(b"should-not-run")], cancel_token=token)
     assert result.failure_cause == "cancelled"
     assert result.events_captured == 1  # only START recorded

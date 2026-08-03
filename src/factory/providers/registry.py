@@ -29,9 +29,9 @@ class ApprovedHostedRoute:
     cost_ceiling_usd: float
     timeout_s: float
     context_limit: int
-    model_version: str = ""            # exact version/digest when applicable (e.g. Replicate)
-    upstream_provider: str = ""        # required for strict routes
-    fallback_allowed: bool = False     # adapter fallback is always forbidden; router-only
+    model_version: str = ""  # exact version/digest when applicable (e.g. Replicate)
+    upstream_provider: str = ""  # required for strict routes
+    fallback_allowed: bool = False  # adapter fallback is always forbidden; router-only
     require_zdr: bool = False
 
     @property

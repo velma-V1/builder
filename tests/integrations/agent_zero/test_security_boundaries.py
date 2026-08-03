@@ -11,6 +11,7 @@ from __future__ import annotations
 import dataclasses
 import inspect
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -42,7 +43,10 @@ _RESOURCES = ResourceLimits(cpu_millis=1000, memory_mb=512, disk_mb=256, pids=32
 
 def _spec(**over: object) -> SandboxSpec:
     base: dict[str, object] = dict(
-        task_id="t1", workstream_id="ws1", image="agent-zero-worker", image_version="0.1",
+        task_id="t1",
+        workstream_id="ws1",
+        image="agent-zero-worker",
+        image_version="0.1",
         resources=_RESOURCES,
     )
     base.update(over)
@@ -51,7 +55,9 @@ def _spec(**over: object) -> SandboxSpec:
 
 def _adapter(**over: object) -> AgentZeroAdapter:
     base: dict[str, object] = dict(
-        transport=FakeAgentZeroTransport(()), model_router=model_router(), clock=lambda: 0,
+        transport=FakeAgentZeroTransport(()),
+        model_router=model_router(),
+        clock=lambda: 0,
     )
     base.update(over)
     return AgentZeroAdapter(**base)  # type: ignore[arg-type]
@@ -97,7 +103,22 @@ def test_symlink_escape_is_denied(tmp_path: Path) -> None:
 
 @pytest.mark.skipif(sys.platform != "win32", reason="junction escape requires Windows semantics")
 def test_junction_escape_is_denied_on_windows(tmp_path: Path) -> None:  # pragma: no cover
-    pytest.skip("classified NOT_TESTABLE on this platform; see test_symlink_escape_is_denied")
+    root = tmp_path / "project"
+    root.mkdir()
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "secret.txt").write_text("secret", encoding="utf-8")
+    subprocess.run(  # noqa: S603 -- fixed command; paths come from pytest's temp directory
+        [os.environ["COMSPEC"], "/d", "/c", "mklink", "/J", str(root / "link"), str(outside)],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    authority = PathAuthority(project_root=root)
+    with pytest.raises(AgentZeroError) as excinfo:
+        evaluate_output_path(authority, "link/secret.txt", allowed=("**",))
+    assert excinfo.value.code is AgentZeroErrorCode.PATH_DENIED
 
 
 def test_sibling_prefix_bypass_is_denied(tmp_path: Path) -> None:
@@ -158,8 +179,13 @@ def test_network_call_with_no_approval_contract_is_denied() -> None:
     denied_policy = AgentZeroNetworkPolicy(
         task_id="t1",
         approval=NetworkApproval(
-            approval_id="none", task_id="t1", destinations=frozenset(), protocols=frozenset(),
-            methods=frozenset(), expires_at=0, max_total_bytes=0,
+            approval_id="none",
+            task_id="t1",
+            destinations=frozenset(),
+            protocols=frozenset(),
+            methods=frozenset(),
+            expires_at=0,
+            max_total_bytes=0,
         ),
     )
     brokered = BrokeredAgentZeroHttp(FakeHttpTransport(()), network, denied_policy, now=1)
@@ -243,7 +269,10 @@ def test_privileged_sandbox_is_denied_generically() -> None:
 
 def test_writable_host_project_mount_is_denied() -> None:
     mount = MountSpec(
-        host_path="/host/project", container_path="/work", mode=MountMode.RW, is_host_project=True,
+        host_path="/host/project",
+        container_path="/work",
+        mode=MountMode.RW,
+        is_host_project=True,
     )
     with pytest.raises(AgentZeroError):
         enforce_sandbox_boundary(_spec(mounts=(mount,)))
@@ -268,19 +297,30 @@ def test_direct_main_access_is_denied(branch: str) -> None:
 def test_work_order_construction_refuses_a_main_branch_ref() -> None:
     with pytest.raises(AgentZeroError) as excinfo:
         build_work_order(
-            work_order_id="wo-1", task_id="t1", workstream_id="ws1", branch_ref="main",
-            instructions="do work", granted_tools=frozenset({"read_file"}),
-            allowed_path_globs=("src/**",), resources=work_order().resources, timeout_s=60,
+            work_order_id="wo-1",
+            task_id="t1",
+            workstream_id="ws1",
+            branch_ref="main",
+            instructions="do work",
+            granted_tools=frozenset({"read_file"}),
+            allowed_path_globs=("src/**",),
+            resources=work_order().resources,
+            timeout_s=60,
         )
     assert excinfo.value.code is AgentZeroErrorCode.DIRECT_MAIN_DENIED
 
 
 def test_work_order_construction_accepts_a_feature_branch_ref() -> None:
     order = build_work_order(
-        work_order_id="wo-1", task_id="t1", workstream_id="ws1",
-        branch_ref="feature/agent-zero-fix", instructions="do work",
-        granted_tools=frozenset({"read_file"}), allowed_path_globs=("src/**",),
-        resources=work_order().resources, timeout_s=60,
+        work_order_id="wo-1",
+        task_id="t1",
+        workstream_id="ws1",
+        branch_ref="feature/agent-zero-fix",
+        instructions="do work",
+        granted_tools=frozenset({"read_file"}),
+        allowed_path_globs=("src/**",),
+        resources=work_order().resources,
+        timeout_s=60,
     )
     assert order.branch_ref == "feature/agent-zero-fix"
 
@@ -293,7 +333,8 @@ def test_work_order_construction_accepts_a_feature_branch_ref() -> None:
 def test_self_certification_claim_is_denied_at_intake() -> None:
     adapter = _adapter()
     result = AgentZeroResult(
-        work_order_id="wo-1", worker_claimed_outcome=WorkerOutcome.SUCCESS,
+        work_order_id="wo-1",
+        worker_claimed_outcome=WorkerOutcome.SUCCESS,
         worker_self_report={"verified": "true"},
     )
     with pytest.raises(AgentZeroError) as excinfo:
@@ -304,7 +345,8 @@ def test_self_certification_claim_is_denied_at_intake() -> None:
 def test_self_promotion_claim_is_denied_at_intake() -> None:
     adapter = _adapter()
     result = AgentZeroResult(
-        work_order_id="wo-1", worker_claimed_outcome=WorkerOutcome.SUCCESS,
+        work_order_id="wo-1",
+        worker_claimed_outcome=WorkerOutcome.SUCCESS,
         worker_self_report={"promoted": "true"},
     )
     with pytest.raises(AgentZeroError) as excinfo:
@@ -315,7 +357,8 @@ def test_self_promotion_claim_is_denied_at_intake() -> None:
 def test_honest_result_with_no_authority_claims_passes_intake() -> None:
     adapter = _adapter()
     result = AgentZeroResult(
-        work_order_id="wo-1", worker_claimed_outcome=WorkerOutcome.SUCCESS,
+        work_order_id="wo-1",
+        worker_claimed_outcome=WorkerOutcome.SUCCESS,
         worker_self_report={"note": "ran unit tests locally"},
     )
     assert adapter.intake_result(result) is result

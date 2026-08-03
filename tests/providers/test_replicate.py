@@ -24,7 +24,9 @@ _OWNER, _NAME, _VERSION = "acme", "img-gen", "v-pinned-abc123"
 _MODEL = f"{_OWNER}/{_NAME}"
 _HOST = "api.replicate.com"
 _ROUTE = ApprovedReplicateRoute(
-    _OWNER, _NAME, _VERSION,
+    _OWNER,
+    _NAME,
+    _VERSION,
     input_schema_keys=frozenset({"prompt", "width"}),
     approved_output_domains=frozenset({"replicate.delivery"}),
 )
@@ -36,13 +38,21 @@ def _resp(payload: dict[str, object], status: int = 200) -> HttpResponse:
 
 def _adapter(exchanges: tuple[FakeExchange, ...], *, max_polls: int = 5) -> ReplicateAdapter:
     config = ProviderConfiguration(
-        Provider.REPLICATE, "https://api.replicate.com/v1", "REPLICATE_API_TOKEN",
+        Provider.REPLICATE,
+        "https://api.replicate.com/v1",
+        "REPLICATE_API_TOKEN",
         frozenset({_HOST}),
     )
     g = grant(host=_HOST, secret_name="REPLICATE_API_TOKEN")  # noqa: S106 - secret name/ref, not a value
     return ReplicateAdapter(
-        config, FakeHttpTransport(exchanges), FakeNetworkBackend(), secret_backend(),
-        StaticResolver(g), {_MODEL: _ROUTE}, clock=lambda: 0, max_polls=max_polls,
+        config,
+        FakeHttpTransport(exchanges),
+        FakeNetworkBackend(),
+        secret_backend(),
+        StaticResolver(g),
+        {_MODEL: _ROUTE},
+        clock=lambda: 0,
+        max_polls=max_polls,
     )
 
 
@@ -65,9 +75,17 @@ def _call() -> CallRequest:
 def test_create_processing_succeeded() -> None:
     exchanges = (
         FakeExchange(_is_create, _resp({"id": "p1", "status": "processing", "version": _VERSION})),
-        FakeExchange(_is_poll, _resp(
-            {"id": "p1", "status": "succeeded", "version": _VERSION,
-             "output": ["https://replicate.delivery/out.png"]})),
+        FakeExchange(
+            _is_poll,
+            _resp(
+                {
+                    "id": "p1",
+                    "status": "succeeded",
+                    "version": _VERSION,
+                    "output": ["https://replicate.delivery/out.png"],
+                }
+            ),
+        ),
     )
     result = _adapter(exchanges).create_and_wait(_call(), {"prompt": "a cat", "width": 512})
     assert result.state is PredictionState.SUCCEEDED
@@ -95,8 +113,9 @@ def test_timeout_cancels() -> None:
 
 def test_version_drift_rejected() -> None:
     exchanges = (
-        FakeExchange(_is_create, _resp(
-            {"id": "p4", "status": "processing", "version": "v-DIFFERENT"})),
+        FakeExchange(
+            _is_create, _resp({"id": "p4", "status": "processing", "version": "v-DIFFERENT"})
+        ),
     )
     result = _adapter(exchanges).create_and_wait(_call(), {"prompt": "x"})
     assert result.state is PredictionState.FAILED
@@ -117,16 +136,25 @@ def test_unpinned_model_rejected() -> None:
         FakeExchange(_is_create, _resp({"id": "p6", "status": "succeeded", "version": _VERSION})),
     )
     result = _adapter(exchanges).create_and_wait(
-        call(route_key="REPLICATE:someone/unapproved"), {"prompt": "x"})
+        call(route_key="REPLICATE:someone/unapproved"), {"prompt": "x"}
+    )
     assert result.error_code == "MODEL_MISSING"
 
 
 def test_malicious_output_url_rejected() -> None:
     exchanges = (
         FakeExchange(_is_create, _resp({"id": "p7", "status": "processing", "version": _VERSION})),
-        FakeExchange(_is_poll, _resp(
-            {"id": "p7", "status": "succeeded", "version": _VERSION,
-             "output": ["https://evil.example/malware.bin"]})),
+        FakeExchange(
+            _is_poll,
+            _resp(
+                {
+                    "id": "p7",
+                    "status": "succeeded",
+                    "version": _VERSION,
+                    "output": ["https://evil.example/malware.bin"],
+                }
+            ),
+        ),
     )
     result = _adapter(exchanges).create_and_wait(_call(), {"prompt": "x"})
     assert result.state is PredictionState.FAILED
@@ -135,12 +163,19 @@ def test_malicious_output_url_rejected() -> None:
 
 def test_no_cloud_grant_refused() -> None:
     config = ProviderConfiguration(
-        Provider.REPLICATE, "https://api.replicate.com/v1", "REPLICATE_API_TOKEN",
+        Provider.REPLICATE,
+        "https://api.replicate.com/v1",
+        "REPLICATE_API_TOKEN",
         frozenset({_HOST}),
     )
     adapter = ReplicateAdapter(
-        config, FakeHttpTransport(()), FakeNetworkBackend(), secret_backend(),
-        StaticResolver(None), {_MODEL: _ROUTE}, clock=lambda: 0,
+        config,
+        FakeHttpTransport(()),
+        FakeNetworkBackend(),
+        secret_backend(),
+        StaticResolver(None),
+        {_MODEL: _ROUTE},
+        clock=lambda: 0,
     )
     result = adapter.create_and_wait(_call(), {"prompt": "x"})
     assert result.error_code == "NETWORK_DENIED"

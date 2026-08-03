@@ -56,25 +56,30 @@ def contrast_ratio(hex_a: str, hex_b: str) -> float:
 def default_token_set() -> DesignTokenSet:
     return DesignTokenSet(
         colors={
-            "background": "#ffffff", "foreground": "#0a0a0a", "primary": "#1d4ed8",
-            "primary-foreground": "#ffffff", "border": "#e5e7eb", "muted": "#6b7280",
+            "background": "#ffffff",
+            "foreground": "#0a0a0a",
+            "primary": "#1d4ed8",
+            "primary-foreground": "#ffffff",
+            "border": "#e5e7eb",
+            "muted": "#6b7280",
         },
         spacing={"xs": "0.25rem", "sm": "0.5rem", "md": "1rem", "lg": "1.5rem", "xl": "2rem"},
         typography={
-            "font-sans": "Inter, system-ui, sans-serif", "font-mono": "JetBrains Mono, monospace",
-            "text-base": "1rem", "text-lg": "1.125rem",
+            "font-sans": "Inter, system-ui, sans-serif",
+            "font-mono": "JetBrains Mono, monospace",
+            "text-base": "1rem",
+            "text-lg": "1.125rem",
         },
         radii={"sm": "0.25rem", "md": "0.5rem", "lg": "0.75rem"},
         motion={
-            "duration-fast": "120ms", "duration-normal": "200ms",
+            "duration-fast": "120ms",
+            "duration-normal": "200ms",
             "easing-standard": "cubic-bezier(0.4,0,0.2,1)",
         },
     )
 
 
-def validate_token_set(
-    tokens: DesignTokenSet, *, min_contrast: float = MIN_CONTRAST_RATIO
-) -> None:
+def validate_token_set(tokens: DesignTokenSet, *, min_contrast: float = MIN_CONTRAST_RATIO) -> None:
     """Raise on an incomplete token set or a fg/bg pairing below the contrast floor."""
     missing_colors = _REQUIRED_COLOR_KEYS - tokens.colors.keys()
     missing_spacing = _REQUIRED_SPACING_KEYS - tokens.spacing.keys()

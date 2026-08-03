@@ -49,7 +49,7 @@ WORLDMONITOR_MANIFEST = WorldMonitorManifest(
         WorldMonitorMode.HOSTED_REST,
         WorldMonitorMode.HOSTED_MCP,
     ),
-    required_domains=frozenset(),   # populated per approved deployment; empty = none approved yet
+    required_domains=frozenset(),  # populated per approved deployment; empty = none approved yet
     required_ports=(),
     compatibility_version="0.1-integration",
 )

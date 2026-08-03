@@ -41,23 +41,39 @@ def approval(
     host: str = APPROVED_HOST, *, task_id: str = "T1", max_bytes: int = 1_000_000
 ) -> NetworkApproval:
     return NetworkApproval(
-        approval_id="A1", task_id=task_id, destinations=frozenset({host}),
-        protocols=frozenset({"https"}), methods=frozenset({"GET", "POST"}),
-        expires_at=10_000, max_total_bytes=max_bytes, follow_redirects=True,
+        approval_id="A1",
+        task_id=task_id,
+        destinations=frozenset({host}),
+        protocols=frozenset({"https"}),
+        methods=frozenset({"GET", "POST"}),
+        expires_at=10_000,
+        max_total_bytes=max_bytes,
+        follow_redirects=True,
     )
 
 
 def grant(
-    *, host: str = APPROVED_HOST, task_id: str = "T1", secret_name: str = SECRET_NAME,
-    expected_upstream: str = "", strict_upstream: bool = True, require_zdr: bool = False,
-    endpoint_identity: str = "", region: str = "",
-    privacy: Privacy = Privacy.CLOUD_ALLOWED, max_bytes: int = 1_000_000,
+    *,
+    host: str = APPROVED_HOST,
+    task_id: str = "T1",
+    secret_name: str = SECRET_NAME,
+    expected_upstream: str = "",
+    strict_upstream: bool = True,
+    require_zdr: bool = False,
+    endpoint_identity: str = "",
+    region: str = "",
+    privacy: Privacy = Privacy.CLOUD_ALLOWED,
+    max_bytes: int = 1_000_000,
 ) -> HostedGrant:
     return HostedGrant(
-        privacy=privacy, approval=approval(host, task_id=task_id, max_bytes=max_bytes),
+        privacy=privacy,
+        approval=approval(host, task_id=task_id, max_bytes=max_bytes),
         secret_ref=SecretRef("R1", secret_name, task_id, max_ttl=100),
-        expected_upstream=expected_upstream, strict_upstream=strict_upstream,
-        require_zdr=require_zdr, endpoint_identity=endpoint_identity, region=region,
+        expected_upstream=expected_upstream,
+        strict_upstream=strict_upstream,
+        require_zdr=require_zdr,
+        endpoint_identity=endpoint_identity,
+        region=region,
     )
 
 
@@ -74,8 +90,12 @@ def call(
     prompt: str = "hello", *, route_key: str = f"OPENROUTER:{DEFAULT_MODEL}", task_id: str = "T1"
 ) -> CallRequest:
     return CallRequest(
-        task_id=task_id, stage_id="S1", route_key=route_key, prompt=prompt,
-        max_tokens=64, timeout=30,
+        task_id=task_id,
+        stage_id="S1",
+        route_key=route_key,
+        prompt=prompt,
+        max_tokens=64,
+        timeout=30,
     )
 
 
@@ -83,7 +103,9 @@ def json_response(
     payload: Mapping[str, object], *, status: int = 200, headers: Mapping[str, str] | None = None
 ) -> HttpResponse:
     return HttpResponse(
-        status, dict(headers or {"x-request-id": "req-1"}), json.dumps(payload).encode("utf-8"),
+        status,
+        dict(headers or {"x-request-id": "req-1"}),
+        json.dumps(payload).encode("utf-8"),
     )
 
 
@@ -94,7 +116,8 @@ def chat_ok(
     if tools:
         message["tool_calls"] = [{"function": {"name": t}} for t in tools]
     body: dict[str, object] = {
-        "id": "gen-1", "model": model,
+        "id": "gen-1",
+        "model": model,
         "choices": [{"message": message}],
         "usage": {"prompt_tokens": 5, "completion_tokens": 7},
     }
@@ -106,18 +129,30 @@ def chat_ok(
 def transport_for(match_substr: str, response: HttpResponse) -> FakeHttpTransport:
     def _m(req: HttpRequest) -> bool:
         return match_substr in req.url
+
     return FakeHttpTransport((FakeExchange(_m, response),))
 
 
 def openrouter_adapter(
-    transport: FakeHttpTransport, net: NetworkBroker, sec: SecretBroker,
-    resolver: StaticResolver, approved: frozenset[str] = frozenset({DEFAULT_MODEL}),
+    transport: FakeHttpTransport,
+    net: NetworkBroker,
+    sec: SecretBroker,
+    resolver: StaticResolver,
+    approved: frozenset[str] = frozenset({DEFAULT_MODEL}),
 ) -> OpenRouterAdapter:
     config = ProviderConfiguration(
-        Provider.OPENROUTER, "https://openrouter.ai/api/v1", SECRET_NAME,
+        Provider.OPENROUTER,
+        "https://openrouter.ai/api/v1",
+        SECRET_NAME,
         frozenset({APPROVED_HOST}),
     )
     return OpenRouterAdapter(
-        config, OpenAICompatibleAdapterCore(), transport, net, sec, resolver, approved,
+        config,
+        OpenAICompatibleAdapterCore(),
+        transport,
+        net,
+        sec,
+        resolver,
+        approved,
         clock=lambda: 0,
     )

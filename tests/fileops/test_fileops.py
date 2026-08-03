@@ -24,14 +24,19 @@ pytestmark = pytest.mark.security
 GrantFactory = Callable[[str], PermissionGrant]
 
 
-def _delete_approval(
-    approval_engine: ApprovalEngine, resource: str
-) -> tuple[object, str]:
+def _delete_approval(approval_engine: ApprovalEngine, resource: str) -> tuple[object, str]:
     card = approval_engine.enqueue(
         ApprovalRequest(
-            task_id="task-1", tool="fs", action="delete", scope="src", purpose="cleanup",
-            consequences="removes a file", autonomy_level="L2-supervised", ttl_seconds=100,
-            resource=resource, destructive=True,
+            task_id="task-1",
+            tool="fs",
+            action="delete",
+            scope="src",
+            purpose="cleanup",
+            consequences="removes a file",
+            autonomy_level="L2-supervised",
+            ttl_seconds=100,
+            resource=resource,
+            destructive=True,
         )
     )
     record = approval_engine.decide(
@@ -75,8 +80,13 @@ def test_write_to_read_only_path_denied(
     # grant is contained by the file-op path authority.
     decision = permission_engine.decide(  # type: ignore[attr-defined]
         ActionRequest(
-            task_id="task-1", tool="fs", action="w", permission_class=PermissionClass.WRITE,
-            scope="src", purpose="p", resource="src/main.py",
+            task_id="task-1",
+            tool="fs",
+            action="w",
+            permission_class=PermissionClass.WRITE,
+            scope="src",
+            purpose="p",
+            resource="src/main.py",
         ),
         authority,
     )
@@ -87,7 +97,9 @@ def test_write_to_read_only_path_denied(
 
 
 def test_delete_requires_valid_approval_decision_b(
-    service: FileOpService, authority: TaskAuthority, approval_engine: ApprovalEngine,
+    service: FileOpService,
+    authority: TaskAuthority,
+    approval_engine: ApprovalEngine,
     project_root: Path,
 ) -> None:
     (project_root / "src" / "g.txt").write_text("g")
@@ -100,8 +112,11 @@ def test_delete_requires_valid_approval_decision_b(
 
 
 def test_delete_with_valid_approval_is_class3_audited(
-    service: FileOpService, authority: TaskAuthority, approval_engine: ApprovalEngine,
-    project_root: Path, clock: object,
+    service: FileOpService,
+    authority: TaskAuthority,
+    approval_engine: ApprovalEngine,
+    project_root: Path,
+    clock: object,
 ) -> None:
     target = project_root / "src" / "d.txt"
     target.write_text("d")
@@ -128,8 +143,10 @@ def test_archive_entry_count_capped(
             z.writestr(f"e{i}.txt", "x" * 10)
     with pytest.raises(FileOpError) as exc:
         service.extract_archive(
-            "src/a.zip", "src/out",
-            ArchiveLimits(max_entries=3, max_depth=5, max_total_bytes=99999), authority,
+            "src/a.zip",
+            "src/out",
+            ArchiveLimits(max_entries=3, max_depth=5, max_total_bytes=99999),
+            authority,
         )
     assert exc.value.code == "FILEOP_ARCHIVE_LIMIT"
 
@@ -142,8 +159,10 @@ def test_archive_decompressed_size_capped(
         z.writestr("big.txt", "x" * 10000)
     with pytest.raises(FileOpError) as exc:
         service.extract_archive(
-            "src/b.zip", "src/out2",
-            ArchiveLimits(max_entries=10, max_depth=5, max_total_bytes=100), authority,
+            "src/b.zip",
+            "src/out2",
+            ArchiveLimits(max_entries=10, max_depth=5, max_total_bytes=100),
+            authority,
         )
     assert exc.value.code == "FILEOP_ARCHIVE_LIMIT"
 
@@ -156,8 +175,10 @@ def test_archive_zip_slip_blocked(
         z.writestr("../../evil.txt", "pwned")
     with pytest.raises(FileOpError) as exc:
         service.extract_archive(
-            "src/c.zip", "src/out3",
-            ArchiveLimits(max_entries=10, max_depth=9, max_total_bytes=99999), authority,
+            "src/c.zip",
+            "src/out3",
+            ArchiveLimits(max_entries=10, max_depth=9, max_total_bytes=99999),
+            authority,
         )
     assert exc.value.code in {"FILEOP_ARCHIVE_ESCAPE", "FILEOP_ARCHIVE_LIMIT"}
 
@@ -169,7 +190,9 @@ def test_archive_valid_extract(
     with zipfile.ZipFile(arc, "w") as z:
         z.writestr("a/b.txt", "hello")
     result = service.extract_archive(
-        "src/ok.zip", "src/dest", ArchiveLimits(max_entries=10, max_depth=5, max_total_bytes=99999),
+        "src/ok.zip",
+        "src/dest",
+        ArchiveLimits(max_entries=10, max_depth=5, max_total_bytes=99999),
         authority,
     )
     assert result.entries == 1
@@ -182,8 +205,10 @@ def test_bad_archive_rejected(
     (project_root / "src" / "notzip.zip").write_text("not a zip")
     with pytest.raises(FileOpError) as exc:
         service.extract_archive(
-            "src/notzip.zip", "src/out4",
-            ArchiveLimits(max_entries=10, max_depth=5, max_total_bytes=99999), authority,
+            "src/notzip.zip",
+            "src/out4",
+            ArchiveLimits(max_entries=10, max_depth=5, max_total_bytes=99999),
+            authority,
         )
     assert exc.value.code == "FILEOP_ARCHIVE_INVALID"
 
@@ -195,7 +220,9 @@ def test_canonicalize_and_escape(service: FileOpService, authority: TaskAuthorit
 
 
 def test_read_without_valid_grant_denied(
-    service: FileOpService, authority: TaskAuthority, write_grant: GrantFactory,
+    service: FileOpService,
+    authority: TaskAuthority,
+    write_grant: GrantFactory,
     permission_engine: object,
 ) -> None:
     grant = write_grant("src/main.py")

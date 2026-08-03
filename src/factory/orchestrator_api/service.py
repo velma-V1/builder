@@ -26,6 +26,7 @@ from factory.orchestrator.store.runtime_state import (
     _OrchestratorStateWriter,
 )
 from factory.orchestrator_api.errors import OrchestratorApiError
+from factory.orchestrator_api.lifecycle import Phase3BLifecycleService
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,6 +45,7 @@ class TaskDetail:
 class TaskOperatorService:
     writer: _OrchestratorStateWriter
     reader: OrchestratorStateReader
+    phase3b: Phase3BLifecycleService | None = None
 
     def submit(
         self,

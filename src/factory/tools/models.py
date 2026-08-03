@@ -51,7 +51,10 @@ class ToolDeclaration:
 
     def is_complete(self) -> bool:
         required_text = (
-            self.tool_id, self.version, self.environment, self.resource_profile,
+            self.tool_id,
+            self.version,
+            self.environment,
+            self.resource_profile,
             self.failure_behavior,
         )
         return (
@@ -63,24 +66,33 @@ class ToolDeclaration:
     def to_json(self) -> str:
         return json.dumps(
             {
-                "tool_id": self.tool_id, "version": self.version,
-                "capabilities": list(self.capabilities), "inputs": list(self.inputs),
-                "outputs": list(self.outputs), "side_effects": list(self.side_effects),
+                "tool_id": self.tool_id,
+                "version": self.version,
+                "capabilities": list(self.capabilities),
+                "inputs": list(self.inputs),
+                "outputs": list(self.outputs),
+                "side_effects": list(self.side_effects),
                 "permission_classes": list(self.permission_classes),
-                "environment": self.environment, "resource_profile": self.resource_profile,
+                "environment": self.environment,
+                "resource_profile": self.resource_profile,
                 "failure_behavior": self.failure_behavior,
             },
-            sort_keys=True, separators=(",", ":"),
+            sort_keys=True,
+            separators=(",", ":"),
         )
 
     @staticmethod
     def from_json(text: str) -> ToolDeclaration:
         d = json.loads(text)
         return ToolDeclaration(
-            tool_id=str(d["tool_id"]), version=str(d["version"]),
-            capabilities=tuple(d["capabilities"]), inputs=tuple(d["inputs"]),
-            outputs=tuple(d["outputs"]), side_effects=tuple(d["side_effects"]),
-            permission_classes=tuple(d["permission_classes"]), environment=str(d["environment"]),
+            tool_id=str(d["tool_id"]),
+            version=str(d["version"]),
+            capabilities=tuple(d["capabilities"]),
+            inputs=tuple(d["inputs"]),
+            outputs=tuple(d["outputs"]),
+            side_effects=tuple(d["side_effects"]),
+            permission_classes=tuple(d["permission_classes"]),
+            environment=str(d["environment"]),
             resource_profile=str(d["resource_profile"]),
             failure_behavior=str(d["failure_behavior"]),
         )
@@ -111,8 +123,11 @@ class OutputSchema:
 
     def to_json(self) -> str:
         return json.dumps(
-            {"kind": self.kind, "max_bytes": self.max_bytes,
-             "required_keys": list(self.required_keys)},
+            {
+                "kind": self.kind,
+                "max_bytes": self.max_bytes,
+                "required_keys": list(self.required_keys),
+            },
             sort_keys=True,
         )
 
@@ -120,7 +135,8 @@ class OutputSchema:
     def from_json(text: str) -> OutputSchema:
         data = json.loads(text)
         return OutputSchema(
-            kind=str(data["kind"]), max_bytes=int(data["max_bytes"]),
+            kind=str(data["kind"]),
+            max_bytes=int(data["max_bytes"]),
             required_keys=tuple(data.get("required_keys", [])),
         )
 

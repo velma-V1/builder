@@ -13,14 +13,16 @@ from factory.preinstall.installer import Installer, InstallStep
 from factory.ui_studio.errors import UIStudioError, UIStudioErrorCode
 from factory.ui_studio.models import PreviewState
 
-_LEGAL_TRANSITIONS: frozenset[tuple[PreviewState, str, PreviewState]] = frozenset({
-    (PreviewState.DRAFT, "render", PreviewState.RENDERING),
-    (PreviewState.RENDERING, "render_ok", PreviewState.READY),
-    (PreviewState.RENDERING, "render_failed", PreviewState.FAILED),
-    (PreviewState.READY, "expire", PreviewState.EXPIRED),
-    (PreviewState.FAILED, "retry", PreviewState.DRAFT),
-    (PreviewState.EXPIRED, "retry", PreviewState.DRAFT),
-})
+_LEGAL_TRANSITIONS: frozenset[tuple[PreviewState, str, PreviewState]] = frozenset(
+    {
+        (PreviewState.DRAFT, "render", PreviewState.RENDERING),
+        (PreviewState.RENDERING, "render_ok", PreviewState.READY),
+        (PreviewState.RENDERING, "render_failed", PreviewState.FAILED),
+        (PreviewState.READY, "expire", PreviewState.EXPIRED),
+        (PreviewState.FAILED, "retry", PreviewState.DRAFT),
+        (PreviewState.EXPIRED, "retry", PreviewState.DRAFT),
+    }
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,9 +46,17 @@ def build_preview_lifecycle() -> Installer:
     steps = (
         InstallStep("inspect", "inspect current preview environment (read-only)", mutating=False),
         InstallStep("prepare", "prepare rendered artifact + config (read-only)", mutating=False),
-        InstallStep("start_later", "start an isolated preview server", mutating=True,
-                    rollback="stop the preview server and remove its process/network"),
-        InstallStep("stop_later", "stop the preview server", mutating=True,
-                    rollback="restart the preview server from the last rendered artifact"),
+        InstallStep(
+            "start_later",
+            "start an isolated preview server",
+            mutating=True,
+            rollback="stop the preview server and remove its process/network",
+        ),
+        InstallStep(
+            "stop_later",
+            "stop the preview server",
+            mutating=True,
+            rollback="restart the preview server from the last rendered artifact",
+        ),
     )
     return Installer("ui_studio_preview", steps)

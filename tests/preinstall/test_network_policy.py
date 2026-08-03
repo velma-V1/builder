@@ -30,8 +30,9 @@ def test_hosted_destination_denied_when_egress_disabled() -> None:
 
 
 def test_hosted_destination_requires_explicit_approval() -> None:
-    policy = NetworkPolicy(hosted_egress_enabled=True,
-                           approved_hosted_destinations=frozenset({"api.groq.com"}))
+    policy = NetworkPolicy(
+        hosted_egress_enabled=True, approved_hosted_destinations=frozenset({"api.groq.com"})
+    )
     assert policy.evaluate("api.groq.com")[0] is True
     denied, reason = policy.evaluate("evil.example.com")
     assert not denied and reason == "HOSTED_DESTINATION_NOT_APPROVED"

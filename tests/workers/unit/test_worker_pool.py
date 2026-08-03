@@ -8,7 +8,7 @@ from factory.orchestrator.models import ProcessEpoch
 from factory.workers.errors import WorkerEngineError
 from factory.workers.models import WorkerState
 from factory.workers.pool import WorkerPool
-from tests.workers.conftest import FakeSpawner
+from tests.workers.support import FakeSpawner
 
 
 def test_pool_spawns_size_idle_workers(spawner: FakeSpawner) -> None:

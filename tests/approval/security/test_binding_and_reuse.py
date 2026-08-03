@@ -45,8 +45,11 @@ def _grant(engine: ApprovalEngine, request: ApprovalRequest) -> tuple[ApprovalRe
     record = engine.decide(card.approval_id, OperatorDecision(DecisionKind.GRANT, operator="op"))
     assert isinstance(record, ApprovalRecord)
     fingerprint = action_fingerprint(
-        task_id=request.task_id, tool=request.tool, action=request.action,
-        resource=request.resource, scope=request.scope,
+        task_id=request.task_id,
+        tool=request.tool,
+        action=request.action,
+        resource=request.resource,
+        scope=request.scope,
     )
     return record, fingerprint
 
@@ -56,8 +59,11 @@ def test_scope_binding_rejects_other_action(
 ) -> None:
     record, _ = _grant(engine, make_request())
     other = action_fingerprint(
-        task_id="task-1", tool="shell", action="DELETE_everything",
-        resource="repo/src/main.py", scope="repo/src",
+        task_id="task-1",
+        tool="shell",
+        action="DELETE_everything",
+        resource="repo/src/main.py",
+        scope="repo/src",
     )
     assert engine.consume(record, other) is False  # bound to (task, action, path, scope)
 

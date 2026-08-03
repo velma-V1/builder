@@ -6,7 +6,17 @@ promotion logic exists here yet — that's Phase 3C.
 """
 
 from factory.orchestrator_api.app import create_app
+from factory.orchestrator_api.auth import OperatorSession
 from factory.orchestrator_api.errors import OrchestratorApiError
+from factory.orchestrator_api.lifecycle import Phase3BDetail, Phase3BLifecycleService
 from factory.orchestrator_api.service import TaskDetail, TaskOperatorService
 
-__all__ = ["OrchestratorApiError", "TaskDetail", "TaskOperatorService", "create_app"]
+__all__ = [
+    "OperatorSession",
+    "OrchestratorApiError",
+    "Phase3BDetail",
+    "Phase3BLifecycleService",
+    "TaskDetail",
+    "TaskOperatorService",
+    "create_app",
+]

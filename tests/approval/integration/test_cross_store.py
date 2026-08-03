@@ -76,8 +76,11 @@ def test_full_lifecycle_chain_valid_and_no_pending_intents(
     record = engine.decide(card.approval_id, OperatorDecision(DecisionKind.GRANT, operator="op"))
     assert isinstance(record, ApprovalRecord)
     fingerprint = action_fingerprint(
-        task_id=record.task_id, tool=record.tool, action=record.action,
-        resource=record.resource, scope=record.scope,
+        task_id=record.task_id,
+        tool=record.tool,
+        action=record.action,
+        resource=record.resource,
+        scope=record.scope,
     )
     assert engine.consume(record, fingerprint) is True
     assert engine.reader.list_pending_intents() == ()  # all intents committed
@@ -91,8 +94,11 @@ def test_replayed_consumption_is_rejected(
     record = engine.decide(card.approval_id, OperatorDecision(DecisionKind.GRANT, operator="op"))
     assert isinstance(record, ApprovalRecord)
     fingerprint = action_fingerprint(
-        task_id=record.task_id, tool=record.tool, action=record.action,
-        resource=record.resource, scope=record.scope,
+        task_id=record.task_id,
+        tool=record.tool,
+        action=record.action,
+        resource=record.resource,
+        scope=record.scope,
     )
     assert engine.consume(record, fingerprint) is True
     # a replay of the same (now-exhausted) record consumes nothing (single-use)

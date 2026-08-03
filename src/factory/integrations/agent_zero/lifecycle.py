@@ -16,8 +16,15 @@ from factory.integrations.agent_zero.models import ModuleHealthState
 from factory.preinstall.installer import Installer, InstallStep
 
 LIFECYCLE_PHASES = (
-    "inspect", "prepare", "install_later", "start_later", "health",
-    "stop_later", "update_later", "rollback_later", "remove_later",
+    "inspect",
+    "prepare",
+    "install_later",
+    "start_later",
+    "health",
+    "stop_later",
+    "update_later",
+    "rollback_later",
+    "remove_later",
 )
 
 
@@ -44,19 +51,43 @@ def build_lifecycle() -> Installer:
     steps = (
         InstallStep("inspect", "inspect current Agent Zero state (read-only)", mutating=False),
         InstallStep("prepare", "prepare config + pinned manifest (read-only)", mutating=False),
-        InstallStep("install_later", "install the pinned Agent Zero worker image", mutating=True,
-                    rollback="remove the installed image + config"),
-        InstallStep("start_later", "start the isolated Agent Zero worker service", mutating=True,
-                    rollback="stop the service and remove its containers/networks"),
+        InstallStep(
+            "install_later",
+            "install the pinned Agent Zero worker image",
+            mutating=True,
+            rollback="remove the installed image + config",
+        ),
+        InstallStep(
+            "start_later",
+            "start the isolated Agent Zero worker service",
+            mutating=True,
+            rollback="stop the service and remove its containers/networks",
+        ),
         InstallStep("health", "check worker health (read-only)", mutating=False),
-        InstallStep("stop_later", "stop the worker service", mutating=True,
-                    rollback="restart the service from the last good state"),
-        InstallStep("update_later", "update to a newer pinned revision", mutating=True,
-                    rollback="roll back to the last-known-good pinned revision"),
-        InstallStep("rollback_later", "roll back to the last-known-good revision", mutating=True,
-                    rollback="re-apply the prior revision snapshot"),
-        InstallStep("remove_later", "remove the worker service + volumes", mutating=True,
-                    rollback="reinstall from the pinned manifest"),
+        InstallStep(
+            "stop_later",
+            "stop the worker service",
+            mutating=True,
+            rollback="restart the service from the last good state",
+        ),
+        InstallStep(
+            "update_later",
+            "update to a newer pinned revision",
+            mutating=True,
+            rollback="roll back to the last-known-good pinned revision",
+        ),
+        InstallStep(
+            "rollback_later",
+            "roll back to the last-known-good revision",
+            mutating=True,
+            rollback="re-apply the prior revision snapshot",
+        ),
+        InstallStep(
+            "remove_later",
+            "remove the worker service + volumes",
+            mutating=True,
+            rollback="reinstall from the pinned manifest",
+        ),
     )
     return Installer("agent_zero", steps)
 
@@ -87,16 +118,22 @@ def plan_update(
     )
     if not compat.compatible:
         return UpdateDecision(
-            applied=False, rolled_back=False, active_version=current_version,
+            applied=False,
+            rolled_back=False,
+            active_version=current_version,
             reason=f"update refused: {compat.reason}",
         )
     if post_update_health is ModuleHealthState.UNAVAILABLE:
         return UpdateDecision(
-            applied=False, rolled_back=True, active_version=current_version,
+            applied=False,
+            rolled_back=True,
+            active_version=current_version,
             reason="candidate failed its post-update health check; rolled back to last-known-good",
         )
     return UpdateDecision(
-        applied=True, rolled_back=False, active_version=candidate_version,
+        applied=True,
+        rolled_back=False,
+        active_version=candidate_version,
         reason="update plan accepted (dry-run preparation only; no host mutation performed)",
     )
 

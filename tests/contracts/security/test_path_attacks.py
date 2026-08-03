@@ -1,4 +1,5 @@
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -108,7 +109,28 @@ def test_symlink_escape_is_denied(tmp_path: Path) -> None:
 
 @pytest.mark.skipif(sys.platform != "win32", reason="junction escape requires Windows semantics")
 def test_junction_escape_is_denied_on_windows(tmp_path: Path) -> None:  # pragma: no cover
-    pytest.skip("classified NOT_TESTABLE on this platform; see test_symlink_escape_is_denied")
+    root = tmp_path / "project"
+    root.mkdir()
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "secret.txt").write_text("secret", encoding="utf-8")
+    subprocess.run(  # noqa: S603 -- fixed command; paths come from pytest's temp directory
+        [os.environ["COMSPEC"], "/d", "/c", "mklink", "/J", str(root / "link"), str(outside)],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    authority = PathAuthority(project_root=root)
+    result = authority.evaluate(
+        "link/secret.txt",
+        operation="read",
+        allowed=["**"],
+        forbidden=[],
+        read_only=[],
+        active_exclusive_paths=[],
+    )
+    assert not result.allowed
 
 
 def test_allowed_path_does_not_override_forbidden_or_read_only(tmp_path: Path) -> None:

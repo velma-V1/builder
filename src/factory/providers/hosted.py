@@ -138,8 +138,10 @@ class HostedAdapter:
         # Honest: a hosted probe requires a task-scoped CLOUD_ALLOWED grant, so availability is not
         # asserted here (no live call). The exact approved model set is reported.
         return CapabilityReport(
-            self._config.provider, RuntimeStatus.UNAVAILABLE,
-            tuple(sorted(self._approved)), self._config.api_version,
+            self._config.provider,
+            RuntimeStatus.UNAVAILABLE,
+            tuple(sorted(self._approved)),
+            self._config.api_version,
             "hosted probe deferred: requires a task-scoped CLOUD_ALLOWED grant",
         )
 
@@ -150,8 +152,12 @@ class HostedAdapter:
         digest = result.fingerprint.digest() if result.fingerprint is not None else ""
         reason = f"{result.reason} fp={digest}" if digest else result.reason
         return CallResult(
-            status=result.status, output=result.output, tokens=result.tokens,
-            fingerprint=None, reason=reason, error_code=result.error_code,
+            status=result.status,
+            output=result.output,
+            tokens=result.tokens,
+            fingerprint=None,
+            reason=reason,
+            error_code=result.error_code,
             tool_calls=result.tool_calls,
         )
 
@@ -165,7 +171,8 @@ class HostedAdapter:
         model_id = self._model_of(request.route_key)
         if not self.supports(model_id):
             return HostedResult(
-                ExecutionStatus.FAILED, error_code=ProviderErrorCode.MODEL_MISSING.value,
+                ExecutionStatus.FAILED,
+                error_code=ProviderErrorCode.MODEL_MISSING.value,
                 reason=f"model {model_id!r} is not in the approved roster (discovery != approval)",
             )
         grant = self._resolver.resolve(request.task_id)
@@ -176,9 +183,14 @@ class HostedAdapter:
                 reason="no task-scoped CLOUD_ALLOWED grant; hosted call refused",
             )
         context = BrokeredContext(
-            task_id=request.task_id, privacy=grant.privacy, network=self._network,
-            approval=grant.approval, secret=self._secret, secret_ref=grant.secret_ref,
-            now=self._clock(), auth_scheme=self._auth_scheme,
+            task_id=request.task_id,
+            privacy=grant.privacy,
+            network=self._network,
+            approval=grant.approval,
+            secret=self._secret,
+            secret_ref=grant.secret_ref,
+            now=self._clock(),
+            auth_scheme=self._auth_scheme,
         )
         brokered = BrokeredHttp(self._transport, context)
         try:
@@ -187,18 +199,26 @@ class HostedAdapter:
             if not core_result.ok:
                 code = core_result.error_code or ProviderErrorCode.RUNTIME_UNAVAILABLE
                 return HostedResult(
-                    status_for(code), metadata=core_result.metadata,
-                    error_code=code.value, reason=brokered.redact(core_result.reason),
+                    status_for(code),
+                    metadata=core_result.metadata,
+                    error_code=code.value,
+                    reason=brokered.redact(core_result.reason),
                 )
             fingerprint = self._fingerprint(model_id, grant, core_result)
             return HostedResult(
-                ExecutionStatus.SUCCEEDED, output=core_result.output,
-                tool_calls=core_result.tool_calls, tokens=core_result.metadata.usage.total_tokens,
-                metadata=core_result.metadata, fingerprint=fingerprint, reason="ok",
+                ExecutionStatus.SUCCEEDED,
+                output=core_result.output,
+                tool_calls=core_result.tool_calls,
+                tokens=core_result.metadata.usage.total_tokens,
+                metadata=core_result.metadata,
+                fingerprint=fingerprint,
+                reason="ok",
             )
         except ProviderError as exc:
             return HostedResult(
-                status_for(exc.code), error_code=exc.code.value, reason=brokered.redact(exc.detail),
+                status_for(exc.code),
+                error_code=exc.code.value,
+                reason=brokered.redact(exc.detail),
             )
 
     # -- hooks -----------------------------------------------------------------------------
@@ -219,13 +239,17 @@ class HostedAdapter:
     ) -> ProviderFingerprint:
         metadata = core_result.metadata
         return ProviderFingerprint(
-            provider=self._config.provider, model_id=model_id,
+            provider=self._config.provider,
+            model_id=model_id,
             model_version_or_digest=metadata.returned_model or model_id,
             upstream_provider=metadata.upstream_provider or grant.expected_upstream,
             endpoint_identity=grant.endpoint_identity,
             runtime_or_api_version=self._config.api_version,
-            context_window=0, capability_digest="", sampling=(),
-            system_prompt_version="v1", tool_schema_version="v1",
+            context_window=0,
+            capability_digest="",
+            sampling=(),
+            system_prompt_version="v1",
+            tool_schema_version="v1",
             adapter_version=self._adapter_version,
             routing_policy_version=self._routing_policy_version,
             execution_region=grant.region,
@@ -237,8 +261,13 @@ class HostedAdapter:
         if grant is None:
             return ()
         context = BrokeredContext(
-            task_id=task_id, privacy=grant.privacy, network=self._network, approval=grant.approval,
-            secret=self._secret, secret_ref=grant.secret_ref, now=self._clock(),
+            task_id=task_id,
+            privacy=grant.privacy,
+            network=self._network,
+            approval=grant.approval,
+            secret=self._secret,
+            secret_ref=grant.secret_ref,
+            now=self._clock(),
             auth_scheme=self._auth_scheme,
         )
         brokered = BrokeredHttp(self._transport, context)
@@ -246,4 +275,3 @@ class HostedAdapter:
             return tuple(m.model_id for m in self._core.discover_models(self._config, brokered))
         except ProviderError:
             return ()
-

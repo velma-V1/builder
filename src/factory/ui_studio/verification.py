@@ -44,17 +44,17 @@ def verify_artifact_package(package: ArtifactPackage) -> tuple[VerificationFindi
         VerificationFinding(
             "build status is set", package.build_status is not BuildStatus.NOT_BUILT, "build_status"
         ),
-        VerificationFinding(
-            "rollback record present", bool(package.rollback.detail), "rollback"
-        ),
+        VerificationFinding("rollback record present", bool(package.rollback.detail), "rollback"),
     ]
     unacknowledged_high = [
-        r for r in package.unresolved_risks
+        r
+        for r in package.unresolved_risks
         if r.severity is RiskSeverity.HIGH and not r.acknowledged
     ]
     findings.append(
         VerificationFinding(
-            "no unacknowledged HIGH-severity risk", not unacknowledged_high,
+            "no unacknowledged HIGH-severity risk",
+            not unacknowledged_high,
             f"unacknowledged={[r.risk_id for r in unacknowledged_high]}",
         )
     )

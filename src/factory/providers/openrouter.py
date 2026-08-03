@@ -21,7 +21,7 @@ class OpenRouterAdapter(HostedAdapter):
 
     def _shape(self, model_id: str, request: CallRequest, grant: HostedGrant) -> ChatRequest:
         provider_policy: dict[str, object] = {
-            "allow_fallbacks": False,      # never let OpenRouter silently substitute
+            "allow_fallbacks": False,  # never let OpenRouter silently substitute
             "require_parameters": True,
             "data_collection": "deny",
         }

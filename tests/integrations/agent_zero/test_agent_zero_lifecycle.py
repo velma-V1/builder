@@ -30,8 +30,15 @@ def test_lifecycle_plan_declares_a_rollback_for_every_mutating_phase() -> None:
 
 def test_lifecycle_phases_cover_the_full_managed_worker_lifecycle() -> None:
     assert LIFECYCLE_PHASES == (
-        "inspect", "prepare", "install_later", "start_later", "health",
-        "stop_later", "update_later", "rollback_later", "remove_later",
+        "inspect",
+        "prepare",
+        "install_later",
+        "start_later",
+        "health",
+        "stop_later",
+        "update_later",
+        "rollback_later",
+        "remove_later",
     )
 
 
@@ -44,7 +51,9 @@ def test_future_isolation_posture_defaults_to_fully_isolated() -> None:
 
 def test_update_failure_when_worker_reports_a_newer_major_version() -> None:
     decision = plan_update(
-        current_version="1.2.0", candidate_version="2.0.0", builder_contract_version="1.5.0",
+        current_version="1.2.0",
+        candidate_version="2.0.0",
+        builder_contract_version="1.5.0",
         post_update_health=ModuleHealthState.HEALTHY,
     )
     assert not decision.applied
@@ -55,8 +64,10 @@ def test_update_failure_when_worker_reports_a_newer_major_version() -> None:
 
 def test_update_failure_when_candidate_version_is_unparseable() -> None:
     decision = plan_update(
-        current_version="1.2.0", candidate_version="not-a-version",
-        builder_contract_version="1.5.0", post_update_health=ModuleHealthState.HEALTHY,
+        current_version="1.2.0",
+        candidate_version="not-a-version",
+        builder_contract_version="1.5.0",
+        post_update_health=ModuleHealthState.HEALTHY,
     )
     assert not decision.applied
     assert "unparseable" in decision.reason
@@ -64,7 +75,9 @@ def test_update_failure_when_candidate_version_is_unparseable() -> None:
 
 def test_last_known_good_rollback_when_post_update_health_is_unavailable() -> None:
     decision = plan_update(
-        current_version="1.2.0", candidate_version="1.3.0", builder_contract_version="1.5.0",
+        current_version="1.2.0",
+        candidate_version="1.3.0",
+        builder_contract_version="1.5.0",
         post_update_health=ModuleHealthState.UNAVAILABLE,
     )
     assert not decision.applied
@@ -75,7 +88,9 @@ def test_last_known_good_rollback_when_post_update_health_is_unavailable() -> No
 
 def test_update_applied_when_compatible_and_healthy() -> None:
     decision = plan_update(
-        current_version="1.2.0", candidate_version="1.3.0", builder_contract_version="1.5.0",
+        current_version="1.2.0",
+        candidate_version="1.3.0",
+        builder_contract_version="1.5.0",
         post_update_health=ModuleHealthState.HEALTHY,
     )
     assert decision.applied

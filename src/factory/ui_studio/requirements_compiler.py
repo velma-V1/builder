@@ -39,9 +39,7 @@ def compile_requirement(
     if not requirement.title.strip():
         raise UIStudioError(UIStudioErrorCode.REQUIREMENT_UNPARSEABLE, "title must not be empty")
     template = templates.get(requirement.template_id)
-    resolved = tuple(
-        dict.fromkeys((*template.required_components, *requirement.extra_components))
-    )
+    resolved = tuple(dict.fromkeys((*template.required_components, *requirement.extra_components)))
     for name in resolved:
         components.get(name)
     return GenerationPlan(requirement, template, resolved)

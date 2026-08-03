@@ -52,9 +52,18 @@ def test_crash_before_audit_rolls_issue_back(
 ) -> None:
     op_key = _new_op_key("issue", "grn-crash")
     engine._writer.stage_issue(
-        grant_id="grn-crash", op_key=op_key, task_id="t", tool="sh", action="w",
-        permission_class=PermissionClass.WRITE, resource="src/main.py", scope="src", purpose="p",
-        grant_fingerprint="fp", expires_at=2_000_000, ts=1_000_000,
+        grant_id="grn-crash",
+        op_key=op_key,
+        task_id="t",
+        tool="sh",
+        action="w",
+        permission_class=PermissionClass.WRITE,
+        resource="src/main.py",
+        scope="src",
+        purpose="p",
+        grant_fingerprint="fp",
+        expires_at=2_000_000,
+        ts=1_000_000,
     )
     staged = engine.reader.get_grant("grn-crash")
     assert staged is not None and staged.commit_state is CommitState.PENDING
@@ -67,14 +76,28 @@ def test_crash_after_audit_rolls_issue_forward(
 ) -> None:
     op_key = _new_op_key("issue", "grn-fwd")
     engine._writer.stage_issue(
-        grant_id="grn-fwd", op_key=op_key, task_id="t", tool="sh", action="w",
-        permission_class=PermissionClass.WRITE, resource="src/main.py", scope="src", purpose="p",
-        grant_fingerprint="fp", expires_at=2_000_000, ts=1_000_000,
+        grant_id="grn-fwd",
+        op_key=op_key,
+        task_id="t",
+        tool="sh",
+        action="w",
+        permission_class=PermissionClass.WRITE,
+        resource="src/main.py",
+        scope="src",
+        purpose="p",
+        grant_fingerprint="fp",
+        expires_at=2_000_000,
+        ts=1_000_000,
     )
     engine._audit.append(
         AuditEvent(
-            op_key=op_key, record_kind=RecordKind.COMPLETION, operation_class=1, actor="a",
-            action_class="permission.issue", payload_hash="ph", occurred_at="t",
+            op_key=op_key,
+            record_kind=RecordKind.COMPLETION,
+            operation_class=1,
+            actor="a",
+            action_class="permission.issue",
+            payload_hash="ph",
+            occurred_at="t",
         )
     )
     engine.reconcile_startup()
@@ -88,8 +111,11 @@ def test_crash_before_audit_rolls_transition_back(
     grant = _issue(engine, make_request, make_authority)
     op_key = _new_op_key("revoke", grant.grant_id)
     engine._writer.stage_transition(
-        grant_id=grant.grant_id, op_key=op_key, verb="revoke",
-        new_state=PermissionState.REVOKED, ts=1_000_050,
+        grant_id=grant.grant_id,
+        op_key=op_key,
+        verb="revoke",
+        new_state=PermissionState.REVOKED,
+        ts=1_000_050,
     )
     mid = engine.reader.get_grant(grant.grant_id)
     assert mid is not None and mid.commit_state is CommitState.PENDING
@@ -110,13 +136,16 @@ def test_reconcile_is_idempotent(
 
 
 def test_issue_fails_closed_when_audit_unavailable(
-    security_db_path: Path, tmp_path: Path, make_request: RequestFactory,
+    security_db_path: Path,
+    tmp_path: Path,
+    make_request: RequestFactory,
     make_authority: AuthorityFactory,
 ) -> None:
     empty_audit = tmp_path / "empty.db"
     sqlite3.connect(str(empty_audit)).close()
     engine = PermissionEngine(
-        security_database_path=security_db_path, audit_database_path=empty_audit,
+        security_database_path=security_db_path,
+        audit_database_path=empty_audit,
         clock=_FixedClock(),
     )
     decision = engine.decide(make_request(), make_authority())
@@ -127,7 +156,9 @@ def test_issue_fails_closed_when_audit_unavailable(
 
 
 def test_revoke_fails_closed_and_restores_prior(
-    engine: PermissionEngine, audit_db_path: Path, make_request: RequestFactory,
+    engine: PermissionEngine,
+    audit_db_path: Path,
+    make_request: RequestFactory,
     make_authority: AuthorityFactory,
 ) -> None:
     grant = _issue(engine, make_request, make_authority)
@@ -143,7 +174,9 @@ def test_revoke_fails_closed_and_restores_prior(
 
 
 def test_reconcile_refuses_invalid_audit_chain(
-    engine: PermissionEngine, audit_db_path: Path, make_request: RequestFactory,
+    engine: PermissionEngine,
+    audit_db_path: Path,
+    make_request: RequestFactory,
     make_authority: AuthorityFactory,
 ) -> None:
     _issue(engine, make_request, make_authority)

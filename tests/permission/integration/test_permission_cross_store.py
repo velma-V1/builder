@@ -65,7 +65,9 @@ def test_class1_happy_path_one_grant_one_completion_joined_by_op_key(
 
 
 def test_full_lifecycle_chain_valid_no_pending_intents(
-    engine: PermissionEngine, audit_db_path: Path, make_request: RequestFactory,
+    engine: PermissionEngine,
+    audit_db_path: Path,
+    make_request: RequestFactory,
     make_authority: AuthorityFactory,
 ) -> None:
     grant = _issue(engine, make_request, make_authority)
@@ -75,7 +77,9 @@ def test_full_lifecycle_chain_valid_no_pending_intents(
 
 
 def test_op_keys_unique_per_operation(
-    engine: PermissionEngine, security_db_path: Path, make_request: RequestFactory,
+    engine: PermissionEngine,
+    security_db_path: Path,
+    make_request: RequestFactory,
     make_authority: AuthorityFactory,
 ) -> None:
     _issue(engine, make_request, make_authority)

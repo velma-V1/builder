@@ -71,9 +71,7 @@ class ToolGateway:
     def _audit(self) -> AuditWriter:
         return AuditWriter(database_path=self.audit_database_path)
 
-    def enforce_limits(
-        self, requested: ResourceLimits | None
-    ) -> ResourceVerdict:
+    def enforce_limits(self, requested: ResourceLimits | None) -> ResourceVerdict:
         """Resource REQUEST CONTRACT: within the policy ceiling is admissible; over it is a
         limit increase (a permission change), not silently allowed. OS enforcement is PH-5."""
         if requested is None:
@@ -153,9 +151,14 @@ class ToolGateway:
         ).hexdigest()
         self._audit.append(
             AuditEvent(
-                op_key=op_key, record_kind=RecordKind.COMPLETION, operation_class=1,
-                actor="cmp-toolgw", action_class="tool.invoke", payload_hash=payload,
-                occurred_at=self.clock.now_iso(), target_ref=f"{call.tool_id}@{call.version}",
+                op_key=op_key,
+                record_kind=RecordKind.COMPLETION,
+                operation_class=1,
+                actor="cmp-toolgw",
+                action_class="tool.invoke",
+                payload_hash=payload,
+                occurred_at=self.clock.now_iso(),
+                target_ref=f"{call.tool_id}@{call.version}",
             )
         )
 

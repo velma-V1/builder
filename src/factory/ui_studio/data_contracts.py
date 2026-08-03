@@ -37,7 +37,8 @@ def validate_data_contract(contract: DataContract) -> None:
             )
         hit = next(
             (
-                field for field in contract.snapshot_shape
+                field
+                for field in contract.snapshot_shape
                 if any(h in field.lower() for h in _BACKEND_SHAPED_FIELD_HINTS)
             ),
             None,

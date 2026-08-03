@@ -124,41 +124,65 @@ class ReplicateAdapter:
         route = self._routes.get(model_id)
         if route is None:
             return ReplicatePrediction(
-                "", "", PredictionState.FAILED, error_code=ProviderErrorCode.MODEL_MISSING.value,
+                "",
+                "",
+                PredictionState.FAILED,
+                error_code=ProviderErrorCode.MODEL_MISSING.value,
                 reason=f"model {model_id!r} not in approved pinned routes",
             )
         unknown = [k for k in input_values if k not in route.input_schema_keys]
         if unknown:
             return ReplicatePrediction(
-                "", route.version_id, PredictionState.FAILED,
+                "",
+                route.version_id,
+                PredictionState.FAILED,
                 error_code=ProviderErrorCode.MALFORMED_OUTPUT.value,
                 reason=f"input keys not in approved schema: {sorted(unknown)}",
             )
         grant = self._resolver.resolve(request.task_id)
         if grant is None:
             return ReplicatePrediction(
-                "", route.version_id, PredictionState.FAILED,
+                "",
+                route.version_id,
+                PredictionState.FAILED,
                 error_code=ProviderErrorCode.NETWORK_DENIED.value,
                 reason="no task-scoped CLOUD_ALLOWED grant; prediction refused",
             )
-        brokered = BrokeredHttp(self._transport, BrokeredContext(
-            task_id=request.task_id, privacy=grant.privacy, network=self._network,
-            approval=grant.approval, secret=self._secret, secret_ref=grant.secret_ref,
-            now=self._clock(), auth_scheme="Token",
-        ))
+        brokered = BrokeredHttp(
+            self._transport,
+            BrokeredContext(
+                task_id=request.task_id,
+                privacy=grant.privacy,
+                network=self._network,
+                approval=grant.approval,
+                secret=self._secret,
+                secret_ref=grant.secret_ref,
+                now=self._clock(),
+                auth_scheme="Token",
+            ),
+        )
         started = self._clock()
         try:
             prediction_id, state = self._create(brokered, route, dict(input_values))
             state, outputs = self._poll(brokered, route, prediction_id, state)
             return ReplicatePrediction(
-                prediction_id, route.version_id, state, outputs=outputs,
+                prediction_id,
+                route.version_id,
+                state,
+                outputs=outputs,
                 reason="ok" if state is PredictionState.SUCCEEDED else state.value,
-                started_at=started, finished_at=self._clock(),
+                started_at=started,
+                finished_at=self._clock(),
             )
         except ProviderError as exc:
             return ReplicatePrediction(
-                "", route.version_id, PredictionState.FAILED, error_code=exc.code.value,
-                reason=brokered.redact(exc.detail), started_at=started, finished_at=self._clock(),
+                "",
+                route.version_id,
+                PredictionState.FAILED,
+                error_code=exc.code.value,
+                reason=brokered.redact(exc.detail),
+                started_at=started,
+                finished_at=self._clock(),
             )
 
     def _create(
@@ -166,7 +190,9 @@ class ReplicateAdapter:
     ) -> tuple[str, PredictionState]:
         body = json.dumps({"version": route.version_id, "input": input_values}).encode("utf-8")
         response = brokered.request(
-            "POST", f"{self._config.base_url}/predictions", body=body,
+            "POST",
+            f"{self._config.base_url}/predictions",
+            body=body,
             headers={"Content-Type": "application/json"},
         )
         if response.status not in (200, 201):
@@ -181,7 +207,10 @@ class ReplicateAdapter:
         return str(data.get("id", "")), self._state(data)
 
     def _poll(
-        self, brokered: BrokeredHttp, route: ApprovedReplicateRoute, prediction_id: str,
+        self,
+        brokered: BrokeredHttp,
+        route: ApprovedReplicateRoute,
+        prediction_id: str,
         state: PredictionState,
     ) -> tuple[PredictionState, tuple[str, ...]]:
         outputs: tuple[str, ...] = ()

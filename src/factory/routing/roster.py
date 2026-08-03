@@ -31,6 +31,7 @@ QWEN_8B = "qwen3:8b"
 QWEN_14B = "qwen3:14b"
 AIDER_WORKER = "aider"
 
+
 def _d(
     provider: Provider,
     model_id: str,

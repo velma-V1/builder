@@ -205,7 +205,9 @@ class ResourceScheduler:
                 sorted(
                     self._active.values(),
                     key=lambda r: (
-                        rank[r.profile.resource_class], -r.acquired_at, r.reservation_id,
+                        rank[r.profile.resource_class],
+                        -r.acquired_at,
+                        r.reservation_id,
                     ),
                 )
             )

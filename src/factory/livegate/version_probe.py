@@ -47,7 +47,9 @@ def evaluate_docker(
     version = parse_docker_version(stdout)
     if version is None:
         return ReadinessCheck(
-            "docker-engine", "Docker Engine present and current", CheckStatus.UNAVAILABLE,
+            "docker-engine",
+            "Docker Engine present and current",
+            CheckStatus.UNAVAILABLE,
             "docker not found / no parseable version; install Docker Engine on the WSL2 host",
             mandatory=True,
         )
@@ -55,10 +57,12 @@ def evaluate_docker(
     ver = ".".join(str(p) for p in version)
     floor = ".".join(str(p) for p in minimum)
     return ReadinessCheck(
-        "docker-engine", "Docker Engine present and current",
+        "docker-engine",
+        "Docker Engine present and current",
         CheckStatus.PASS if ok else CheckStatus.FAIL,
         f"Docker {ver} ({'meets' if ok else 'below'} {floor} floor)",
-        mandatory=True, facts=(("docker_version", ver), ("floor", floor)),
+        mandatory=True,
+        facts=(("docker_version", ver), ("floor", floor)),
     )
 
 
@@ -74,7 +78,9 @@ def evaluate_wsl(stdout: str, *, required: int = REQUIRED_WSL_DEFAULT_VERSION) -
     cleaned = _clean_probe_text(stdout)
     if not cleaned.strip():
         return ReadinessCheck(
-            "wsl2-default", "WSL2 is the default distro version", CheckStatus.UNAVAILABLE,
+            "wsl2-default",
+            "WSL2 is the default distro version",
+            CheckStatus.UNAVAILABLE,
             "wsl not found; this is expected off the Windows target host",
             mandatory=True,
         )
@@ -82,10 +88,12 @@ def evaluate_wsl(stdout: str, *, required: int = REQUIRED_WSL_DEFAULT_VERSION) -
     version = int(match.group(1)) if match else None
     ok = version == required
     return ReadinessCheck(
-        "wsl2-default", "WSL2 is the default distro version",
+        "wsl2-default",
+        "WSL2 is the default distro version",
         CheckStatus.PASS if ok else CheckStatus.FAIL,
         f"default WSL version = {version} (require {required})",
-        mandatory=True, facts=(("default_version", str(version)),),
+        mandatory=True,
+        facts=(("default_version", str(version)),),
     )
 
 
@@ -111,7 +119,9 @@ def evaluate_nvidia(
     floor = ".".join(str(p) for p in minimum_cuda)
     if cuda is None and driver is None:
         return ReadinessCheck(
-            "nvidia-cuda", "NVIDIA driver + CUDA support GPU-heavy roles", CheckStatus.UNAVAILABLE,
+            "nvidia-cuda",
+            "NVIDIA driver + CUDA support GPU-heavy roles",
+            CheckStatus.UNAVAILABLE,
             "nvidia-smi not found / unparseable; install the NVIDIA driver + CUDA on the host",
             mandatory=True,
         )
@@ -121,17 +131,23 @@ def evaluate_nvidia(
         # (not an absence): collapsing this into UNAVAILABLE would lose the driver-version fact and
         # misreport a real, non-compliant host identically to "no NVIDIA hardware at all".
         return ReadinessCheck(
-            "nvidia-cuda", "NVIDIA driver + CUDA support GPU-heavy roles", CheckStatus.FAIL,
+            "nvidia-cuda",
+            "NVIDIA driver + CUDA support GPU-heavy roles",
+            CheckStatus.FAIL,
             f"NVIDIA driver {driver} detected but CUDA Version is unavailable (e.g. driver-only "
             f"install, no CUDA toolkit); floor {floor} requires the CUDA runtime component",
             mandatory=True,
-            facts=(("driver_version", driver or "unknown"), ("cuda_version", "unavailable"),
-                   ("floor", floor)),
+            facts=(
+                ("driver_version", driver or "unknown"),
+                ("cuda_version", "unavailable"),
+                ("floor", floor),
+            ),
         )
     ok = cuda >= minimum_cuda
     cuda_s = ".".join(str(p) for p in cuda)
     return ReadinessCheck(
-        "nvidia-cuda", "NVIDIA driver + CUDA support GPU-heavy roles",
+        "nvidia-cuda",
+        "NVIDIA driver + CUDA support GPU-heavy roles",
         CheckStatus.PASS if ok else CheckStatus.FAIL,
         f"CUDA {cuda_s} (driver {driver or 'unknown'}); {'meets' if ok else 'below'} {floor}",
         mandatory=True,
@@ -162,21 +178,29 @@ def evaluate_ollama_models(
     leaked = sorted(m for m in installed if m.lower() in {e.lower() for e in excluded})
     if not installed:
         return ReadinessCheck(
-            "ollama-models", "Approved local models available; excluded absent",
+            "ollama-models",
+            "Approved local models available; excluded absent",
             CheckStatus.UNAVAILABLE,
             "ollama not running / no models; pull approved models on the host before live PH-4",
-            mandatory=True, facts=(("approved_required", ",".join(sorted(approved))),),
+            mandatory=True,
+            facts=(("approved_required", ",".join(sorted(approved))),),
         )
     if leaked:
         return ReadinessCheck(
-            "ollama-models", "Approved local models available; excluded absent", CheckStatus.FAIL,
+            "ollama-models",
+            "Approved local models available; excluded absent",
+            CheckStatus.FAIL,
             f"excluded model(s) present and must be removed: {leaked}",
-            mandatory=True, facts=(("excluded_present", ",".join(leaked)),),
+            mandatory=True,
+            facts=(("excluded_present", ",".join(leaked)),),
         )
     status = CheckStatus.PASS if not missing else CheckStatus.FAIL
     detail = "all approved local models present" if not missing else f"missing: {missing}"
     return ReadinessCheck(
-        "ollama-models", "Approved local models available; excluded absent", status, detail,
+        "ollama-models",
+        "Approved local models available; excluded absent",
+        status,
+        detail,
         mandatory=True,
         facts=(
             ("installed", ",".join(sorted(installed))),

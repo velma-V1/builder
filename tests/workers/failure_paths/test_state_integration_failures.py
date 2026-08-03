@@ -18,8 +18,12 @@ pytestmark = pytest.mark.failure_path
 
 def _result(task_id: str, *, exit_code: int | None, cause: str | None) -> ExecutionResult:
     return ExecutionResult(
-        task_id=task_id, exit_code=exit_code, output_hash="h",
-        events_captured=1, truncated=False, failure_cause=cause,
+        task_id=task_id,
+        exit_code=exit_code,
+        output_hash="h",
+        events_captured=1,
+        truncated=False,
+        failure_cause=cause,
     )
 
 
