@@ -719,25 +719,22 @@ the PH-6 simulated workstream core, demonstrated end-to-end against the PH-4/PH-
 
 ### Phase 3B worker verify/promote implementation - 2026-08-02
 
-#### Status: `IMPLEMENTED CANDIDATE — VERIFICATION BLOCKED`
+#### Status: `IMPLEMENTED CANDIDATE — INDEPENDENT REVIEW PENDING`
 
-- **Current Linux-tested implementation commit:** `475c528` after milestone commits `0c65b21`,
+- **Linux and native-Windows tested implementation commit:** `8c05e6c` after milestone commits `0c65b21`,
   `3ebdedd`, `41056d6`, `9eca3db`, `f91bace`, `6f1392e`, validation repair `c25bb4c`, and launcher
-  portability repair `475c528`.
+  portability repair `475c528`, and six-blocker remediation `8c05e6c`.
 - **Delivered:** independent verification; append-only evidence/manifests; explicit approval binding;
   serialized promotion and rollback; restart reconciliation; lifecycle API; Phase 3B dashboard.
-- **Current PASS evidence:** Linux collection 1733; restricted suite 1648 passed with 85 explicitly
-  classified environment skips; loopback 83/83 outside the restricted socket sandbox; Section 1
-  325 tests at 96.86% branch coverage; Ruff format/lint; mypy 305 files; lockfile; frontend
-  typecheck/lint/43 tests/build; Section 2 18/18; RPH3 10/10; PH-4 10/10; focused lifecycle and
+- **Current PASS evidence:** Linux collection 1747; restricted suite 1660 passed with 87 explicitly
+  classified environment skips; loopback 85/85 outside the restricted socket sandbox; Section 1
+  324 passed and 1 native-Windows skip at 96.86% branch coverage; Ruff format/lint; mypy 307 files;
+  lockfile; frontend typecheck/lint/45 tests/build; Section 2 18/18; RPH3 10/10; PH-4 10/10; focused lifecycle and
   failure-path tests.
-- **Historical evidence only:** native Windows collection/suite 1730, two junction cases, and
-  Windows Ruff/mypy/preinstall results belong to `48e0dd8`, not the current PR head.
-- **Environment blocker:** rerun focused native-Windows launcher and junction gates at the exact
-  final PR head.
-- **Review blockers:** independent review reports untrusted verifier execution without a process
-  sandbox, unauthenticated approval authority, incomplete quick-start lifecycle wiring, a
-  path-revalidation TOCTOU window, incomplete promotion restart rollback, and launcher cleanup
-  weaknesses. These must be resolved and independently re-reviewed.
+- **Native-Windows evidence:** at exact implementation commit `8c05e6c`, the focused launcher,
+  creation-flag, process-group, and bounded cleanup gate passed 8/8 and both junction escape gates
+  passed 2/2. No required platform check remains environment-blocked.
+- **Review status:** the six earlier findings have focused remediation and regression coverage. A
+  fresh independent review of the final evidence-only PR head remains required.
 - **Boundary:** draft PR #18 was pushed; no merge, deploy, release, or protected-ref promotion was
   performed.
