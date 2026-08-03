@@ -77,6 +77,27 @@ export interface Phase3BDetail {
   };
 }
 
+let operatorSessionCredential: string | null = null;
+
+export function configureOperatorSession(credential: string): void {
+  if (!credential) throw new Error("operator session credential must not be empty");
+  operatorSessionCredential = credential;
+}
+
+export function clearOperatorSession(): void {
+  operatorSessionCredential = null;
+}
+
+function authorityHeaders(): Record<string, string> {
+  if (operatorSessionCredential === null) {
+    throw new Error("operator session is unavailable");
+  }
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${operatorSessionCredential}`,
+  };
+}
+
 async function throwOnError(response: Response, action: string): Promise<void> {
   if (response.ok) return;
   let message = `HTTP ${response.status}`;
@@ -139,8 +160,8 @@ export async function requestPromotionApproval(taskId: string, targetRef: string
     `/api/orchestrator/tasks/${encodeURIComponent(taskId)}/approval-requests`,
     {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ target_ref: targetRef, actor: "operator" }),
+      headers: authorityHeaders(),
+      body: JSON.stringify({ target_ref: targetRef }),
     },
   );
   await throwOnError(response, "promotion approval request");
@@ -150,10 +171,9 @@ export async function requestPromotionApproval(taskId: string, targetRef: string
 export async function approvePromotion(taskId: string, approvalId: string) {
   const response = await fetch(`/api/orchestrator/tasks/${encodeURIComponent(taskId)}/approve`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authorityHeaders(),
     body: JSON.stringify({
       approval_id: approvalId,
-      operator: "operator",
       confirmed_destructive: true,
     }),
   });
@@ -164,8 +184,8 @@ export async function approvePromotion(taskId: string, approvalId: string) {
 export async function rejectPromotion(taskId: string, approvalId: string, reason: string) {
   const response = await fetch(`/api/orchestrator/tasks/${encodeURIComponent(taskId)}/reject`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ approval_id: approvalId, operator: "operator", reason }),
+    headers: authorityHeaders(),
+    body: JSON.stringify({ approval_id: approvalId, reason }),
   });
   await throwOnError(response, "promotion rejection");
   return (await response.json()) as { outcome: string; state: string };

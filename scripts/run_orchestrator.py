@@ -24,22 +24,31 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import os
 import sys
+import threading
+import time
 from pathlib import Path
 
 import uvicorn
 
 from factory.approval import ApprovalEngine, SystemClock
 from factory.git.manager import GitManager
+from factory.models.ollama_adapter.live_ollama import OllamaClient
 from factory.orchestrator.store.runtime_state import (
     SQLiteOrchestratorStateReader,
     _OrchestratorStateWriter,
 )
-from factory.orchestrator_api import Phase3BLifecycleService, create_app
+from factory.orchestrator_api import OperatorSession, Phase3BLifecycleService, create_app
 from factory.orchestrator_api.service import TaskOperatorService
 from factory.promotion import PromotionService, SQLitePromotionReader
-from factory.verification import SQLiteVerificationReader
-from factory.worker_engine.store import SQLiteWorkerRunReader
+from factory.verification import DockerIsolatedCommandRunner, SQLiteVerificationReader
+from factory.verification.engine import VerificationEngine
+from factory.verification.store import _VerificationWriter
+from factory.worker_engine.model_router import LiveOllamaModelRouter
+from factory.worker_engine.service import WorkerEngineService
+from factory.worker_engine.store import SQLiteWorkerRunReader, _WorkerRunWriter
+from factory.worker_engine.workspace import WorkspaceManager
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _schema_check import require_current_schema_or_exit
@@ -50,12 +59,24 @@ _DEFAULT_DATABASE_PATH = _REPO_ROOT / "runtime.db"
 _SETUP_COMMAND = "uv run python scripts/setup_api_database.py"
 
 
+def _worker_loop(worker: WorkerEngineService, poll_interval_s: float) -> None:
+    while True:
+        worker.run_all_claimable()
+        worker.retry_blocked_tasks()
+        time.sleep(poll_interval_s)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-path", type=Path, default=_DEFAULT_DATABASE_PATH)
     parser.add_argument("--migrations-root", type=Path, default=_DEFAULT_MIGRATIONS_ROOT)
     parser.add_argument("--security-database-path", type=Path)
     parser.add_argument("--audit-database-path", type=Path)
+    parser.add_argument("--enable-worker", action="store_true")
+    parser.add_argument("--verifier-image", default="builder-verifier:phase3b")
+    parser.add_argument("--ollama-model", default="devstral-small-2:24b")
+    parser.add_argument("--sandbox-root", type=Path, default=_REPO_ROOT / ".builder-sandboxes")
+    parser.add_argument("--worker-poll-interval", type=float, default=1.0)
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8100)
     args = parser.parse_args()
@@ -65,11 +86,25 @@ def main() -> None:
     writer = _OrchestratorStateWriter(database_path=args.database_path)
     reader = SQLiteOrchestratorStateReader(database_path=args.database_path)
     phase3b = None
+    worker = None
+    operator_session = None
     if (args.security_database_path is None) != (args.audit_database_path is None):
         parser.error("security and audit database paths must be supplied together")
     if args.security_database_path is not None and args.audit_database_path is not None:
+        credential = os.environ.get("BUILDER_OPERATOR_SESSION_TOKEN")
+        if not credential:
+            parser.error("BUILDER_OPERATOR_SESSION_TOKEN is required for Phase 3B")
+        operator_session = OperatorSession(credential=credential, operator="local-operator")
         git = GitManager()
         verification_reader = SQLiteVerificationReader(args.database_path)
+        verifier = VerificationEngine(
+            writer,
+            reader,
+            _VerificationWriter(args.database_path),
+            git,
+            _REPO_ROOT,
+            command_runner=DockerIsolatedCommandRunner(args.verifier_image),
+        )
         approval = ApprovalEngine(
             args.security_database_path, args.audit_database_path, SystemClock()
         )
@@ -91,10 +126,31 @@ def main() -> None:
             SQLitePromotionReader(args.database_path),
             git,
             _REPO_ROOT,
+            verifier,
         )
         phase3b.reconcile_startup()
+        if args.enable_worker:
+            run_reader = SQLiteWorkerRunReader(args.database_path)
+            worker = WorkerEngineService(
+                orchestrator_writer=writer,
+                orchestrator_reader=reader,
+                run_writer=_WorkerRunWriter(args.database_path),
+                run_reader=run_reader,
+                git=git,
+                workspace_manager=WorkspaceManager(git, args.sandbox_root),
+                repo_root=_REPO_ROOT,
+                model_router=LiveOllamaModelRouter(OllamaClient(), args.ollama_model),
+                verifier=verifier,
+            )
     service = TaskOperatorService(writer=writer, reader=reader, phase3b=phase3b)
-    app = create_app(service=service)
+    app = create_app(service=service, operator_session=operator_session)
+    if worker is not None:
+        threading.Thread(
+            target=_worker_loop,
+            args=(worker, args.worker_poll_interval),
+            daemon=True,
+            name="builder-worker-loop",
+        ).start()
     uvicorn.run(app, host=args.host, port=args.port)
 
 

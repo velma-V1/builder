@@ -6,6 +6,8 @@ No approve/reject route exists -- confirmed absent, not merely untested.
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
+from typing import cast
 
 import pytest
 from starlette.applications import Starlette
@@ -15,7 +17,12 @@ from factory.orchestrator.store.runtime_state import (
     SQLiteOrchestratorStateReader,
     _OrchestratorStateWriter,
 )
-from factory.orchestrator_api import TaskOperatorService, create_app
+from factory.orchestrator_api import (
+    OperatorSession,
+    Phase3BLifecycleService,
+    TaskOperatorService,
+    create_app,
+)
 
 _SUBMIT_ROUTE = "/api/orchestrator/tasks"
 
@@ -213,6 +220,68 @@ def test_reject_route_fails_closed_when_phase3b_is_not_configured(client: TestCl
         json={"approval_id": "apr-test", "operator": "operator", "reason": "declined"},
     )
     assert response.status_code == 503
+
+
+def test_approval_routes_require_runtime_session_credential(
+    service: TaskOperatorService,
+) -> None:
+    client = TestClient(
+        create_app(
+            service=service,
+            operator_session=OperatorSession(credential="runtime-secret", operator="alice"),
+        )
+    )
+
+    missing = client.post(
+        f"{_SUBMIT_ROUTE}/task/approve",
+        json={"approval_id": "apr", "confirmed_destructive": True},
+    )
+    wrong = client.post(
+        f"{_SUBMIT_ROUTE}/task/reject",
+        headers={"authorization": "Bearer wrong"},
+        json={"approval_id": "apr", "reason": "no"},
+    )
+
+    assert missing.status_code == 401
+    assert wrong.status_code == 401
+
+
+def test_authenticated_operator_identity_is_derived_server_side(
+    writer: _OrchestratorStateWriter, reader: SQLiteOrchestratorStateReader
+) -> None:
+    operators: list[str] = []
+
+    class FakePhase3B:
+        def approve(
+            self, approval_id: str, *, operator: str, confirmed_destructive: bool
+        ) -> SimpleNamespace:
+            operators.append(operator)
+            return SimpleNamespace(outcome=SimpleNamespace(value="PROMOTED"))
+
+    service = TaskOperatorService(
+        writer=writer,
+        reader=reader,
+        phase3b=cast(Phase3BLifecycleService, FakePhase3B()),
+    )
+    client = TestClient(
+        create_app(
+            service=service,
+            operator_session=OperatorSession(credential="runtime-secret", operator="alice"),
+        )
+    )
+
+    response = client.post(
+        f"{_SUBMIT_ROUTE}/task/approve",
+        headers={"authorization": "Bearer runtime-secret"},
+        json={
+            "approval_id": "apr",
+            "operator": "attacker-controlled",
+            "confirmed_destructive": True,
+        },
+    )
+
+    assert response.status_code == 200
+    assert operators == ["alice"]
 
 
 def test_forced_unexpected_failure_returns_controlled_503(

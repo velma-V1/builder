@@ -4,6 +4,7 @@ never write outside whatever workspace path it was given (never the live reposit
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from factory.integrations.agent_zero.models import (
@@ -147,6 +148,38 @@ def test_write_mode_rejects_a_path_traversal_attempt_out_of_the_workspace(tmp_pa
     assert AgentZeroEventType.FAILED in event_types
     assert AgentZeroEventType.PATCH_PROPOSED not in event_types
     assert not (tmp_path / "etc" / "pwned.txt").exists()
+
+
+def test_write_mode_revalidates_authorized_path_after_model_call(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    safe = workspace / "safe"
+    outside = tmp_path / "outside"
+    safe.mkdir(parents=True)
+    outside.mkdir()
+
+    class SwappingRouter:
+        def request(self, _capability: object) -> AgentZeroModelResult:
+            safe.rmdir()
+            os.symlink(outside, safe, target_is_directory=True)
+            return AgentZeroModelResult(
+                ok=True,
+                output="---BEGIN NEW CONTENT---\nowned\n---END NEW CONTENT---",
+                model_fingerprint="fp",
+                provider_route="fake",
+            )
+
+    transport = BuilderWorkerTransport(
+        model_router=SwappingRouter(),  # type: ignore[arg-type]
+        workspace_path=workspace,
+        allowed_path_globs=("safe/**",),
+    )
+    run_id = transport.submit(
+        _work_order(instructions="target: safe/out.txt\nwrite", allowed_path_globs=("safe/**",))
+    )
+    events = transport.poll_events(run_id, after_sequence=-1)
+
+    assert AgentZeroEventType.FAILED in [event.event_type for event in events]
+    assert not (outside / "out.txt").exists()
 
 
 def test_select_target_path_defaults_to_a_safe_scratch_file() -> None:

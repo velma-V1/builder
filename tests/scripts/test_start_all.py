@@ -179,6 +179,117 @@ def test_windows_creation_flags_fail_closed_when_constant_is_unavailable(
         start_all._creation_flags()
 
 
+class _FakeWindowsProcess:
+    pid = 123
+
+    def __init__(self, *, exits_on_wait: bool = True) -> None:
+        self.exited = False
+        self.exits_on_wait = exits_on_wait
+
+    def poll(self) -> int | None:
+        return 0 if self.exited else None
+
+    def wait(self, timeout: float) -> int:
+        if self.exits_on_wait:
+            self.exited = True
+        return 0
+
+
+def test_windows_cleanup_times_out_boundedly(
+    start_all: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(start_all, "_is_windows", lambda: True)
+    monkeypatch.setenv("SYSTEMROOT", "C:/Windows")
+    monkeypatch.setattr(
+        start_all.subprocess,
+        "run",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(subprocess.TimeoutExpired("taskkill", 5)),
+    )
+
+    with pytest.raises(start_all.StartupFailure, match="taskkill timed out"):
+        start_all.terminate_process_group(_FakeWindowsProcess())
+
+
+def test_windows_cleanup_rejects_failed_taskkill(
+    start_all: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(start_all, "_is_windows", lambda: True)
+    monkeypatch.setenv("SYSTEMROOT", "C:/Windows")
+    monkeypatch.setattr(
+        start_all.subprocess,
+        "run",
+        lambda *_args, **_kwargs: type("Completed", (), {"returncode": 1})(),
+    )
+
+    with pytest.raises(start_all.StartupFailure, match="taskkill failed"):
+        start_all.terminate_process_group(_FakeWindowsProcess())
+
+
+def test_windows_cleanup_requires_verified_process_exit(
+    start_all: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(start_all, "_is_windows", lambda: True)
+    monkeypatch.setenv("SYSTEMROOT", "C:/Windows")
+    monkeypatch.setattr(
+        start_all.subprocess,
+        "run",
+        lambda *_args, **_kwargs: type("Completed", (), {"returncode": 0})(),
+    )
+
+    with pytest.raises(start_all.StartupFailure, match="still running"):
+        start_all.terminate_process_group(_FakeWindowsProcess(exits_on_wait=False))
+
+
+def test_windows_cleanup_succeeds_only_after_verified_exit(
+    start_all: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(start_all, "_is_windows", lambda: True)
+    monkeypatch.setenv("SYSTEMROOT", "C:/Windows")
+    timeouts: list[float] = []
+
+    def _run(*_args: object, **kwargs: object) -> Any:
+        timeouts.append(float(kwargs["timeout"]))
+        return type("Completed", (), {"returncode": 0})()
+
+    monkeypatch.setattr(start_all.subprocess, "run", _run)
+    proc = _FakeWindowsProcess()
+
+    start_all.terminate_process_group(proc)
+
+    assert proc.poll() == 0
+    assert timeouts == [5]
+
+
+def test_phase3b_service_specs_inject_complete_runtime_configuration(
+    start_all: ModuleType, config: Any, tmp_path: Path
+) -> None:
+    specs = start_all._service_specs(config, tmp_path / "logs", "session-secret")
+    orchestrator = next(spec for spec in specs if spec.name == "orchestrator API")
+    dashboard = next(spec for spec in specs if spec.name == "dashboard")
+
+    assert "--security-database-path" in orchestrator.cmd
+    assert "--audit-database-path" in orchestrator.cmd
+    assert "--enable-worker" in orchestrator.cmd
+    assert orchestrator.env == {"BUILDER_OPERATOR_SESSION_TOKEN": "session-secret"}
+    assert dashboard.env == {"VITE_OPERATOR_SESSION_TOKEN": "session-secret"}
+
+
+def test_database_setup_includes_security_and_audit_schemas(
+    start_all: ModuleType, config: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    captured: list[str] = []
+
+    def _run(argv: list[str], **_kwargs: object) -> Any:
+        captured.extend(argv)
+        return type("Completed", (), {"returncode": 0})()
+
+    monkeypatch.setattr(start_all.subprocess, "run", _run)
+
+    assert start_all._run_setup(config)
+    assert "--security-database-path" in captured
+    assert "--audit-database-path" in captured
+
+
 def test_spawn_and_terminate_process_group_kills_the_process(
     start_all: ModuleType, tmp_path: Path
 ) -> None:

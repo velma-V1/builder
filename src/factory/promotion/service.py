@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import threading
 import uuid
 from dataclasses import dataclass, field
@@ -16,7 +17,7 @@ from factory.orchestrator.store.runtime_state import (
 )
 from factory.promotion.errors import PromotionError
 from factory.promotion.models import PromotionBinding, PromotionOutcome, PromotionRecord
-from factory.promotion.store import _PromotionWriter
+from factory.promotion.store import SQLitePromotionReader, _PromotionWriter
 from factory.verification.store import VerificationReader
 
 
@@ -69,19 +70,47 @@ class PromotionService:
         return result
 
     def reconcile_startup(self) -> tuple[str, ...]:
-        """Fail closed for interrupted promotions; never infer completion after restart."""
+        """Roll back interrupted ref updates; never infer completion after restart."""
         reconciled: list[str] = []
         tasks = self.orchestrator_reader.list_tasks_by_states(frozenset({TaskState.PROMOTING}))
         for task in tasks:
             manifest = self.verification_reader.get_latest_manifest(task.task_id)
             run_id = manifest.run_id if manifest is not None else "unknown-run"
-            self.orchestrator_writer.apply_transition(
-                task_id=task.task_id,
-                expected_current_state=TaskState.PROMOTING,
-                new_state=TaskState.FAILED,
-                cause="promotion_interrupted_reconcile",
-                actor=self.actor,
-            )
+            intent = SQLitePromotionReader(self.database_path).get_latest_for_task(task.task_id)
+            outcome = PromotionOutcome.REJECTED
+            branch: str | None = None
+            checkpoint: str | None = None
+            reason = "ROLLBACK_FAILED: durable promotion intent is unavailable"
+            if intent is not None:
+                try:
+                    payload = json.loads(intent.reason)
+                except json.JSONDecodeError:
+                    payload = None
+                if isinstance(payload, dict) and payload.get("kind") == "PROMOTION_INTENT":
+                    target_revision = payload.get("target_revision")
+                    branch = intent.promoted_branch
+                    checkpoint = intent.promoted_commit_sha
+                    if (
+                        isinstance(target_revision, str)
+                        and target_revision
+                        and branch is not None
+                        and checkpoint is not None
+                    ):
+                        try:
+                            current = self.git.resolve_ref(self.repo_root, branch)
+                            if current == checkpoint:
+                                self.git.restore_ref(
+                                    self.repo_root, branch, target_revision, checkpoint
+                                )
+                            elif current != target_revision:
+                                raise PromotionError(
+                                    "PROMOTION_TARGET_DRIFT",
+                                    f"interrupted target is at unexpected revision {current}",
+                                )
+                            outcome = PromotionOutcome.ROLLED_BACK
+                            reason = "interrupted promotion rolled back to original revision"
+                        except Exception as exc:
+                            reason = f"ROLLBACK_FAILED: {exc}"
             self._writer.record(
                 PromotionRecord(
                     promotion_id=f"reconcile-{task.task_id}-{task.sequence}",
@@ -89,15 +118,19 @@ class PromotionService:
                     run_id=run_id,
                     approval_card_id="unavailable-after-interruption",
                     decided_by=self.actor,
-                    promoted_branch=None,
-                    promoted_commit_sha=None,
-                    outcome=PromotionOutcome.REJECTED,
-                    reason=(
-                        "INTERRUPTED_PROMOTION: completion and rollback not provable; "
-                        "manual recovery required"
-                    ),
+                    promoted_branch=branch,
+                    promoted_commit_sha=checkpoint,
+                    outcome=outcome,
+                    reason=reason,
                     created_at=_utcnow(),
                 )
+            )
+            self.orchestrator_writer.apply_transition(
+                task_id=task.task_id,
+                expected_current_state=TaskState.PROMOTING,
+                new_state=TaskState.FAILED,
+                cause="promotion_interrupted_reconcile",
+                actor=self.actor,
             )
             reconciled.append(task.task_id)
         return tuple(reconciled)
@@ -158,6 +191,24 @@ class PromotionService:
             raise PromotionError(
                 "PROMOTION_APPROVAL_INVALID", "bound approval could not be consumed"
             )
+        self._writer.record(
+            PromotionRecord(
+                promotion_id=f"intent-{binding.task_id}-{binding.run_id}",
+                task_id=binding.task_id,
+                run_id=binding.run_id,
+                approval_card_id=approval.approval_id,
+                decided_by=operator,
+                promoted_branch=binding.target_ref,
+                promoted_commit_sha=checkpoint,
+                outcome=PromotionOutcome.REJECTED,
+                reason=json.dumps(
+                    {"kind": "PROMOTION_INTENT", "target_revision": binding.target_revision},
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ),
+                created_at=_utcnow(),
+            )
+        )
         self.orchestrator_writer.apply_transition(
             task_id=binding.task_id,
             expected_current_state=TaskState.AWAITING_APPROVAL,

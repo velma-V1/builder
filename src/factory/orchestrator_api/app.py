@@ -22,6 +22,7 @@ from starlette.responses import JSONResponse
 from starlette.routing import Route
 
 from factory.orchestrator.models import TaskRuntimeRecord
+from factory.orchestrator_api.auth import OperatorSession
 from factory.orchestrator_api.errors import OrchestratorApiError
 from factory.orchestrator_api.lifecycle import Phase3BLifecycleService
 from factory.orchestrator_api.service import TaskDetail, TaskOperatorService
@@ -47,6 +48,16 @@ def _error_response(exc: OrchestratorApiError) -> JSONResponse:
 
 def _bad_request(message: str) -> JSONResponse:
     return JSONResponse({"error": message}, status_code=400)
+
+
+def _authenticated_operator(request: Request) -> str | JSONResponse:
+    session: OperatorSession | None = request.app.state.operator_session
+    if session is None:
+        return JSONResponse({"error": "operator session unavailable"}, status_code=503)
+    operator = session.authenticate(request.headers.get("authorization"))
+    if operator is None:
+        return JSONResponse({"error": "operator authentication required"}, status_code=401)
+    return operator
 
 
 async def _submit_task(request: Request) -> JSONResponse:
@@ -232,6 +243,9 @@ async def _phase3b_detail(request: Request) -> JSONResponse:
 
 
 async def _request_approval(request: Request) -> JSONResponse:
+    operator = _authenticated_operator(request)
+    if isinstance(operator, JSONResponse):
+        return operator
     try:
         body = await request.json()
     except Exception:
@@ -239,10 +253,9 @@ async def _request_approval(request: Request) -> JSONResponse:
     target_ref = body.get("target_ref") if isinstance(body, dict) else None
     if not isinstance(target_ref, str) or not target_ref.strip():
         return _bad_request("target_ref is required")
-    actor = str(body.get("actor") or _DEFAULT_SUBMITTED_BY)
     try:
         card = _phase3b_service(request).request_approval(
-            request.path_params["task_id"], target_ref=target_ref, actor=actor
+            request.path_params["task_id"], target_ref=target_ref, actor=operator
         )
     except OrchestratorApiError as exc:
         return _error_response(exc)
@@ -261,15 +274,17 @@ async def _request_approval(request: Request) -> JSONResponse:
 
 
 async def _approve(request: Request) -> JSONResponse:
+    operator = _authenticated_operator(request)
+    if isinstance(operator, JSONResponse):
+        return operator
     try:
         body = await request.json()
     except Exception:
         return _bad_request("request body must be valid JSON")
     approval_id = body.get("approval_id") if isinstance(body, dict) else None
-    operator = body.get("operator") if isinstance(body, dict) else None
     confirmed = body.get("confirmed_destructive") if isinstance(body, dict) else None
-    if not isinstance(approval_id, str) or not isinstance(operator, str) or confirmed is not True:
-        return _bad_request("approval_id, operator, and explicit confirmation are required")
+    if not isinstance(approval_id, str) or confirmed is not True:
+        return _bad_request("approval_id and explicit confirmation are required")
     try:
         result = _phase3b_service(request).approve(
             approval_id, operator=operator, confirmed_destructive=True
@@ -282,21 +297,21 @@ async def _approve(request: Request) -> JSONResponse:
 
 
 async def _reject(request: Request) -> JSONResponse:
+    operator = _authenticated_operator(request)
+    if isinstance(operator, JSONResponse):
+        return operator
     try:
         body = await request.json()
     except Exception:
         return _bad_request("request body must be valid JSON")
     approval_id = body.get("approval_id") if isinstance(body, dict) else None
-    operator = body.get("operator") if isinstance(body, dict) else None
     reason = body.get("reason") if isinstance(body, dict) else None
-    valid = all(
-        isinstance(value, str) and value.strip() for value in (approval_id, operator, reason)
-    )
+    valid = all(isinstance(value, str) and value.strip() for value in (approval_id, reason))
     if not valid:
-        return _bad_request("approval_id, operator, and reason are required")
+        return _bad_request("approval_id and reason are required")
     try:
         result = _phase3b_service(request).reject(
-            cast(str, approval_id), operator=cast(str, operator), reason=cast(str, reason)
+            cast(str, approval_id), operator=operator, reason=cast(str, reason)
         )
     except OrchestratorApiError as exc:
         return _error_response(exc)
@@ -305,7 +320,9 @@ async def _reject(request: Request) -> JSONResponse:
     return JSONResponse({"outcome": result.outcome.value, "state": "REJECTED"})
 
 
-def create_app(*, service: TaskOperatorService) -> Starlette:
+def create_app(
+    *, service: TaskOperatorService, operator_session: OperatorSession | None = None
+) -> Starlette:
     """Narrow application factory: the operator service (which holds the writer) is the only
     dependency, passed explicitly. No connection is opened at import time."""
     app = Starlette(
@@ -325,4 +342,5 @@ def create_app(*, service: TaskOperatorService) -> Starlette:
         ],
     )
     app.state.service = service
+    app.state.operator_session = operator_session
     return app

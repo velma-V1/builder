@@ -7,29 +7,91 @@ from types import SimpleNamespace
 import pytest
 
 from factory.verification.engine import VerificationEngine
+from factory.verification.execution import DockerIsolatedCommandRunner
 
 
-def test_missing_linter_fails_closed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+class RecordingRunner:
+    def __init__(self, returncode: int = 0) -> None:
+        self.returncode = returncode
+        self.calls: list[tuple[tuple[str, ...], Path, int]] = []
+
+    def run(self, argv: tuple[str, ...], *, cwd: Path, timeout_s: int) -> SimpleNamespace:
+        self.calls.append((argv, cwd, timeout_s))
+        return SimpleNamespace(returncode=self.returncode, stdout="", stderr="")
+
+
+def test_docker_runner_uses_hardened_networkless_ephemeral_container(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls: list[list[str]] = []
+
+    def _run(argv: list[str], **_kwargs: object) -> SimpleNamespace:
+        calls.append(argv)
+        return SimpleNamespace(returncode=0, stdout="ok", stderr="")
+
+    monkeypatch.setattr("factory.verification.execution.shutil.which", lambda name: "/bin/docker")
+    monkeypatch.setattr("factory.verification.execution.subprocess.run", _run)
+    (tmp_path / "test_output.py").write_text("def test_ok(): assert True\n")
+
+    result = DockerIsolatedCommandRunner("builder-verifier:test").run(
+        ("python", "-m", "pytest", "-q", "."), cwd=tmp_path, timeout_s=30
+    )
+
+    assert result.returncode == 0
+    command = calls[0]
+    assert "--network" in command and "none" in command
+    assert "--read-only" in command
+    assert "--cap-drop" in command and "ALL" in command
+    assert "no-new-privileges" in command
+    assert str(tmp_path) not in " ".join(command)
+
+
+def test_missing_linter_fails_closed(tmp_path: Path) -> None:
     (tmp_path / "a.py").write_text("x = 1\n")
-    monkeypatch.setattr("factory.verification.engine.shutil.which", lambda name: None)
-    passed, detail = VerificationEngine._check_lint(object(), tmp_path, ("a.py",))
+    engine = SimpleNamespace(command_runner=None)
+    passed, detail = VerificationEngine._check_lint(engine, tmp_path, ("a.py",))
     assert not passed
     assert "required" in detail
 
 
-def test_missing_type_checker_fails_closed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_missing_type_checker_fails_closed(tmp_path: Path) -> None:
     (tmp_path / "a.py").write_text("x = 1\n")
-    monkeypatch.setattr("factory.verification.engine.shutil.which", lambda name: None)
-    passed, detail = VerificationEngine._check_types(object(), tmp_path, ("a.py",))
+    engine = SimpleNamespace(command_runner=None)
+    passed, detail = VerificationEngine._check_types(engine, tmp_path, ("a.py",))
     assert not passed
     assert "required" in detail
 
 
 def test_source_change_without_regression_test_fails_closed(tmp_path: Path) -> None:
     (tmp_path / "a.py").write_text("x = 1\n")
-    passed, detail = VerificationEngine._check_tests(object(), tmp_path, ("a.py",))
+    engine = SimpleNamespace(command_runner=None)
+    passed, detail = VerificationEngine._check_tests(engine, tmp_path, ("a.py",))
     assert not passed
     assert "regression test" in detail
+
+
+def test_worker_controlled_tests_require_an_isolated_runner(tmp_path: Path) -> None:
+    (tmp_path / "test_output.py").write_text("def test_ok(): assert True\n")
+    engine = SimpleNamespace(command_runner=None)
+
+    passed, detail = VerificationEngine._check_tests(engine, tmp_path, ("test_output.py",))
+
+    assert not passed
+    assert "isolated" in detail
+
+
+def test_test_command_is_delegated_to_the_isolated_runner(tmp_path: Path) -> None:
+    (tmp_path / "test_output.py").write_text("def test_ok(): assert True\n")
+    runner = RecordingRunner()
+    engine = SimpleNamespace(command_runner=runner)
+
+    passed, detail = VerificationEngine._check_tests(engine, tmp_path, ("test_output.py",))
+
+    assert passed
+    assert detail == "tests passed in isolated sandbox"
+    assert runner.calls == [
+        (("python", "-m", "pytest", "-q", "."), tmp_path, 60),
+    ]
 
 
 def test_plain_text_acceptance_is_rejected_not_substring_matched(tmp_path: Path) -> None:

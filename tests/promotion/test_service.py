@@ -12,6 +12,7 @@ from factory.orchestrator.store.runtime_state import (
     SQLiteOrchestratorStateReader,
     _OrchestratorStateWriter,
 )
+from factory.promotion import SQLitePromotionReader
 from factory.promotion.errors import PromotionError
 from factory.promotion.models import PromotionBinding, PromotionOutcome
 from factory.promotion.service import PromotionService
@@ -30,6 +31,8 @@ class FakeGit:
     digest: str = "blob"
     fail_advance: bool = False
     restored: bool = False
+    crash_after_advance: bool = False
+    fail_restore: bool = False
 
     def guard_protected_ref(self, ref: str) -> None:
         if ref == "main":
@@ -45,10 +48,18 @@ class FakeGit:
         if self.fail_advance:
             raise GitError("GIT_COMMAND_FAILED", "injected")
         self.target = commit
+        if self.crash_after_advance:
+            raise SimulatedProcessCrash
 
     def restore_ref(self, repo: Path, ref: str, commit: str, expected_current: str) -> None:
+        if self.fail_restore:
+            raise GitError("GIT_COMMAND_FAILED", "restore injected")
         self.target = commit
         self.restored = True
+
+
+class SimulatedProcessCrash(BaseException):
+    pass
 
 
 @dataclass
@@ -196,3 +207,40 @@ def test_interrupted_promotion_reconciles_to_failed_idempotently(
     assert (
         SQLiteOrchestratorStateReader(database).get_task(task_id).current_state is TaskState.FAILED
     )
+
+
+def test_restart_rolls_back_ref_advanced_before_process_crash(
+    verification_db: tuple[Path, str],
+) -> None:
+    database, task_id = verification_db
+    binding, approval = _setup(database, task_id)
+    git = FakeGit(crash_after_advance=True)
+    service = _service(database, git, approval)
+
+    with pytest.raises(SimulatedProcessCrash):
+        service.promote(binding, approval, "operator")
+
+    assert git.target == "checkpoint"
+    assert service.reconcile_startup() == (task_id,)
+    assert git.target == "base"
+    assert git.restored
+    assert (
+        SQLiteOrchestratorStateReader(database).get_task(task_id).current_state is TaskState.FAILED
+    )
+
+
+def test_restart_records_explicit_rollback_failure(
+    verification_db: tuple[Path, str],
+) -> None:
+    database, task_id = verification_db
+    binding, approval = _setup(database, task_id)
+    git = FakeGit(crash_after_advance=True, fail_restore=True)
+    service = _service(database, git, approval)
+    with pytest.raises(SimulatedProcessCrash):
+        service.promote(binding, approval, "operator")
+
+    assert service.reconcile_startup() == (task_id,)
+    record = SQLitePromotionReader(database).get_latest_for_task(task_id)
+    assert record is not None
+    assert record.outcome is PromotionOutcome.REJECTED
+    assert "ROLLBACK_FAILED" in record.reason

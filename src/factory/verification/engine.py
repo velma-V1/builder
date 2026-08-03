@@ -25,9 +25,6 @@ from __future__ import annotations
 import ast
 import hashlib
 import json
-import shutil
-import subprocess
-import sys
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -44,6 +41,7 @@ from factory.orchestrator.store.runtime_state import (
 from factory.staging.manager import QuarantinedStaging
 from factory.staging.models import StagedFile
 from factory.verification.errors import VerificationStoreError
+from factory.verification.execution import IsolatedCommandRunner
 from factory.verification.models import (
     EvidenceItem,
     EvidencePackage,
@@ -89,6 +87,7 @@ class VerificationEngine:
     verification_writer: _VerificationWriter
     git: GitManager
     repo_root: Path
+    command_runner: IsolatedCommandRunner | None = None
     actor: str = _VERIFICATION_ACTOR
 
     def verify(self, task_id: str, run: WorkerRunRecord) -> VerificationOutcome:
@@ -315,20 +314,18 @@ class VerificationEngine:
         python_files = [p for p in changed_paths if p.endswith(".py")]
         if not python_files:
             return True, "no Python files to lint"
-        ruff = shutil.which("ruff")
-        if ruff is None:
-            return False, "required ruff executable is unavailable"
+        if self.command_runner is None:
+            return False, "required isolated verification runner is unavailable"
         try:
-            result = subprocess.run(  # noqa: S603 - fixed executable path, literal argv
-                [ruff, "check", *python_files],
+            result = self.command_runner.run(
+                ("ruff", "check", *python_files),
                 cwd=output_root,
-                capture_output=True,
-                text=True,
-                timeout=_TIMEOUT_S,
-                check=False,
+                timeout_s=_TIMEOUT_S,
             )
-        except subprocess.TimeoutExpired:
+        except TimeoutError:
             return False, f"ruff check exceeded {_TIMEOUT_S}s"
+        except Exception as exc:
+            return False, f"isolated ruff execution failed: {exc}"
         if result.returncode != 0:
             return False, f"ruff check failed: {result.stdout.strip()[:500]}"
         return True, "ruff check clean"
@@ -337,20 +334,18 @@ class VerificationEngine:
         python_files = [path for path in changed_paths if path.endswith(".py")]
         if not python_files:
             return True, "no Python files to type-check"
-        mypy = shutil.which("mypy")
-        if mypy is None:
-            return False, "required mypy executable is unavailable"
+        if self.command_runner is None:
+            return False, "required isolated verification runner is unavailable"
         try:
-            result = subprocess.run(  # noqa: S603 - fixed executable path, bounded argv
-                [mypy, "--strict", *python_files],
+            result = self.command_runner.run(
+                ("mypy", "--strict", *python_files),
                 cwd=output_root,
-                capture_output=True,
-                text=True,
-                timeout=_TIMEOUT_S,
-                check=False,
+                timeout_s=_TIMEOUT_S,
             )
-        except subprocess.TimeoutExpired:
+        except TimeoutError:
             return False, f"mypy exceeded {_TIMEOUT_S}s"
+        except Exception as exc:
+            return False, f"isolated mypy execution failed: {exc}"
         if result.returncode != 0:
             return False, f"mypy failed: {(result.stdout + result.stderr).strip()[:500]}"
         return True, "mypy strict check clean"
@@ -365,19 +360,21 @@ class VerificationEngine:
             if source_changed:
                 return False, "Python source changed without a required regression test"
             return True, "no testable source changed"
+        if self.command_runner is None:
+            return False, "required isolated verification runner is unavailable"
         try:
-            result = subprocess.run(  # noqa: S603 - fixed argv, no shell
-                [sys.executable, "-m", "pytest", "-q", str(output_root)],
-                capture_output=True,
-                text=True,
-                timeout=_TIMEOUT_S,
-                check=False,
+            result = self.command_runner.run(
+                ("python", "-m", "pytest", "-q", "."),
+                cwd=output_root,
+                timeout_s=_TIMEOUT_S,
             )
-        except subprocess.TimeoutExpired:
+        except TimeoutError:
             return False, f"test run exceeded {_TIMEOUT_S}s"
+        except Exception as exc:
+            return False, f"isolated test execution failed: {exc}"
         if result.returncode != 0:
             return False, f"tests failed: {result.stdout.strip()[:500]}"
-        return True, "tests passed"
+        return True, "tests passed in isolated sandbox"
 
     def _check_acceptance(
         self,

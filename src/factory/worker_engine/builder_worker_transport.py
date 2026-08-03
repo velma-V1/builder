@@ -45,6 +45,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from factory.contracts.errors import ContractError
 from factory.contracts.validation.paths import PathAuthority
 from factory.integrations.agent_zero.models import (
     AgentZeroEvent,
@@ -315,6 +316,20 @@ class BuilderWorkerTransport:
         if self._is_cancelled():
             seq += 1
             events.append(self._emit(work_order.work_order_id, seq, AgentZeroEventType.CANCELLED))
+            return events
+
+        try:
+            authority.revalidate_before_use(authorization)
+        except ContractError as exc:
+            seq += 1
+            events.append(
+                self._emit(
+                    work_order.work_order_id,
+                    seq,
+                    AgentZeroEventType.FAILED,
+                    reason=f"target path changed after authorization: {exc}",
+                )
+            )
             return events
 
         absolute_target.parent.mkdir(parents=True, exist_ok=True)
