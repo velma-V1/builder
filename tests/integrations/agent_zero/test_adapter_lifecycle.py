@@ -4,7 +4,6 @@ module-failure isolation (one bad run never corrupts the adapter for the next)."
 from __future__ import annotations
 
 import pytest
-from az_support import model_router, work_order
 
 from factory.integrations.agent_zero.adapter import AgentZeroAdapter
 from factory.integrations.agent_zero.errors import AgentZeroError, AgentZeroErrorCode
@@ -17,6 +16,8 @@ from factory.integrations.agent_zero.fake_transport import (
 )
 from factory.integrations.agent_zero.models import AgentZeroEventType, WorkerOutcome
 from factory.integrations.agent_zero.transport import TransportFailure, TransportTimeout
+
+from .az_support import model_router, work_order
 
 pytestmark = pytest.mark.security
 

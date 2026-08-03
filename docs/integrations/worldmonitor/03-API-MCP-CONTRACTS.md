@@ -1,13 +1,12 @@
 # WorldMonitor 03 — API / MCP Contracts
 
-**REST:** `WorldMonitorRestClient` issues read-only `GET` per category against documented paths. The
-official pinned OpenAPI is used **when verified**; until then `OPENAPI_CLIENT_STATUS := BLOCKED_UNVERIFIED`
-— no schema is fabricated; the client operates on an interface + fixtures. A generated client (later)
-lands in an isolated generated directory and is never hand-edited.
+**HTTP:** `WorldMonitorOfficialClient` uses the verified pinned SeBuf route
+`/api/seismology/v1/list-earthquakes`. It accepts only the configured loopback WorldMonitor origin,
+validates response shape and source identity, and normalizes real USGS records with provenance.
+Malformed replies, unexpected hosts, and unavailable sources fail closed; no speculative endpoint
+or fabricated fallback record exists.
 
-**MCP:** `mcp_client` prepares discovery of the server card, OAuth metadata, tool list, scopes, and
-capability flags via a fake transport only. **No** OAuth registration, login, token acquisition, or
-live connection. Tool results (later) flow through the same IntelligenceRecord normalization.
+`mcp_client` remains a non-production discovery contract. It is not used by the implemented refresh
+path and cannot become a hidden fallback.
 
-**Modes:** `LOCAL_MANAGED_UI` (default future), `LOCAL_REST`, `HOSTED_REST` (disabled), `HOSTED_MCP`
-(disabled). Never assume a mode exposes a capability — discover it; unknown ⇒ denied.
+Hosted REST/MCP modes are disabled. This approval covers local managed use only.

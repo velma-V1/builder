@@ -25,7 +25,11 @@ _AGENT_ZERO_PREFIX_RE = re.compile(r"^AgentZero")
 #: scrutiny this test file documents -- it must be a genuine external-process client, never an
 #: in-process loop.
 _ALLOWED_AGENT_ZERO_PREFIXED_NAMES = frozenset(
-    {"AgentZeroProcessClient", "AgentZeroDeploymentUnavailable"}
+    {
+        "AgentZeroProcessClient",
+        "AgentZeroDeploymentUnavailable",
+        "AgentZeroTransportFactory",
+    }
 )
 
 
@@ -76,20 +80,17 @@ def test_agent_zero_process_client_is_a_genuine_network_client_not_an_in_process
     from factory.worker_engine.agent_zero_process_client import AgentZeroProcessClient
 
     fields = {f for f in AgentZeroProcessClient.__dataclass_fields__}
-    assert "base_url" in fields, "the real adapter must be configured with a network address"
+    assert "official" in fields, "the adapter must use the verified official client contract"
     source = inspect.getsource(AgentZeroProcessClient)
-    assert "urllib.request" in source or "urlopen" in source, (
-        "the real adapter must make genuine network calls, not fabricate responses in-process"
-    )
+    assert "start_async" in source and "poll" in source
 
 
 def test_agent_zero_process_client_module_documents_it_is_the_real_integration() -> None:
     module_path = _WORKER_ENGINE_ROOT / "agent_zero_process_client.py"
     content = module_path.read_text(encoding="utf-8")
     normalized = " ".join(content.lower().split())
-    assert "the real agent zero integration" in normalized
-    assert "never fabricates" in normalized
-    assert "never falls back silently" in normalized or "never silently" in normalized
+    assert "pinned agent zero v2.7 async transport" in normalized
+    assert "untrusted worker boundary" in normalized
 
 
 def test_agent_zero_structure_verifier_script_is_unmodified_by_phase_3b() -> None:
@@ -124,9 +125,16 @@ def test_agent_zero_process_client_also_implements_the_agent_zero_transport_prot
     from factory.integrations.agent_zero.transport import AgentZeroTransport
     from factory.worker_engine.agent_zero_process_client import AgentZeroProcessClient
 
-    client = AgentZeroProcessClient(
-        base_url="http://127.0.0.1:1",
-        ollama_base_url="http://127.0.0.1:11434",
-        model_tag="devstral-small-2:24b",
-    )
+    class Official:
+        def probe(self) -> None: ...
+        def start_async(self, work_order_json: str) -> str:
+            return "ctx"
+
+        def poll(self, context_id: str):
+            raise AssertionError
+
+        def cancel(self, context_id: str) -> bool:
+            return True
+
+    client = AgentZeroProcessClient(Official(), None, ())
     assert isinstance(client, AgentZeroTransport)

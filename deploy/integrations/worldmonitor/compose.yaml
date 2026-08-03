@@ -1,0 +1,62 @@
+services:
+  worldmonitor:
+    profiles: [builder-enabled]
+    build:
+      context: .
+      args:
+        WORLDMONITOR_COMMIT: e51058e1765ef2f0c83ccb1d08d984bc59d23f10
+    image: builder/worldmonitor:v2.5.23
+    container_name: builder-worldmonitor
+    user: "1000:1000"
+    read_only: true
+    privileged: false
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 192
+    mem_limit: ${WORLDMONITOR_MEMORY:-2048m}
+    cpus: ${WORLDMONITOR_CPUS:-1.0}
+    restart: "no"
+    ports: ["127.0.0.1:${WORLDMONITOR_PORT:-3000}:3000"]
+    volumes: ["worldmonitor-cache:/home/node/.cache"]
+    tmpfs: [/tmp:size=256m,mode=1777]
+    networks: [worldmonitor-internal]
+    environment:
+      HTTPS_PROXY: http://worldmonitor-egress:3128
+      HTTP_PROXY: http://worldmonitor-egress:3128
+      NO_PROXY: 127.0.0.1,localhost
+      NODE_USE_ENV_PROXY: "1"
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 6s
+      retries: 24
+      start_period: 30s
+    depends_on:
+      worldmonitor-egress:
+        condition: service_started
+
+  worldmonitor-egress:
+    profiles: [builder-enabled]
+    image: ubuntu/squid:6.13-25.10_beta
+    read_only: true
+    privileged: false
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 256m
+    cpus: 0.25
+    volumes:
+      - ./squid.conf:/etc/squid/squid.conf:ro
+    tmpfs:
+      - /var/log/squid:size=16m,uid=13,gid=13
+      - /var/spool/squid:size=16m,uid=13,gid=13
+      - /run:size=4m
+    networks: [worldmonitor-internal, worldmonitor-egress]
+
+networks:
+  worldmonitor-internal:
+    internal: true
+  worldmonitor-egress:
+
+volumes:
+  worldmonitor-cache:

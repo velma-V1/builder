@@ -2,7 +2,7 @@
 """Verification suite for the WorldMonitor integration structure (deterministic; no live calls).
 
 Confirms the managed-module boundaries: no WorldMonitor upstream source is vendored into Builder,
-attribution + license obligations are recorded (commercial use unresolved), no direct HTTP library
+the official revision and AGPL obligations are recorded, no direct HTTP library
 or environment-secret access, AI access is model-router-only (no provider/secret handle), the
 lifecycle is dry-run by default, hosted access is disabled, and the deterministic tests pass under
 ruff + strict mypy. Makes NO network/MCP call. Not a phase-promotion gate.
@@ -52,13 +52,11 @@ def verify_layout() -> VerificationResult:
         "models",
         "manifest",
         "capabilities",
-        "adapter",
-        "rest_client",
+        "official_client",
         "mcp_client",
         "normalization",
         "provenance",
         "health",
-        "lifecycle",
         "policy",
         "retention",
         "ui_bridge",
@@ -91,11 +89,14 @@ def verify_attribution_and_license() -> VerificationResult:
     ok = (
         bool(WORLDMONITOR_MANIFEST.attribution)
         and "koala73/worldmonitor" in WORLDMONITOR_MANIFEST.upstream_repo
-        and "UNRESOLVED" in WORLDMONITOR_MANIFEST.commercial_use_status
-        and WORLDMONITOR_MANIFEST.license_verified is False
+        and WORLDMONITOR_MANIFEST.license == "AGPL-3.0-or-later"
+        and WORLDMONITOR_MANIFEST.license_verified is True
+        and WORLDMONITOR_MANIFEST.revision_verified is True
         and bool(AGPL_OBLIGATIONS)
     )
-    return VerificationResult("attribution + license (commercial unresolved) recorded", ok, "ok")
+    return VerificationResult(
+        "official revision, attribution, and AGPL boundary recorded", ok, "ok"
+    )
 
 
 def verify_no_direct_http_or_secret() -> VerificationResult:
@@ -103,25 +104,39 @@ def verify_no_direct_http_or_secret() -> VerificationResult:
     return VerificationResult("no direct HTTP / env-secret access", not hits, f"hits={hits}")
 
 
-def verify_model_router_only() -> VerificationResult:
-    from factory.integrations.worldmonitor import WorldMonitorAdapter
+def verify_official_read_only_contract() -> VerificationResult:
+    from factory.integrations.worldmonitor.official_client import WorldMonitorOfficialClient
 
-    slots = set(WorldMonitorAdapter.__slots__)
-    ok = "_router" in slots and not any("provider" in s or "secret" in s for s in slots)
+    slots = set(WorldMonitorOfficialClient.__slots__)
+    ok = "base_url" in slots and not any("provider" in slot or "secret" in slot for slot in slots)
     return VerificationResult(
-        "AI access is Builder-router-only (no provider/secret handle)",
+        "official read-only client has no provider/secret handle",
         ok,
-        f"router_slot={'_router' in slots}",
+        f"slots={sorted(slots)}",
     )
 
 
-def verify_lifecycle_dry_run() -> VerificationResult:
-    from factory.integrations.worldmonitor import build_lifecycle
-
-    report = build_lifecycle().run()  # default dry-run
-    ok = not report.mutated and "(MISSING)" not in build_lifecycle().format_plan()
+def verify_managed_build_lifecycle() -> VerificationResult:
+    source = (ROOT / "src/factory/integrations/runtime.py").read_text(encoding="utf-8")
+    compose = (ROOT / "deploy/integrations/worldmonitor/compose.yaml").read_text(encoding="utf-8")
+    ok = 'spec.compose("build", "--pull")' in source and "builder-enabled" in compose
     return VerificationResult(
-        "lifecycle is dry-run by default (no mutation)", ok, f"mutated={report.mutated}"
+        "WorldMonitor uses Builder-managed pinned build lifecycle", ok, "managed runtime + profile"
+    )
+
+
+def verify_capability_scope_is_honest() -> VerificationResult:
+    from factory.integrations.worldmonitor import WORLDMONITOR_MANIFEST
+
+    ok = (
+        WORLDMONITOR_MANIFEST.section_complete is False
+        and WORLDMONITOR_MANIFEST.implemented_capability_scope == ("disasters.earthquakes",)
+        and len(WORLDMONITOR_MANIFEST.approved_capability_scope) == 13
+    )
+    return VerificationResult(
+        "approved capability scope is explicitly incomplete",
+        ok,
+        "implemented=disasters.earthquakes; required=13 categories",
     )
 
 
@@ -176,8 +191,9 @@ def main() -> int:
         verify_no_source_copied,
         verify_attribution_and_license,
         verify_no_direct_http_or_secret,
-        verify_model_router_only,
-        verify_lifecycle_dry_run,
+        verify_official_read_only_contract,
+        verify_managed_build_lifecycle,
+        verify_capability_scope_is_honest,
         verify_tests,
         verify_ruff,
         verify_mypy,
@@ -195,8 +211,8 @@ def main() -> int:
     print("=" * 80 + "\n")
     if passed == total:
         print(
-            "WorldMonitor structure gate: PASS. STRUCTURE_COMPLETE_NOT_INSTALLED; "
-            "external pinned dependency; hosted access DISABLED; router-only AI.\n"
+            "WorldMonitor structure gate: PASS; capability section remains INCOMPLETE "
+            "(earthquakes only; live container checked separately).\n"
         )
         return 0
     print("WorldMonitor structure gate: INCOMPLETE — fix failures above.\n")

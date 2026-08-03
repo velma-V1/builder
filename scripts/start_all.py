@@ -218,6 +218,12 @@ def _run_setup(config: BuilderConfig) -> bool:
             str(config.database_path.with_name("security.db")),
             "--audit-database-path",
             str(config.database_path.with_name("audit.db")),
+            "--integration-database-path",
+            str(
+                config.integrations.state_path
+                if config.integrations is not None
+                else config.repository_path / "integrations.db"
+            ),
         ],
         cwd=str(_REPO_ROOT),
         check=False,
@@ -226,8 +232,17 @@ def _run_setup(config: BuilderConfig) -> bool:
 
 
 def _service_specs(
-    config: BuilderConfig, log_dir: Path, operator_session_credential: str
+    config: BuilderConfig,
+    log_dir: Path,
+    operator_session_credential: str,
+    agent_zero_credential: str,
+    model_gateway_credential: str,
 ) -> tuple[ServiceSpec, ...]:
+    integration_state_path = (
+        config.integrations.state_path
+        if config.integrations is not None
+        else config.repository_path / "integrations.db"
+    )
     return (
         ServiceSpec(
             name="read API",
@@ -257,6 +272,10 @@ def _service_specs(
                 "--audit-database-path",
                 str(config.database_path.with_name("audit.db")),
                 "--enable-worker",
+                "--integration-state-path",
+                str(integration_state_path),
+                "--config-path",
+                str(_REPO_ROOT / "config" / "builder.yaml"),
                 "--port",
                 str(config.orchestrator_api_port),
             ),
@@ -265,7 +284,31 @@ def _service_specs(
             health_check=http_health_check(
                 f"http://127.0.0.1:{config.orchestrator_api_port}/api/orchestrator/health"
             ),
-            env={"BUILDER_OPERATOR_SESSION_TOKEN": operator_session_credential},
+            env={
+                "BUILDER_OPERATOR_SESSION_TOKEN": operator_session_credential,
+                "BUILDER_AGENT_ZERO_API_KEY": agent_zero_credential,
+                "BUILDER_MODEL_GATEWAY_TOKEN": model_gateway_credential,
+                "OPENAI_API_KEY": model_gateway_credential,
+                "AGENT_ZERO_MODEL": "devstral-small-2:24b",
+                "AGENT_ZERO_PORT": str(config.integrations.agent_zero.port)
+                if config.integrations
+                else "50080",
+                "WORLDMONITOR_PORT": str(config.integrations.worldmonitor.port)
+                if config.integrations
+                else "3000",
+                "AGENT_ZERO_MEMORY": f"{config.integrations.agent_zero.memory_mb}m"
+                if config.integrations
+                else "4096m",
+                "WORLDMONITOR_MEMORY": f"{config.integrations.worldmonitor.memory_mb}m"
+                if config.integrations
+                else "2048m",
+                "AGENT_ZERO_CPUS": f"{config.integrations.agent_zero.cpu_millis / 1000:g}"
+                if config.integrations
+                else "2.0",
+                "WORLDMONITOR_CPUS": f"{config.integrations.worldmonitor.cpu_millis / 1000:g}"
+                if config.integrations
+                else "1.0",
+            },
         ),
         ServiceSpec(
             name="dashboard",
@@ -281,7 +324,7 @@ def _service_specs(
             cwd=_REPO_ROOT / "ui",
             log_path=log_dir / "dashboard.log",
             health_check=http_health_check(f"http://127.0.0.1:{config.dashboard_port}/"),
-            env={"VITE_OPERATOR_SESSION_TOKEN": operator_session_credential},
+            env={"BUILDER_OPERATOR_SESSION_TOKEN": operator_session_credential},
         ),
     )
 
@@ -304,7 +347,15 @@ def main() -> int:
 
     log_dir = _REPO_ROOT / ".builder-logs"
     operator_session_credential = secrets.token_urlsafe(32)
-    specs = _service_specs(config, log_dir, operator_session_credential)
+    agent_zero_credential = secrets.token_urlsafe(32)
+    model_gateway_credential = secrets.token_urlsafe(32)
+    specs = _service_specs(
+        config,
+        log_dir,
+        operator_session_credential,
+        agent_zero_credential,
+        model_gateway_credential,
+    )
 
     try:
         processes = start_services(specs)

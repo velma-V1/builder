@@ -4,6 +4,9 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
+const operatorSession = process.env.BUILDER_OPERATOR_SESSION_TOKEN;
+const operatorHeaders = operatorSession ? { Authorization: `Bearer ${operatorSession}` } : {};
+
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   // Tauri expects a fixed, predictable dev server port and strict port binding.
@@ -23,6 +26,9 @@ export default defineConfig({
       "/api/orchestrator": {
         target: process.env.VITE_ORCHESTRATOR_PROXY_TARGET ?? "http://127.0.0.1:8100",
         changeOrigin: true,
+        // The local proxy owns the ephemeral operator credential. It is never compiled into the
+        // frontend bundle, returned to browser code, or written to browser storage.
+        headers: operatorHeaders,
       },
       "/api": {
         target: process.env.VITE_API_PROXY_TARGET ?? "http://127.0.0.1:8000",

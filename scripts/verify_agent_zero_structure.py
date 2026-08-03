@@ -2,9 +2,9 @@
 """Verification suite for the Agent Zero integration structure (deterministic; no live calls).
 
 Confirms the managed-worker boundaries: no Agent Zero upstream source is vendored into Builder,
-attribution + license obligations are recorded (commercial use unresolved), no direct HTTP/Docker/
-subprocess/environment-secret access, AI access is model-router-only (no provider/secret handle),
-the lifecycle is dry-run by default, a worker's result carries no verified/approved/promoted field,
+the exact official revision and license are recorded, no integration-module environment-secret
+access, AI access is model-router-only (no provider/secret handle), a worker's result carries no
+verified/approved/promoted field,
 and the deterministic tests pass under ruff + strict mypy. Makes NO network/process/container call.
 Not a phase-promotion gate.
 """
@@ -68,7 +68,7 @@ def verify_layout() -> VerificationResult:
         "result_mapping",
         "event_validation",
         "policy",
-        "lifecycle",
+        "official_client",
         "health",
         "compatibility",
         "provenance",
@@ -98,13 +98,13 @@ def verify_attribution_and_license() -> VerificationResult:
 
     ok = (
         bool(AGENT_ZERO_MANIFEST.attribution)
-        and "UNRESOLVED" in AGENT_ZERO_MANIFEST.commercial_use_status
-        and AGENT_ZERO_MANIFEST.license_verified is False
-        and AGENT_ZERO_MANIFEST.revision_verified is False
+        and AGENT_ZERO_MANIFEST.license == "MIT"
+        and AGENT_ZERO_MANIFEST.license_verified is True
+        and AGENT_ZERO_MANIFEST.revision_verified is True
         and AGENT_ZERO_MANIFEST.required_domains == frozenset()
         and bool(MANAGED_WORKER_OBLIGATIONS)
     )
-    return VerificationResult("attribution + license (commercial unresolved) recorded", ok, "ok")
+    return VerificationResult("official revision, attribution, and MIT license recorded", ok, "ok")
 
 
 def verify_no_direct_http_process_or_secret() -> VerificationResult:
@@ -136,13 +136,12 @@ def verify_no_secret_broker_parameter_exists() -> VerificationResult:
     )
 
 
-def verify_lifecycle_dry_run() -> VerificationResult:
-    from factory.integrations.agent_zero import build_lifecycle
-
-    report = build_lifecycle().run()
-    ok = not report.mutated and "(MISSING)" not in build_lifecycle().format_plan()
+def verify_managed_lifecycle() -> VerificationResult:
+    source = (ROOT / "src/factory/integrations/runtime.py").read_text(encoding="utf-8")
+    compose = (ROOT / "deploy/integrations/agent-zero/compose.yaml").read_text(encoding="utf-8")
+    ok = "_verify_revision" in source and "builder-enabled" in compose
     return VerificationResult(
-        "lifecycle is dry-run by default (no mutation)", ok, f"mutated={report.mutated}"
+        "Agent Zero uses Builder-managed immutable lifecycle", ok, "managed runtime + profile"
     )
 
 
@@ -244,7 +243,7 @@ def main() -> int:
         verify_no_direct_http_process_or_secret,
         verify_model_router_only,
         verify_no_secret_broker_parameter_exists,
-        verify_lifecycle_dry_run,
+        verify_managed_lifecycle,
         verify_result_carries_no_verification_authority,
         verify_work_order_carries_no_forbidden_grant,
         verify_tests,
@@ -264,8 +263,7 @@ def main() -> int:
     print("=" * 80 + "\n")
     if passed == total:
         print(
-            "Agent Zero structure gate: PASS. STRUCTURE_COMPLETE_NOT_INSTALLED; "
-            "managed external worker; router-only AI; Builder retains all authority.\n"
+            "Agent Zero structure gate: PASS (deterministic; live container checked separately).\n"
         )
         return 0
     print("Agent Zero structure gate: INCOMPLETE — fix failures above.\n")

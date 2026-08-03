@@ -2,11 +2,11 @@
 
 WorldMonitor is integrated as a **managed first-class module** and an **external pinned dependency**
 (`koala73/worldmonitor`). Its source is **not** copied, forked, or rebranded into Builder. This
-package is the Builder-side interface: brokered read-only data access, capability discovery,
-normalization with preserved provenance, an MCP discovery seam, a UI workspace contract, a dry-run
-lifecycle, and retention policy.
+package is the Builder-side interface for pinned read-only access, normalization with preserved
+provenance, durable lifecycle state, and dashboard presentation.
 
-State: `WORLDMONITOR_MODULE := STRUCTURE_COMPLETE_NOT_INSTALLED`,
-`WORLDMONITOR_SOURCE := EXTERNAL_PINNED_DEPENDENCY`, `WORLDMONITOR_REST/MCP := PREPARED_NOT_CONNECTED`,
-`WORLDMONITOR_MODEL_ACCESS := BUILDER_ROUTER_ONLY`, `WORLDMONITOR_HOSTED_ACCESS := DISABLED`,
-`WORLDMONITOR_LICENSE_GATE := RECORDED` (commercial use unresolved).
+State: deterministic integration `PASS`; Docker-backed live acceptance `BLOCKED`. Builder builds the
+exact external pinned revision, verifies the resulting immutable image identity, and uses only the
+verified read-only earthquake contract. Source failures are durably `DEGRADED` and never fabricate
+records. `WORLDMONITOR_MODEL_ACCESS := NONE`, `WORLDMONITOR_HOSTED_ACCESS := DISABLED`, and
+`WORLDMONITOR_LICENSE := AGPL-3.0-or-later`.

@@ -11,6 +11,7 @@ from types import ModuleType
 
 import pytest
 
+from factory.integrations.migrations import apply_integration_migrations
 from factory.orchestrator.store.runtime_state import (
     SQLiteOrchestratorStateReader,
     _OrchestratorStateWriter,
@@ -82,6 +83,46 @@ def test_main_wires_a_writer_and_reader_backed_service_without_starting_a_real_s
     assert isinstance(service, TaskOperatorService)
     assert isinstance(service.writer, _OrchestratorStateWriter)
     assert isinstance(service.reader, SQLiteOrchestratorStateReader)
+
+
+def test_main_wires_managed_integrations_when_security_runtime_is_enabled(
+    run_orchestrator: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db = tmp_path / "runtime.db"
+    apply_migrations(db, MIGRATIONS_ROOT)
+    captured: dict[str, object] = {}
+    monkeypatch.setattr(run_orchestrator, "require_current_schema_or_exit", lambda *_args: None)
+    monkeypatch.setattr(run_orchestrator, "_build_phase3b", lambda *_args, **_kwargs: (None, None))
+    monkeypatch.setattr(
+        run_orchestrator.uvicorn,
+        "run",
+        lambda app, **_kwargs: captured.update(app=app),
+    )
+    monkeypatch.setenv("BUILDER_OPERATOR_SESSION_TOKEN", "operator-token")
+    monkeypatch.setenv("BUILDER_AGENT_ZERO_API_KEY", "agent-token")
+    monkeypatch.setenv("BUILDER_MODEL_GATEWAY_TOKEN", "gateway-token")
+    apply_integration_migrations(
+        tmp_path / "integrations.db", _REPO_ROOT / "migrations" / "integrations"
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "run_orchestrator.py",
+            "--database-path",
+            str(db),
+            "--security-database-path",
+            str(tmp_path / "security.db"),
+            "--audit-database-path",
+            str(tmp_path / "audit.db"),
+            "--integration-state-path",
+            str(tmp_path / "integrations.db"),
+        ],
+    )
+
+    run_orchestrator.main()
+
+    assert captured["app"].state.integration_control is not None  # type: ignore[attr-defined]
 
 
 def test_main_exits_before_starting_uvicorn_when_schema_is_outdated(

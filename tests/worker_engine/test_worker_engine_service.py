@@ -1,6 +1,6 @@
 """Phase 3B ``WorkerEngineService`` integration tests: atomic claiming, all three execution
-modes end to end, crash/restart reconciliation, retry/exhaustion, and Agent Zero unavailable ->
-Builder-native fallback (explicit, recorded, never silent).
+modes end to end, crash/restart reconciliation, retry/exhaustion, and fail-closed Agent Zero
+selection.
 """
 
 from __future__ import annotations
@@ -19,7 +19,6 @@ from factory.worker_engine.model_router import FakeModelRouter
 from factory.worker_engine.models import WorkerRunOutcome, WorkerRunRecord
 from factory.worker_engine.service import (
     TRANSPORT_AGENT_ZERO_REAL,
-    TRANSPORT_BUILDER_NATIVE,
     WorkerEngineService,
 )
 from factory.worker_engine.store import SQLiteWorkerRunReader, _WorkerRunWriter
@@ -350,7 +349,102 @@ def test_retry_blocked_tasks_never_touches_a_task_blocked_for_an_unrelated_reaso
     assert current_state(orchestrator_reader, task_id) is TaskState.BLOCKED
 
 
-def test_agent_zero_unavailable_falls_back_to_builder_native_explicitly(
+def test_selected_agent_zero_unavailable_fails_closed_without_substitution(
+    orchestrator_writer: _OrchestratorStateWriter,
+    orchestrator_reader: SQLiteOrchestratorStateReader,
+    run_writer: _WorkerRunWriter,
+    run_reader: SQLiteWorkerRunReader,
+    git: GitManager,
+    workspace_manager: WorkspaceManager,
+    repo: Path,
+    successful_router: FakeModelRouter,
+) -> None:
+    class UnavailableTransport:
+        def probe(self) -> None:
+            raise RuntimeError("not ready")
+
+    class Factory:
+        def create(self, workspace_path: Path | None, allowed_path_globs: tuple[str, ...]):
+            del workspace_path, allowed_path_globs
+            from factory.worker_engine.agent_zero_process_client import AgentZeroProcessClient
+
+            return AgentZeroProcessClient(UnavailableTransport(), None, ())
+
+    task_id = submit_task(orchestrator_writer, description="Explain what this repo does.")
+    service = WorkerEngineService(
+        orchestrator_writer=orchestrator_writer,
+        orchestrator_reader=orchestrator_reader,
+        run_writer=run_writer,
+        run_reader=run_reader,
+        git=git,
+        workspace_manager=workspace_manager,
+        repo_root=repo,
+        model_router=successful_router,
+        agent_zero_factory=Factory(),
+    )
+    summary = service.claim_and_run(task_id)
+    assert summary is not None
+    assert summary.outcome is WorkerRunOutcome.FAILED
+    assert "no silent substitution" in summary.reason
+    runs = run_reader.list_runs_for_task(task_id)
+    assert len(runs) == 1
+    assert runs[0].outcome is WorkerRunOutcome.FAILED
+    assert TRANSPORT_AGENT_ZERO_REAL in runs[0].work_order_json
+
+
+def test_agent_zero_context_is_durable_before_result_polling(
+    orchestrator_writer: _OrchestratorStateWriter,
+    orchestrator_reader: SQLiteOrchestratorStateReader,
+    run_writer: _WorkerRunWriter,
+    run_reader: SQLiteWorkerRunReader,
+    git: GitManager,
+    workspace_manager: WorkspaceManager,
+    repo: Path,
+    successful_router: FakeModelRouter,
+) -> None:
+    from factory.integrations.agent_zero.official_client import AgentZeroPoll
+    from factory.worker_engine.agent_zero_process_client import AgentZeroProcessClient
+
+    class Official:
+        def probe(self) -> None:
+            return None
+
+        def start_async(self, work_order_json: str) -> str:
+            assert work_order_json
+            return "ctx-durable"
+
+        def poll(self, context_id: str) -> AgentZeroPoll:
+            run = run_reader.list_runs_for_task(task_id)[0]
+            assert run_reader.get_events(run.run_id)[0].event_type == "UPSTREAM_CONTEXT"
+            return AgentZeroPoll(context_id, False, '{"response":"done","files":[]}')
+
+        def cancel(self, context_id: str) -> bool:
+            return True
+
+    class Factory:
+        def create(self, workspace_path: Path | None, allowed_path_globs: tuple[str, ...]):
+            return AgentZeroProcessClient(Official(), workspace_path, allowed_path_globs)
+
+    task_id = submit_task(orchestrator_writer, description="Explain this repository.")
+    service = WorkerEngineService(
+        orchestrator_writer,
+        orchestrator_reader,
+        run_writer,
+        run_reader,
+        git,
+        workspace_manager,
+        repo,
+        successful_router,
+        agent_zero_factory=Factory(),
+    )
+
+    summary = service.claim_and_run(task_id)
+
+    assert summary is not None
+    assert summary.transport_source == TRANSPORT_AGENT_ZERO_REAL
+
+
+def test_restart_cancels_durable_agent_context_and_marks_run_interrupted(
     orchestrator_writer: _OrchestratorStateWriter,
     orchestrator_reader: SQLiteOrchestratorStateReader,
     run_writer: _WorkerRunWriter,
@@ -362,31 +456,77 @@ def test_agent_zero_unavailable_falls_back_to_builder_native_explicitly(
 ) -> None:
     from factory.worker_engine.agent_zero_process_client import AgentZeroProcessClient
 
-    task_id = submit_task(orchestrator_writer, description="Explain what this repo does.")
-    unreachable_client = AgentZeroProcessClient(
-        base_url="http://127.0.0.1:1",
-        ollama_base_url="http://127.0.0.1:11434",
-        model_tag="devstral-small-2:24b",
-        timeout_s=1,
+    cancelled: list[str] = []
+
+    class Official:
+        def probe(self) -> None:
+            return None
+
+        def start_async(self, work_order_json: str) -> str:
+            raise AssertionError
+
+        def poll(self, context_id: str):
+            raise AssertionError
+
+        def cancel(self, context_id: str) -> bool:
+            cancelled.append(context_id)
+            return True
+
+    class Factory:
+        def create(self, workspace_path: Path | None, allowed_path_globs: tuple[str, ...]):
+            return AgentZeroProcessClient(Official(), workspace_path, allowed_path_globs)
+
+    task_id = submit_task(orchestrator_writer, description="Explain this repository.")
+    orchestrator_writer.apply_transition(
+        task_id=task_id,
+        expected_current_state=TaskState.QUEUED,
+        new_state=TaskState.PLANNING,
+        cause="claimed",
+        actor="worker",
+    )
+    orchestrator_writer.apply_transition(
+        task_id=task_id,
+        expected_current_state=TaskState.PLANNING,
+        new_state=TaskState.RUNNING,
+        cause="started",
+        actor="worker",
+    )
+    run_writer.create_run(
+        run_id="run-interrupted",
+        task_id=task_id,
+        attempt=1,
+        requested_mode=ExecutionMode.DIRECT_READ_ONLY,
+        selected_mode=ExecutionMode.DIRECT_READ_ONLY,
+        mode_reason="test",
+        policy_rule="test",
+        work_order_json='{"transport_source":"agent_zero_real"}',
+        model_route_token=task_id,
+    )
+    run_writer.append_event(
+        run_id="run-interrupted",
+        sequence=-1,
+        event_type="UPSTREAM_CONTEXT",
+        payload_json='{"context_id":"ctx-before-crash"}',
     )
     service = WorkerEngineService(
-        orchestrator_writer=orchestrator_writer,
-        orchestrator_reader=orchestrator_reader,
-        run_writer=run_writer,
-        run_reader=run_reader,
-        git=git,
-        workspace_manager=workspace_manager,
-        repo_root=repo,
-        model_router=successful_router,
-        agent_zero_client=unreachable_client,
+        orchestrator_writer,
+        orchestrator_reader,
+        run_writer,
+        run_reader,
+        git,
+        workspace_manager,
+        repo,
+        successful_router,
+        agent_zero_factory=Factory(),
     )
-    summary = service.claim_and_run(task_id)
-    assert summary is not None
-    assert summary.transport_source == TRANSPORT_BUILDER_NATIVE
-    run = run_reader.get_run(summary.run_id)
-    assert run is not None
-    assert TRANSPORT_BUILDER_NATIVE in run.work_order_json
-    assert TRANSPORT_AGENT_ZERO_REAL not in run.work_order_json
+
+    service.recover_on_startup()
+
+    assert cancelled == ["ctx-before-crash"]
+    recovered = run_reader.get_run("run-interrupted")
+    assert recovered is not None
+    assert recovered.outcome is WorkerRunOutcome.CRASHED
+    assert "restart" in (recovered.reason or "")
 
 
 def test_cancellation_before_execution_starts_is_honored(

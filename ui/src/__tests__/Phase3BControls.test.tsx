@@ -2,11 +2,9 @@ import { afterEach, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Phase3BControls } from "@/components/Phase3BControls";
-import { clearOperatorSession, configureOperatorSession } from "@/api/orchestrator";
 
 afterEach(() => {
   cleanup();
-  clearOperatorSession();
   vi.unstubAllGlobals();
 });
 
@@ -53,7 +51,6 @@ it("reconciles a pending approval after reconnect and exposes approve and reject
 });
 
 it("requires an approval request before promotion", async () => {
-  configureOperatorSession("test-session");
   const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
     if (url.endsWith("/approval-requests")) {
