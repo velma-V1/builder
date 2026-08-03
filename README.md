@@ -6,13 +6,11 @@ Factory is a standalone, local-first AI software-production system designed to b
 
 ## Status
 
-**Phase 3B worker verification, explicit approval, promotion/rollback, lifecycle/API integration,
-and dashboard controls are implemented on the draft Phase 3B branch, but the branch is not yet
-merge-ready. Complete Linux verification and the required native-Windows launcher and junction
-gates pass for implementation commit `8c05e6c`; the subsequent evidence-only commit does not alter
-the tested code. The six previously reported blockers have focused regression coverage, but a fresh
-independent review of the final PR head remains required. The branch remains draft PR #18; no merge,
-deployment, release, or protected-ref promotion occurred.**
+**Phase 3B is merged on `main`. Agent Zero has complete deterministic Builder integration on the
+current worktree. WorldMonitor remains INCOMPLETE: the pinned upstream’s approved thirteen-category
+scope currently implements only `disasters.earthquakes`. Live installation, readiness, real use,
+restart, recovery, cleanup, independent operation, and combined operation also remain BLOCKED until
+Docker Desktop WSL2 integration is available.**
 
 Continue to the next phase:
 
@@ -25,12 +23,12 @@ Continue to the next phase:
 
 The system is intentionally planned in locked sections before code is written. This prevents architecture drift, conflicting parallel edits, unverifiable completion claims, and uncontrolled autonomy.
 
-## Quick start (Phase 3B — local verification and operator-controlled promotion)
+## Quick start
 
 The launcher retains Phase 3A intake. With migrated security and audit databases configured, the
-orchestrator additionally exposes Phase 3B evidence/manifest review, explicit bound approval,
-approve/reject, and promotion status. Agent Zero and real external services remain disabled unless
-separately configured; approval is never inferred.
+orchestrator additionally exposes Phase 3B controls and the pinned local Agent Zero and
+WorldMonitor control plane. See
+[`docs/integrations/AGENT-ZERO-WORLDMONITOR-SETUP.md`](docs/integrations/AGENT-ZERO-WORLDMONITOR-SETUP.md).
 
 **From Linux/WSL2 directly:**
 

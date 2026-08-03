@@ -16,6 +16,7 @@ import { useTaskDetail } from "@/queries/useTaskDetail";
 import { useOrchestratorHealth } from "@/queries/useOrchestratorHealth";
 import { TaskSubmissionForm } from "@/components/TaskSubmissionForm";
 import { Phase3BControls } from "@/components/Phase3BControls";
+import { IntegrationControls } from "@/components/IntegrationControls";
 
 // Mirrors the exact set of states with a legal edge to STOPPING in
 // src/factory/orchestrator/state/transitions.py's ALLOWED_TRANSITIONS, plus QUEUED (which the
@@ -123,6 +124,7 @@ export function Dashboard(): JSX.Element {
           </ul>
         </Card>
         <TaskSubmissionForm />
+        <IntegrationControls />
         {selectedTaskId && (
           <Card>
             <h2 className="text-base font-semibold">Task details</h2>

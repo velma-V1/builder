@@ -15,11 +15,13 @@ def test_capability_set_supports_only_granted_tools() -> None:
     assert not capabilities.supports("shell_exec")
 
 
-def test_manifest_declares_commercial_use_unresolved_and_unverified() -> None:
-    assert "UNRESOLVED" in AGENT_ZERO_MANIFEST.commercial_use_status
-    assert AGENT_ZERO_MANIFEST.license_verified is False
-    assert AGENT_ZERO_MANIFEST.revision_verified is False
-    assert AGENT_ZERO_MANIFEST.required_domains == frozenset()
+def test_manifest_pins_verified_official_release_and_license() -> None:
+    assert AGENT_ZERO_MANIFEST.upstream_repo == "github.com/agent0ai/agent-zero"
+    assert AGENT_ZERO_MANIFEST.pinned_release == "v2.7"
+    assert AGENT_ZERO_MANIFEST.pinned_commit == "87e1e591e1ba2e8b1a19d34e134fcae490c8dded"
+    assert AGENT_ZERO_MANIFEST.license == "MIT"
+    assert AGENT_ZERO_MANIFEST.license_verified is True
+    assert AGENT_ZERO_MANIFEST.revision_verified is True
     assert bool(MANAGED_WORKER_OBLIGATIONS)
 
 

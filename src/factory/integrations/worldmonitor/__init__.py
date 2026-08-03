@@ -1,24 +1,18 @@
-"""WorldMonitor integration — managed first-class module (STRUCTURE_COMPLETE_NOT_INSTALLED).
+"""WorldMonitor integration — Builder-managed local monitoring contracts.
 
 WorldMonitor is an **external, pinned dependency** (its source is not copied into Builder). This
 package is the Builder-side managed interface: brokered read-only data access, capability discovery,
 normalization with preserved provenance, an MCP discovery seam, a UI workspace contract, a dry-run
 lifecycle, and retention policy. **All AI is routed by the Builder router** — WorldMonitor never
-selects a provider or holds credentials. Nothing here connects, installs, or activates anything.
+selects a provider or holds credentials. Runtime lifecycle is owned by
+:mod:`factory.integrations.runtime`.
 """
 
 from __future__ import annotations
 
-from factory.integrations.worldmonitor.adapter import WorldMonitorAdapter
 from factory.integrations.worldmonitor.capabilities import CapabilitySet, require_capability
 from factory.integrations.worldmonitor.errors import WorldMonitorError, WorldMonitorErrorCode
 from factory.integrations.worldmonitor.health import check_health
-from factory.integrations.worldmonitor.lifecycle import (
-    FUTURE_ISOLATION,
-    LIFECYCLE_PHASES,
-    FutureIsolation,
-    build_lifecycle,
-)
 from factory.integrations.worldmonitor.manifest import (
     AGPL_OBLIGATIONS,
     WORLDMONITOR_MANIFEST,
@@ -54,10 +48,6 @@ from factory.integrations.worldmonitor.policy import (
     ModelRouterPort,
     WorldMonitorNetworkPolicy,
 )
-from factory.integrations.worldmonitor.rest_client import (
-    OPENAPI_CLIENT_STATUS,
-    WorldMonitorRestClient,
-)
 from factory.integrations.worldmonitor.retention import DEFAULT_RETENTION, RetentionPolicy
 from factory.integrations.worldmonitor.ui_bridge import (
     SUPPORTED_MESSAGE_VERSION,
@@ -68,9 +58,6 @@ from factory.integrations.worldmonitor.ui_bridge import (
 __all__ = [
     "AGPL_OBLIGATIONS",
     "DEFAULT_RETENTION",
-    "FUTURE_ISOLATION",
-    "LIFECYCLE_PHASES",
-    "OPENAPI_CLIENT_STATUS",
     "SUPPORTED_MESSAGE_VERSION",
     "WORLDMONITOR_MANIFEST",
     "AiCapabilityRequest",
@@ -80,7 +67,6 @@ __all__ = [
     "Category",
     "FakeMcpTransport",
     "Freshness",
-    "FutureIsolation",
     "HealthState",
     "IntelligenceRecord",
     "McpServerCard",
@@ -88,7 +74,6 @@ __all__ = [
     "ModelRouterPort",
     "RetentionPolicy",
     "UiMessage",
-    "WorldMonitorAdapter",
     "WorldMonitorCapability",
     "WorldMonitorError",
     "WorldMonitorErrorCode",
@@ -99,12 +84,10 @@ __all__ = [
     "WorldMonitorMode",
     "WorldMonitorNetworkPolicy",
     "WorldMonitorQuery",
-    "WorldMonitorRestClient",
     "WorldMonitorResult",
     "WorldMonitorSourceRef",
     "WorldMonitorViewCommand",
     "WorldMonitorWorkspaceState",
-    "build_lifecycle",
     "check_health",
     "deduplicate",
     "discovered_tools",

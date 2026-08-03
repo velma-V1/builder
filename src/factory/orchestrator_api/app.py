@@ -14,13 +14,18 @@ exception text, SQL, paths, or stack traces are ever returned to the client.
 from __future__ import annotations
 
 import contextlib
+import json
 from typing import Any, cast
 
 from starlette.applications import Starlette
 from starlette.requests import Request
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, Response
 from starlette.routing import Route
 
+from factory.integrations.control import IntegrationControlService
+from factory.integrations.model_gateway import ModelGateway, ModelGatewayError
+from factory.integrations.runtime import IntegrationName, IntegrationOperation, IntegrationRecord
+from factory.integrations.worldmonitor.manifest import WORLDMONITOR_MANIFEST
 from factory.orchestrator.models import TaskRuntimeRecord
 from factory.orchestrator_api.auth import OperatorSession
 from factory.orchestrator_api.errors import OrchestratorApiError
@@ -320,8 +325,314 @@ async def _reject(request: Request) -> JSONResponse:
     return JSONResponse({"outcome": result.outcome.value, "state": "REJECTED"})
 
 
+def _integration_service(request: Request) -> IntegrationControlService | JSONResponse:
+    service: IntegrationControlService | None = request.app.state.integration_control
+    if service is None:
+        return JSONResponse({"error": "managed integrations are unavailable"}, status_code=503)
+    return service
+
+
+def _integration_record(record: IntegrationRecord) -> dict[str, object]:
+    return {
+        "name": record.name.value,
+        "state": record.state.value,
+        "detail": record.detail,
+        "occurred_at": record.occurred_at,
+    }
+
+
+def _integration_result(record: IntegrationOperation) -> dict[str, object]:
+    return {
+        "operation_id": record.operation_id,
+        "status": record.state.value,
+        "occurred_at": record.updated_at,
+        "context_id": record.context_id,
+        "reason": record.reason,
+        "payload": json.loads(record.result_json) if record.result_json else {},
+    }
+
+
+def _integration_name(raw: str) -> IntegrationName | None:
+    with contextlib.suppress(ValueError):
+        return IntegrationName(raw)
+    return None
+
+
+def _disabled_response(
+    service: IntegrationControlService, name: IntegrationName
+) -> JSONResponse | None:
+    if not service.is_enabled(name):
+        return JSONResponse(
+            {"error": f"{name.value} is disabled in Builder configuration"}, status_code=409
+        )
+    return None
+
+
+async def _integration_status(request: Request) -> JSONResponse:
+    service = _integration_service(request)
+    if isinstance(service, JSONResponse):
+        return service
+    statuses: dict[str, object] = {}
+    for name in (IntegrationName.AGENT_ZERO, IntegrationName.WORLDMONITOR):
+        status = _integration_record(service.status(name))
+        status["configured_enabled"] = service.is_enabled(name)
+        if name is IntegrationName.WORLDMONITOR:
+            status["capability_coverage"] = {
+                "status": "INCOMPLETE",
+                "implemented": list(WORLDMONITOR_MANIFEST.implemented_capability_scope),
+                "required": list(WORLDMONITOR_MANIFEST.approved_capability_scope),
+            }
+        operation = service.latest_operation(name)
+        status["operation"] = None if operation is None else _integration_result(operation)
+        statuses[name.value] = status
+    return JSONResponse(statuses)
+
+
+async def _model_completion(request: Request) -> Response:
+    gateway: ModelGateway | None = request.app.state.model_gateway
+    if gateway is None:
+        return JSONResponse({"error": "model gateway unavailable"}, status_code=503)
+    try:
+        payload = await request.json()
+    except Exception:
+        return _bad_request("model request must be valid JSON")
+    if not isinstance(payload, dict):
+        return _bad_request("model request must be a JSON object")
+    streaming = payload.get("stream") is True
+    # Agent Zero compatibility: v2.7 always asks for stream=true. It is normalized to a
+    # non-streaming inference ONLY here; ModelGateway.complete() keeps its fail-closed
+    # non-streaming contract (streaming requests remain rejected at the gateway).
+    normalized = {**payload, "stream": False} if streaming else payload
+    try:
+        result = gateway.complete(request.headers.get("Authorization", ""), normalized)
+    except ModelGatewayError as exc:
+        status = 401 if "authentication" in str(exc) else 503
+        return JSONResponse({"error": str(exc)}, status_code=status)
+    except Exception:
+        return _bad_request("model request must be valid JSON")
+    if streaming:
+        return _sse_completion_response(result)
+    return JSONResponse(result)
+
+
+def _sse_completion_response(completion: dict[str, object]) -> Response:
+    """Serialize one non-streamed completion into the OpenAI SSE shape Agent Zero expects."""
+    event_id = str(completion.get("id") or "builder-completion")
+    model = str(completion.get("model") or "unknown")
+    content = ""
+    choices = completion.get("choices")
+    if isinstance(choices, list) and choices:
+        first = choices[0]
+        if isinstance(first, dict):
+            message = first.get("message")
+            if isinstance(message, dict) and isinstance(message.get("content"), str):
+                content = message["content"]
+    chunks = [
+        {
+            "id": event_id,
+            "object": "chat.completion.chunk",
+            "model": model,
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {"role": "assistant", "content": content},
+                    "finish_reason": None,
+                }
+            ],
+        },
+        {
+            "id": event_id,
+            "object": "chat.completion.chunk",
+            "model": model,
+            "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
+        },
+    ]
+    body = "".join(f"data: {json.dumps(chunk)}\n\n" for chunk in chunks) + "data: [DONE]\n\n"
+    return Response(content=body, media_type="text/event-stream")
+
+
+async def _integration_action(request: Request) -> JSONResponse:
+    operator = _authenticated_operator(request)
+    if isinstance(operator, JSONResponse):
+        return operator
+    service = _integration_service(request)
+    if isinstance(service, JSONResponse):
+        return service
+    name = _integration_name(request.path_params["name"])
+    action = request.path_params["action"]
+    if name is None or action not in {"install", "start", "stop", "disable", "remove"}:
+        return JSONResponse({"error": "unknown integration action"}, status_code=404)
+    if (disabled := _disabled_response(service, name)) is not None:
+        return disabled
+    try:
+        body = await request.json()
+    except Exception:
+        return _bad_request("request body must be valid JSON")
+    operation_id = body.get("operation_id") if isinstance(body, dict) else None
+    if not isinstance(operation_id, str) or not operation_id.strip():
+        return _bad_request("operation_id is required")
+    try:
+        method = getattr(service, action)
+        record = method(name, actor=operator, operation_id=operation_id)
+    except Exception:
+        return JSONResponse({"error": "integration action failed"}, status_code=503)
+    return JSONResponse(_integration_record(record))
+
+
+async def _integration_logs(request: Request) -> JSONResponse:
+    operator = _authenticated_operator(request)
+    if isinstance(operator, JSONResponse):
+        return operator
+    service = _integration_service(request)
+    if isinstance(service, JSONResponse):
+        return service
+    name = _integration_name(request.path_params["name"])
+    if name is None:
+        return JSONResponse({"error": "unknown integration"}, status_code=404)
+    if (disabled := _disabled_response(service, name)) is not None:
+        return disabled
+    try:
+        tail = int(request.query_params.get("tail", "200"))
+        lines = service.logs(name, tail=tail)
+    except (ValueError, RuntimeError):
+        return _bad_request("tail must be between 1 and 1000")
+    return JSONResponse({"lines": list(lines)})
+
+
+async def _agent_cancel(request: Request) -> JSONResponse:
+    operator = _authenticated_operator(request)
+    if isinstance(operator, JSONResponse):
+        return operator
+    service = _integration_service(request)
+    if isinstance(service, JSONResponse):
+        return service
+    if (disabled := _disabled_response(service, IntegrationName.AGENT_ZERO)) is not None:
+        return disabled
+    try:
+        body = await request.json()
+        operation_id = body["operation_id"]
+    except (KeyError, TypeError):
+        return _bad_request("operation_id is required")
+    if not isinstance(operation_id, str) or not operation_id.strip():
+        return _bad_request("operation_id is required")
+    try:
+        task_service: TaskOperatorService = request.app.state.service
+        operation = service.cancel_agent_task(
+            operation_id,
+            lambda task_id: task_service.cancel(
+                task_id, actor=operator, reason="Agent Zero operation cancelled"
+            ),
+        )
+    except Exception:
+        return JSONResponse({"error": "Agent Zero cancellation failed"}, status_code=503)
+    return JSONResponse(_integration_result(operation))
+
+
+async def _agent_task(request: Request) -> JSONResponse:
+    operator = _authenticated_operator(request)
+    if isinstance(operator, JSONResponse):
+        return operator
+    service = _integration_service(request)
+    if isinstance(service, JSONResponse):
+        return service
+    if (disabled := _disabled_response(service, IntegrationName.AGENT_ZERO)) is not None:
+        return disabled
+    try:
+        body = await request.json()
+    except Exception:
+        return _bad_request("request body must be valid JSON")
+    operation_id = body.get("operation_id") if isinstance(body, dict) else None
+    instructions = body.get("instructions") if isinstance(body, dict) else None
+    valid = all(isinstance(value, str) and value.strip() for value in (operation_id, instructions))
+    if not valid:
+        return _bad_request("operation_id and instructions are required")
+    try:
+        task_service: TaskOperatorService = request.app.state.service
+        request_json = json.dumps(
+            {"instructions": instructions}, sort_keys=True, separators=(",", ":")
+        )
+
+        def submit() -> str:
+            submitted = task_service.submit(
+                project_ref="builder",
+                workstream_id="agent-zero",
+                description=cast(str, instructions),
+                priority="normal",
+                model_preference="agent-zero",
+                expected_result="independently verified Builder work product",
+                submitted_by=operator,
+                idempotency_key=f"agent-zero:{cast(str, operation_id)}",
+            )
+            return submitted.task_id
+
+        result = service.dispatch_agent_task(
+            cast(str, operation_id), request_json, actor=operator, submit=submit
+        )
+    except Exception:
+        return JSONResponse({"error": "Agent Zero task failed"}, status_code=503)
+    return JSONResponse(_integration_result(result))
+
+
+async def _agent_operation(request: Request) -> JSONResponse:
+    operator = _authenticated_operator(request)
+    if isinstance(operator, JSONResponse):
+        return operator
+    service = _integration_service(request)
+    if isinstance(service, JSONResponse):
+        return service
+    if (disabled := _disabled_response(service, IntegrationName.AGENT_ZERO)) is not None:
+        return disabled
+    try:
+        task_service: TaskOperatorService = request.app.state.service
+        operation = service.reconcile_agent_task(
+            request.path_params["operation_id"],
+            lambda task_id: (
+                detail.task.current_state if (detail := task_service.get_detail(task_id)) else None
+            ),
+        )
+    except Exception:
+        return JSONResponse({"error": "Agent Zero operation unavailable"}, status_code=404)
+    return JSONResponse(_integration_result(operation))
+
+
+async def _worldmonitor_refresh(request: Request) -> JSONResponse:
+    operator = _authenticated_operator(request)
+    if isinstance(operator, JSONResponse):
+        return operator
+    service = _integration_service(request)
+    if isinstance(service, JSONResponse):
+        return service
+    if (disabled := _disabled_response(service, IntegrationName.WORLDMONITOR)) is not None:
+        return disabled
+    try:
+        body = await request.json()
+        operation_id = body["operation_id"]
+        start_ms = int(body["start_ms"])
+        end_ms = int(body["end_ms"])
+        limit = int(body.get("limit", 50))
+    except (KeyError, TypeError, ValueError):
+        return _bad_request("operation_id, start_ms, end_ms, and a valid limit are required")
+    if not isinstance(operation_id, str) or not operation_id.strip():
+        return _bad_request("operation_id is required")
+    try:
+        result = service.refresh_worldmonitor(
+            operation_id,
+            start_ms=start_ms,
+            end_ms=end_ms,
+            limit=limit,
+            actor=operator,
+        )
+    except Exception:
+        return JSONResponse({"error": "WorldMonitor refresh failed"}, status_code=503)
+    return JSONResponse(_integration_result(result))
+
+
 def create_app(
-    *, service: TaskOperatorService, operator_session: OperatorSession | None = None
+    *,
+    service: TaskOperatorService,
+    operator_session: OperatorSession | None = None,
+    integration_control: IntegrationControlService | None = None,
+    model_gateway: ModelGateway | None = None,
 ) -> Starlette:
     """Narrow application factory: the operator service (which holds the writer) is the only
     dependency, passed explicitly. No connection is opened at import time."""
@@ -339,8 +650,46 @@ def create_app(
             Route("/api/orchestrator/tasks/{task_id}/approve", _approve, methods=["POST"]),
             Route("/api/orchestrator/tasks/{task_id}/reject", _reject, methods=["POST"]),
             Route("/api/orchestrator/health", _health, methods=["GET"]),
+            Route("/api/orchestrator/integrations", _integration_status, methods=["GET"]),
+            Route(
+                "/api/integrations/model/v1/chat/completions",
+                _model_completion,
+                methods=["POST"],
+            ),
+            Route(
+                "/api/orchestrator/integrations/agent-zero/tasks",
+                _agent_task,
+                methods=["POST"],
+            ),
+            Route(
+                "/api/orchestrator/integrations/agent-zero/cancel",
+                _agent_cancel,
+                methods=["POST"],
+            ),
+            Route(
+                "/api/orchestrator/integrations/agent-zero/tasks/{operation_id}",
+                _agent_operation,
+                methods=["GET"],
+            ),
+            Route(
+                "/api/orchestrator/integrations/{name}/logs",
+                _integration_logs,
+                methods=["GET"],
+            ),
+            Route(
+                "/api/orchestrator/integrations/worldmonitor/refresh",
+                _worldmonitor_refresh,
+                methods=["POST"],
+            ),
+            Route(
+                "/api/orchestrator/integrations/{name}/{action}",
+                _integration_action,
+                methods=["POST"],
+            ),
         ],
     )
     app.state.service = service
     app.state.operator_session = operator_session
+    app.state.integration_control = integration_control
+    app.state.model_gateway = model_gateway
     return app

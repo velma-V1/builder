@@ -1,0 +1,121 @@
+services:
+  agent-zero:
+    profiles: [builder-enabled]
+    build:
+      context: ../../..
+      dockerfile: deploy/integrations/agent-zero/Dockerfile.api
+      args:
+        BASE_IMAGE: builder/agent-zero-parent:404177ac
+      labels:
+        org.opencontainers.image.revision: 87e1e591e1ba2e8b1a19d34e134fcae490c8dded
+        org.opencontainers.image.base.digest: sha256:404177ac27f283ffcbd843ec590fbb3f5e375a746b8157137fd26dcb9d6fd192
+    image: builder/agent-zero-api:v2.7-87e1e591
+    container_name: builder-agent-zero
+    user: "1000:1000"
+    read_only: true
+    privileged: false
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 256
+    mem_limit: ${AGENT_ZERO_MEMORY:-4096m}
+    cpus: ${AGENT_ZERO_CPUS:-2.0}
+    restart: "no"
+    environment:
+      A0_SET_mcp_server_token: ${BUILDER_AGENT_ZERO_API_KEY:?runtime Agent Zero credential required}
+      A0_SET_chat_model_provider: openai
+      A0_SET_chat_model_name: ${AGENT_ZERO_MODEL:?selected Builder model required}
+      A0_SET_chat_model_api_base: http://host.docker.internal:8100/api/integrations/model/v1
+      A0_SET_litellm_global_kwargs: '{"stream":false}'
+      API_KEY_OPENAI: ${BUILDER_MODEL_GATEWAY_TOKEN:?runtime model gateway credential required}
+      HTTP_PROXY: http://agent-zero-egress:3128
+      NO_PROXY: 127.0.0.1,localhost
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+    volumes: ["agent-zero-data:/a0/usr"]
+    tmpfs:
+      - /tmp:size=512m,mode=1777
+      - /a0/tmp:size=512m,mode=1777
+    networks: [agent-zero-internal]
+    depends_on:
+      agent-zero-egress:
+        condition: service_started
+    healthcheck:
+      test: [CMD, /opt/venv-a0/bin/python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/api/health', timeout=5)"]
+      interval: 5s
+      timeout: 6s
+      retries: 24
+      start_period: 30s
+
+  agent-zero-bridge-relay:
+    profiles: [builder-enabled]
+    image: alpine/socat@sha256:e7b17711daaa7d49107a7193112689e91fb1a27bddd9cb0b32641b55b8e9e3b0
+    user: "1000:1000"
+    read_only: true
+    privileged: false
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 64m
+    cpus: 0.25
+    restart: "no"
+    tmpfs: ["/tmp:size=64m"]
+    networks: [agent-zero-loopback, agent-zero-internal]
+    command:
+      - TCP-LISTEN:8080,fork,reuseaddr
+      - TCP:builder-agent-zero:8080
+    depends_on:
+      agent-zero:
+        condition: service_started
+
+  agent-zero-ingress:
+    profiles: [builder-enabled]
+    image: alpine/socat@sha256:e7b17711daaa7d49107a7193112689e91fb1a27bddd9cb0b32641b55b8e9e3b0
+    user: "1000:1000"
+    read_only: true
+    privileged: false
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 64m
+    cpus: 0.25
+    restart: "no"
+    tmpfs: ["/tmp:size=64m"]
+    networks: [agent-zero-loopback]
+    ports: ["127.0.0.1:${AGENT_ZERO_PORT:-50080}:8080"]
+    command:
+      - TCP-LISTEN:8080,fork,reuseaddr
+      - TCP:agent-zero-bridge-relay:8080
+    depends_on:
+      agent-zero-bridge-relay:
+        condition: service_started
+
+  agent-zero-egress:
+    profiles: [builder-enabled]
+    image: ubuntu/squid@sha256:3de2e64f0ca6efdac3e98557607dc0f23050037f3885016d5d5bfcf9950501b8
+    user: "13:13"
+    read_only: true
+    privileged: false
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 32
+    mem_limit: 128m
+    cpus: 0.15
+    volumes: ["./squid.conf:/etc/squid/squid.conf:ro"]
+    tmpfs:
+      - /var/log/squid:size=8m,uid=13,gid=13
+      - /var/spool/squid:size=8m,uid=13,gid=13
+      - /run:size=4m,uid=13,gid=13,mode=0755
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    sysctls:
+      net.ipv6.conf.all.disable_ipv6: "1"
+    networks: [agent-zero-internal, agent-zero-gateway]
+
+networks:
+  agent-zero-internal:
+    internal: true
+  agent-zero-loopback:
+    internal: false
+  agent-zero-gateway:
+
+volumes:
+  agent-zero-data:

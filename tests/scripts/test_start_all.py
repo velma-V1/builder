@@ -263,15 +263,41 @@ def test_windows_cleanup_succeeds_only_after_verified_exit(
 def test_phase3b_service_specs_inject_complete_runtime_configuration(
     start_all: ModuleType, config: Any, tmp_path: Path
 ) -> None:
-    specs = start_all._service_specs(config, tmp_path / "logs", "session-secret")
+    specs = start_all._service_specs(
+        config, tmp_path / "logs", "session-secret", "agent-zero-secret", "gateway-secret"
+    )
     orchestrator = next(spec for spec in specs if spec.name == "orchestrator API")
     dashboard = next(spec for spec in specs if spec.name == "dashboard")
 
     assert "--security-database-path" in orchestrator.cmd
     assert "--audit-database-path" in orchestrator.cmd
     assert "--enable-worker" in orchestrator.cmd
-    assert orchestrator.env == {"BUILDER_OPERATOR_SESSION_TOKEN": "session-secret"}
-    assert dashboard.env == {"VITE_OPERATOR_SESSION_TOKEN": "session-secret"}
+    assert orchestrator.env == {
+        "BUILDER_OPERATOR_SESSION_TOKEN": "session-secret",
+        "BUILDER_AGENT_ZERO_API_KEY": "agent-zero-secret",
+        "BUILDER_MODEL_GATEWAY_TOKEN": "gateway-secret",
+        "OPENAI_API_KEY": "gateway-secret",
+        "AGENT_ZERO_MODEL": "devstral-small-2:24b",
+        "AGENT_ZERO_PORT": "50080",
+        "WORLDMONITOR_PORT": "3000",
+        "AGENT_ZERO_MEMORY": "4096m",
+        "WORLDMONITOR_MEMORY": "2048m",
+        "AGENT_ZERO_CPUS": "2.0",
+        "WORLDMONITOR_CPUS": "1.0",
+    }
+    assert dashboard.env == {"BUILDER_OPERATOR_SESSION_TOKEN": "session-secret"}
+    assert not any(name.startswith("VITE_") for name in dashboard.env)
+
+
+def test_dashboard_credential_is_proxy_scoped_not_browser_injected() -> None:
+    root = Path(__file__).resolve().parents[2]
+    main_source = (root / "ui/src/main.tsx").read_text(encoding="utf-8")
+    api_source = (root / "ui/src/api/orchestrator.ts").read_text(encoding="utf-8")
+    proxy_source = (root / "ui/vite.config.ts").read_text(encoding="utf-8")
+
+    assert "VITE_OPERATOR_SESSION_TOKEN" not in main_source + api_source + proxy_source
+    assert "BUILDER_OPERATOR_SESSION_TOKEN" in proxy_source
+    assert "Authorization" not in api_source
 
 
 def test_database_setup_includes_security_and_audit_schemas(

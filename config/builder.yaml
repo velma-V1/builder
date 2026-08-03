@@ -1,9 +1,6 @@
-# Builder configuration — single source of truth for launcher-consumed settings (Phase 3A).
+# Builder configuration — single source of truth for launcher-consumed settings.
 #
-# Only the fields under the top-level keys below are read by any Phase 3A code
-# (scripts/start_all.py, scripts/windows/Builder.cmd). The `future` section is a documented
-# placeholder for later phases (Agent Zero / Ollama / WorldMonitor) -- intentionally left
-# unelaborated; no Phase 3A code reads it.
+# The launcher and managed-integration control plane validate these values at startup.
 
 wsl:
   distribution: Ubuntu
@@ -24,6 +21,23 @@ ports:
 browser:
   auto_open: true
 
-# Reserved for later phases (Agent Zero / Ollama / WorldMonitor) -- not read by any Phase 3A
-# code. Left empty deliberately; no unused configuration schema is built out ahead of need.
-future: {}
+integrations:
+  state_path: integrations.db
+  agent_zero:
+    enabled: false
+    release: v2.7
+    commit: 87e1e591e1ba2e8b1a19d34e134fcae490c8dded
+    image: agent0ai/agent-zero:v2.7
+    port: 50080
+    cpu_millis: 2000
+    memory_mb: 4096
+    timeout_s: 900
+  worldmonitor:
+    enabled: false
+    release: v2.5.23
+    commit: e51058e1765ef2f0c83ccb1d08d984bc59d23f10
+    source: https://github.com/koala73/worldmonitor.git
+    port: 3000
+    cpu_millis: 1000
+    memory_mb: 2048
+    timeout_s: 120

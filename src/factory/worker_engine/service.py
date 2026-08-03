@@ -50,7 +50,7 @@ from factory.staging.manager import QuarantinedStaging
 from factory.staging.models import StagedFile
 from factory.worker_engine.agent_zero_process_client import (
     AgentZeroDeploymentUnavailable,
-    AgentZeroProcessClient,
+    AgentZeroTransportFactory,
 )
 from factory.worker_engine.builder_worker_transport import BuilderWorkerTransport
 from factory.worker_engine.execution_policy import ExecutionMode, ExecutionPolicy
@@ -164,7 +164,7 @@ class WorkerEngineService:
     verifier: VerificationPort | None = None
     #: ``None`` means no real Agent Zero deployment is configured at all -- every run uses the
     #: Builder-native fallback, explicitly and honestly (never silently).
-    agent_zero_client: AgentZeroProcessClient | None = None
+    agent_zero_factory: AgentZeroTransportFactory | None = None
     policy: ExecutionPolicy = field(default_factory=ExecutionPolicy)
     retry_policy: RetryPolicy = field(default_factory=RetryPolicy)
     actor: str = "worker_engine"
@@ -184,9 +184,46 @@ class WorkerEngineService:
         """
         non_terminal = frozenset(TaskState) - TERMINAL_STATES
         in_flight = self.orchestrator_reader.list_tasks_by_states(non_terminal)
+        for record in in_flight:
+            self._reconcile_interrupted_agent_run(record.task_id)
         task_ids = [record.task_id for record in in_flight]
         recovery = StartupRecovery(integration=self._integration, quarantine=QuarantineRegistry())
         return recovery.recover(task_ids, actor=self.actor)
+
+    def _reconcile_interrupted_agent_run(self, task_id: str) -> None:
+        if self.agent_zero_factory is None:
+            return
+        for run in self.run_reader.list_runs_for_task(task_id):
+            if run.outcome is not None or TRANSPORT_AGENT_ZERO_REAL not in run.work_order_json:
+                continue
+            context_id: str | None = None
+            for event in self.run_reader.get_events(run.run_id):
+                if event.event_type != "UPSTREAM_CONTEXT":
+                    continue
+                try:
+                    raw = json.loads(event.payload_json)
+                except ValueError:
+                    continue
+                candidate = raw.get("context_id") if isinstance(raw, dict) else None
+                if isinstance(candidate, str) and candidate:
+                    context_id = candidate
+            cleanup = "upstream context identity missing"
+            if context_id is not None:
+                workspace = Path(run.sandbox_path) if run.sandbox_path else None
+                try:
+                    confirmed = self.agent_zero_factory.create(workspace, ()).cancel(context_id)
+                    cleanup = (
+                        "upstream cancellation confirmed"
+                        if confirmed
+                        else "upstream cancellation was not confirmed"
+                    )
+                except Exception as exc:
+                    cleanup = f"upstream cancellation failed: {exc}"
+            self.run_writer.finish_run(
+                run_id=run.run_id,
+                outcome=WorkerRunOutcome.CRASHED,
+                reason=f"interrupted by Builder restart; {cleanup}",
+            )
 
     # ---- claim + run ------------------------------------------------------------------------
 
@@ -249,13 +286,17 @@ class WorkerEngineService:
     def _choose_transport(
         self, *, workspace_path: Path | None, allowed_path_globs: tuple[str, ...]
     ) -> tuple[AgentZeroTransport, str]:
-        if self.agent_zero_client is not None:
+        if self.agent_zero_factory is not None:
+            client = self.agent_zero_factory.create(workspace_path, allowed_path_globs)
             try:
-                self.agent_zero_client.probe()
+                client.probe()
             except AgentZeroDeploymentUnavailable:
-                pass
+                raise WorkerEngineError(
+                    "AGENT_ZERO_UNAVAILABLE",
+                    "configured Agent Zero runtime is unavailable; no silent substitution",
+                ) from None
             else:
-                return self.agent_zero_client, TRANSPORT_AGENT_ZERO_REAL
+                return client, TRANSPORT_AGENT_ZERO_REAL
         fallback = BuilderWorkerTransport(
             model_router=self.model_router,
             workspace_path=workspace_path,
@@ -322,9 +363,19 @@ class WorkerEngineService:
             model_route_token=uuid.uuid4().hex,
         )
 
-        transport, transport_source = self._choose_transport(
-            workspace_path=workspace_path, allowed_path_globs=allowed_path_globs
+        transport: AgentZeroTransport | None = None
+        transport_source = (
+            TRANSPORT_AGENT_ZERO_REAL
+            if self.agent_zero_factory is not None
+            else TRANSPORT_BUILDER_NATIVE
         )
+        transport_failure: WorkerEngineError | None = None
+        try:
+            transport, transport_source = self._choose_transport(
+                workspace_path=workspace_path, allowed_path_globs=allowed_path_globs
+            )
+        except WorkerEngineError as exc:
+            transport_failure = exc
 
         self.run_writer.create_run(
             run_id=run_id,
@@ -350,6 +401,29 @@ class WorkerEngineService:
             model_route_token=work_order.model_route_token,
         )
 
+        if transport_failure is not None:
+            reason = str(transport_failure)
+            return self._finalize_run(
+                task_id=task_id,
+                run_id=run_id,
+                attempt=attempt,
+                transport_source=transport_source,
+                selected_mode=decision.selected_mode,
+                workspace=workspace,
+                staging_dir=staging_dir,
+                outcome=WorkerRunOutcome.FAILED,
+                reason=reason,
+                exec_result=ExecutionResult(
+                    task_id=task_id,
+                    exit_code=1,
+                    output_hash="",
+                    events_captured=0,
+                    truncated=False,
+                    failure_cause=transport_failure.code,
+                ),
+            )
+
+        assert transport is not None
         adapter = AgentZeroAdapter(
             transport=transport, model_router=self.model_router, clock=lambda: int(time.time())
         )
@@ -375,6 +449,14 @@ class WorkerEngineService:
                     truncated=False,
                     failure_cause=exc.code.value,
                 ),
+            )
+
+        if transport_source == TRANSPORT_AGENT_ZERO_REAL:
+            self.run_writer.append_event(
+                run_id=run_id,
+                sequence=-1,
+                event_type="UPSTREAM_CONTEXT",
+                payload_json=json.dumps({"context_id": run_ref}, sort_keys=True),
             )
 
         result = adapter.collect_result(run_ref, work_order)

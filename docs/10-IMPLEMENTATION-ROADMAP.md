@@ -90,6 +90,15 @@ Factory is complete when all eight sections + the Shell milestone pass their acc
 
 ## Per-phase specifications
 
+### Managed Agent Zero + WorldMonitor section (2026-08-02)
+
+Agent Zero’s deterministic integration is complete on the pending worktree based on `c0a37c8`.
+WorldMonitor remains `INCOMPLETE`: its approved pinned-upstream scope is the thirteen categories in
+`Category`, while only `disasters.earthquakes` has a verified production client. Docker-backed
+installation and real-use acceptance also remain `BLOCKED`. This section cannot be promoted until
+the missing WorldMonitor capabilities are implemented and Windows 11 Home + WSL2/Docker live
+independent and combined workflows pass.
+
 Fields: scope · exclusions · authoritative requirements · components · contracts · schemas · tasks (count/shape) · dependencies · permitted parallel lanes · integration gate · required tests · evidence outputs · rollback boundary · promotion gate.
 
 ### PH-1 · Requirements & Contracts

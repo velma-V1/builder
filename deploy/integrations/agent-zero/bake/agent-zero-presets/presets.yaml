@@ -1,0 +1,30 @@
+- name: Default
+  chat:
+    provider: openai
+    name: qwen3:8b
+    api_base: http://host.docker.internal:8100/api/integrations/model/v1
+    ctx_length: 32768
+    ctx_history: 0.7
+    vision: false
+    max_embeds: 10
+    rl_requests: 0
+    rl_input: 0
+    rl_output: 0
+    kwargs: {}
+  utility:
+    provider: openai
+    name: qwen3:8b
+    api_base: http://host.docker.internal:8100/api/integrations/model/v1
+    ctx_length: 32768
+    ctx_input: 0.7
+    rl_requests: 0
+    rl_input: 0
+    rl_output: 0
+    kwargs: {}
+  embedding:
+    provider: huggingface
+    name: sentence-transformers/all-MiniLM-L6-v2
+    api_base: ""
+    rl_requests: 0
+    rl_input: 0
+    kwargs: {}

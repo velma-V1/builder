@@ -1,4 +1,4 @@
-"""Agent Zero integration — managed external worker (STRUCTURE_COMPLETE_NOT_INSTALLED).
+"""Agent Zero integration — Builder-managed external worker contracts.
 
 Agent Zero is an **external, pinned dependency** (its source is not copied into Builder) integrated
 strictly as a **managed worker**. Builder remains the sole authority for task state, repositories,
@@ -7,8 +7,8 @@ scheduling. Agent Zero may only execute an assigned work order, use explicitly g
 produce patches/artifacts, stream visible progress, and return evidence. It never receives a
 provider API key, a Docker socket, unrestricted host filesystem access, direct ``main`` access,
 merge/approval/promotion/self-update authority, or hidden scheduling — and its own claim of success
-is never Builder's verification verdict. **All AI is routed by the Builder router.** Nothing here
-connects, installs, or activates anything.
+is never Builder's verification verdict. **All AI is routed by the Builder router.** Runtime
+installation and lifecycle are owned by :mod:`factory.integrations.runtime`.
 """
 
 from __future__ import annotations
@@ -30,19 +30,9 @@ from factory.integrations.agent_zero.fake_transport import (
     sample_work_order,
 )
 from factory.integrations.agent_zero.health import DEFAULT_UNAVAILABLE_AFTER_FAILURES, check_health
-from factory.integrations.agent_zero.lifecycle import (
-    FUTURE_ISOLATION,
-    LIFECYCLE_PHASES,
-    FutureIsolation,
-    UpdateDecision,
-    build_lifecycle,
-    deny_self_update,
-    plan_update,
-)
 from factory.integrations.agent_zero.manifest import (
     AGENT_ZERO_MANIFEST,
     MANAGED_WORKER_OBLIGATIONS,
-    UNVERIFIED,
     AgentZeroManifest,
 )
 from factory.integrations.agent_zero.models import (
@@ -88,10 +78,7 @@ from factory.integrations.agent_zero.transport import (
 __all__ = [
     "AGENT_ZERO_MANIFEST",
     "DEFAULT_UNAVAILABLE_AFTER_FAILURES",
-    "FUTURE_ISOLATION",
-    "LIFECYCLE_PHASES",
     "MANAGED_WORKER_OBLIGATIONS",
-    "UNVERIFIED",
     "AgentZeroAdapter",
     "AgentZeroCapabilityRequest",
     "AgentZeroError",
@@ -111,7 +98,6 @@ __all__ = [
     "EvidenceBundle",
     "EvidenceItem",
     "FakeAgentZeroTransport",
-    "FutureIsolation",
     "ModelRouterPort",
     "ModuleHealth",
     "ModuleHealthState",
@@ -122,13 +108,11 @@ __all__ = [
     "ToolGrant",
     "TransportFailure",
     "TransportTimeout",
-    "UpdateDecision",
     "ValidatedEventStream",
     "WorkOrder",
     "WorkerOutcome",
     "assert_no_self_certification",
     "assert_no_self_promotion",
-    "build_lifecycle",
     "build_provenance",
     "build_work_order",
     "check_compatibility",
@@ -136,14 +120,12 @@ __all__ = [
     "content_digest",
     "deny_direct_main_access",
     "deny_hidden_scheduling",
-    "deny_self_update",
     "enforce_sandbox_boundary",
     "evaluate_output_path",
     "event",
     "full_failure_stream",
     "full_success_stream",
     "map_events_to_result",
-    "plan_update",
     "require_tool",
     "sample_work_order",
     "validate_event_stream",

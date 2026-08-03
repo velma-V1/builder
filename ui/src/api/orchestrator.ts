@@ -77,24 +77,9 @@ export interface Phase3BDetail {
   };
 }
 
-let operatorSessionCredential: string | null = null;
-
-export function configureOperatorSession(credential: string): void {
-  if (!credential) throw new Error("operator session credential must not be empty");
-  operatorSessionCredential = credential;
-}
-
-export function clearOperatorSession(): void {
-  operatorSessionCredential = null;
-}
-
 function authorityHeaders(): Record<string, string> {
-  if (operatorSessionCredential === null) {
-    throw new Error("operator session is unavailable");
-  }
   return {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${operatorSessionCredential}`,
   };
 }
 
@@ -189,4 +174,88 @@ export async function rejectPromotion(taskId: string, approvalId: string, reason
   });
   await throwOnError(response, "promotion rejection");
   return (await response.json()) as { outcome: string; state: string };
+}
+
+export interface IntegrationStatus {
+  name: "agent-zero" | "worldmonitor";
+  state: string;
+  detail: string;
+  occurred_at: number;
+  configured_enabled: boolean;
+  capability_coverage?: {
+    status: "INCOMPLETE" | "COMPLETE";
+    implemented: string[];
+    required: string[];
+  };
+  operation: IntegrationResult | null;
+}
+
+export type IntegrationStatuses = Record<"agent-zero" | "worldmonitor", IntegrationStatus>;
+
+export interface IntegrationResult {
+  operation_id: string;
+  status: string;
+  occurred_at: number;
+  context_id: string | null;
+  reason: string | null;
+  payload: Record<string, unknown>;
+}
+
+export async function getIntegrationStatuses(): Promise<IntegrationStatuses> {
+  const response = await fetch("/api/orchestrator/integrations");
+  await throwOnError(response, "integration status fetch");
+  return (await response.json()) as IntegrationStatuses;
+}
+
+export async function integrationAction(
+  name: IntegrationStatus["name"], action: "install" | "start" | "stop" | "disable" | "remove",
+): Promise<IntegrationStatus> {
+  const response = await fetch(`/api/orchestrator/integrations/${name}/${action}`, {
+    method: "POST", headers: authorityHeaders(),
+    body: JSON.stringify({ operation_id: crypto.randomUUID() }),
+  });
+  await throwOnError(response, `${name} ${action}`);
+  return (await response.json()) as IntegrationStatus;
+}
+
+export async function getIntegrationLogs(name: IntegrationStatus["name"]): Promise<string[]> {
+  const response = await fetch(`/api/orchestrator/integrations/${name}/logs?tail=200`, { headers: authorityHeaders() });
+  await throwOnError(response, `${name} logs`);
+  return ((await response.json()) as { lines: string[] }).lines;
+}
+
+export async function cancelAgentZero(operationId: string): Promise<IntegrationResult> {
+  const response = await fetch("/api/orchestrator/integrations/agent-zero/cancel", {
+    method: "POST", headers: authorityHeaders(), body: JSON.stringify({ operation_id: operationId }),
+  });
+  await throwOnError(response, "Agent Zero cancellation");
+  return (await response.json()) as IntegrationResult;
+}
+
+export async function getAgentZeroOperation(operationId: string): Promise<IntegrationResult> {
+  const response = await fetch(
+    `/api/orchestrator/integrations/agent-zero/tasks/${encodeURIComponent(operationId)}`,
+    { headers: authorityHeaders() },
+  );
+  await throwOnError(response, "Agent Zero operation fetch");
+  return (await response.json()) as IntegrationResult;
+}
+
+export async function runAgentZero(instructions: string): Promise<IntegrationResult> {
+  const response = await fetch("/api/orchestrator/integrations/agent-zero/tasks", {
+    method: "POST", headers: authorityHeaders(),
+    body: JSON.stringify({ operation_id: crypto.randomUUID(), instructions }),
+  });
+  await throwOnError(response, "Agent Zero task");
+  return (await response.json()) as IntegrationResult;
+}
+
+export async function refreshWorldMonitor(): Promise<IntegrationResult> {
+  const end = Date.now();
+  const response = await fetch("/api/orchestrator/integrations/worldmonitor/refresh", {
+    method: "POST", headers: authorityHeaders(),
+    body: JSON.stringify({ operation_id: crypto.randomUUID(), start_ms: end - 86400000, end_ms: end, limit: 50 }),
+  });
+  await throwOnError(response, "WorldMonitor refresh");
+  return (await response.json()) as IntegrationResult;
 }

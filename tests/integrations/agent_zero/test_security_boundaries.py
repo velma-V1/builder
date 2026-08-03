@@ -16,7 +16,6 @@ import sys
 from pathlib import Path
 
 import pytest
-from az_support import approval, model_router, network_backend, work_order
 
 from factory.contracts.validation.paths import PathAuthority
 from factory.integrations.agent_zero.adapter import AgentZeroAdapter
@@ -35,6 +34,8 @@ from factory.integrations.agent_zero.task_mapping import build_work_order
 from factory.network.models import Direction, NetworkApproval, NetworkRequest
 from factory.providers.transport import FakeExchange, FakeHttpTransport, HttpResponse
 from factory.sandbox.models import MountMode, MountSpec, ResourceLimits, SandboxSpec
+
+from .az_support import approval, model_router, network_backend, work_order
 
 pytestmark = pytest.mark.security
 
