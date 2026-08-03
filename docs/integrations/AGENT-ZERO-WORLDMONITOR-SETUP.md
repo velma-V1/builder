@@ -55,3 +55,33 @@ fail or restart without changing the other's durable state.
 Live container acceptance must be run on Windows 11 + WSL2 with Docker Desktop integration. A host
 without a working Docker command can pass deterministic contract/security tests but must record
 installation, readiness, real use, restart, recovery, cleanup, and combined operation as BLOCKED.
+
+## API-only hardened deployment
+
+The pinned upstream `docker/run` image is a rootful supervisord system runtime and cannot start
+under the approved non-root/read-only/capability-dropped boundary. The approved deployment instead
+builds an **API-only child image** (`deploy/integrations/agent-zero/Dockerfile.api`) from the exact
+pinned v2.7 source commit (`87e1e591…`, parent `builder/agent-zero-parent:404177ac`). It runs only
+the Agent Zero API/UI process (`run_ui.py` / uvicorn on 8080) as non-root `1000:1000` under a
+read-only rootfs with `cap_drop ALL` + `no-new-privileges`. The security boundary is not weakened.
+
+Live acceptance on Docker Desktop for WSL2 (2026-08-03) is **PASS** end-to-end: Builder → ingress
+(`127.0.0.1:50080`) → bridge relay → Squid egress → `host.docker.internal:8100` model gateway →
+Ollama `qwen3:8b` returned `LIVE-MODEL-OK`. Two sanctioned in-scope mitigations are required by
+upstream v2.7 behavior and are baked into the image, not into Builder's core:
+
+1. **Model preset:** v2.7's `_model_config` plugin overrides `A0_SET_chat_model_*` with its `Default`
+   preset, so `presets.yaml` is baked with Default chat+utility → `openai/qwen3:8b` at the gateway
+   base URL.
+2. **Offline embedding:** the `_memory` plugin would download `all-MiniLM-L6-v2` from huggingface.co;
+   a pruned offline cache (88 MB) is baked with `HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1`.
+3. **SSE-only chat loop:** v2.7 always sends `stream:true`; the model-gateway route normalizes it to
+   a single non-streaming completion and returns OpenAI SSE (`[DONE]`). `ModelGateway.complete()`
+   keeps its fail-closed non-streaming contract.
+
+Known upstream defect: `normalize_settings` overwrites `A0_SET_mcp_server_token` with a derived
+token, so `api_log_get` / `api_terminate_chat` require that derived token rather than the configured
+key. Builder records this and uses the derived token for cancel/logs lifecycle operations.
+
+See `docs/verification/agent-zero-worldmonitor-verification.md` for exact commands, counts, image
+digests, topology proof, and the upstream-defect evidence.

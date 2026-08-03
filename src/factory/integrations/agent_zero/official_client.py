@@ -140,7 +140,12 @@ class AgentZeroOfficialClient:
         answer: str | None = None
         logs = data.get("logs")
         if not running and isinstance(logs, list):
-            for item in reversed(logs):
+            last_user = max(
+                (index for index, item in enumerate(logs) if _log_type(item) == "user"),
+                default=-1,
+            )
+            candidates = logs[last_user + 1 :] if last_user >= 0 else logs
+            for item in reversed(candidates):
                 if isinstance(item, dict) and item.get("type") in {"response", "agent"}:
                     content = item.get("content")
                     if isinstance(content, str):
@@ -162,6 +167,14 @@ class AgentZeroOfficialClient:
         if not isinstance(items, list) or not all(isinstance(item, dict) for item in items):
             raise AgentZeroOfficialError("malformed Agent Zero log response")
         return tuple(items)
+
+
+def _log_type(item: object) -> str:
+    if isinstance(item, dict):
+        value = item.get("type")
+        if isinstance(value, str):
+            return value
+    return ""
 
 
 def _parse_object(response: HttpResponse) -> dict[str, object]:

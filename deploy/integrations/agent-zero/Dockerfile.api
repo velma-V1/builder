@@ -1,0 +1,56 @@
+# syntax=docker/dockerfile:1
+# API-only hardened Agent Zero image.
+#
+# Derived from the exact pinned full runtime image so the immutable pinned source
+# (v2.7 @ 87e1e591e1ba2e8b1a19d34e134fcae490c8dded) and its validated Python 3.12 venv
+# are reused byte-for-byte.
+#
+# The full upstream runtime's system services (Supervisor, sshd, cron, SearXNG, and the
+# root initialization) are NOT removed from the image; they are simply not started. The
+# image runs ONLY the single Agent Zero API/UI process (run_ui.py / uvicorn) as a
+# dedicated non-root user under a read-only rootfs with cap_drop ALL.
+#
+# Parent image baseline (current verified parent):
+#   Digest   = sha256:404177ac27f283ffcbd843ec590fbb3f5e375a746b8157137fd26dcb9d6fd192
+#   Revision = 87e1e591e1ba2e8b1a19d34e134fcae490c8dded
+
+ARG BASE_IMAGE=builder/agent-zero-parent:404177ac
+FROM ${BASE_IMAGE}
+
+USER root
+
+# Bake the pinned source at /a0 (helpers.base_dir and normalize_a0_path resolve under
+# /a0), so the read-only rootfs needs no runtime copy. Drop VCS history to keep the
+# layer minimal; keep all runtime code (including run_ui.py at /a0).
+RUN cp -a /git/agent-zero/. /a0/ \
+    && rm -rf /a0/.git \
+    && mkdir -p /a0/usr /a0/tmp
+
+# Bake the hardened model preset (Default -> qwen3:8b via the Builder model gateway)
+# and the offline embedding cache into /a0/usr so a fresh empty volume is seeded with
+# image content. The _model_config plugin generates presets.yaml only when absent, so
+# this override is authoritative; the pruned offline cache (safetensors + metadata,
+# verified via offline SentenceTransformer load) prevents any huggingface.co fetch on
+# the first turn. COPY paths are relative to the compose build context (repo root).
+COPY deploy/integrations/agent-zero/bake/agent-zero-presets/presets.yaml \
+    /a0/usr/plugins/_model_config/presets.yaml
+COPY deploy/integrations/agent-zero/bake/agent-zero-hf-cache/huggingface/ \
+    /a0/usr/.cache/huggingface/
+
+# Deterministic dedicated non-root group+user (uid/gid 1000) for the single API process.
+RUN groupadd --gid 1000 a0 \
+    && useradd --uid 1000 --gid a0 --no-create-home --shell /usr/sbin/nologin a0 \
+    && chown -R 1000:1000 /a0/usr /a0/tmp
+
+# Agent Zero writes: state/data under /a0/usr, scratch under /a0/tmp and /tmp.
+WORKDIR /a0
+ENV HOME=/a0/usr \
+    PYTHONPATH=/a0 \
+    TOKENIZERS_PARALLELISM=false \
+    WEB_UI_HOST=0.0.0.0 \
+    WEB_UI_PORT=8080
+
+# Neutralize any entrypoint inherited from the base image; explicit API-only CMD.
+ENTRYPOINT []
+USER 1000:1000
+CMD ["/opt/venv-a0/bin/python", "/a0/run_ui.py", "--dockerized=true"]

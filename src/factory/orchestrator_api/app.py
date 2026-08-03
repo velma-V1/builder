@@ -19,7 +19,7 @@ from typing import Any, cast
 
 from starlette.applications import Starlette
 from starlette.requests import Request
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, Response
 from starlette.routing import Route
 
 from factory.integrations.control import IntegrationControlService
@@ -388,19 +388,67 @@ async def _integration_status(request: Request) -> JSONResponse:
     return JSONResponse(statuses)
 
 
-async def _model_completion(request: Request) -> JSONResponse:
+async def _model_completion(request: Request) -> Response:
     gateway: ModelGateway | None = request.app.state.model_gateway
     if gateway is None:
         return JSONResponse({"error": "model gateway unavailable"}, status_code=503)
     try:
         payload = await request.json()
-        result = gateway.complete(request.headers.get("Authorization", ""), payload)
+    except Exception:
+        return _bad_request("model request must be valid JSON")
+    if not isinstance(payload, dict):
+        return _bad_request("model request must be a JSON object")
+    streaming = payload.get("stream") is True
+    # Agent Zero compatibility: v2.7 always asks for stream=true. It is normalized to a
+    # non-streaming inference ONLY here; ModelGateway.complete() keeps its fail-closed
+    # non-streaming contract (streaming requests remain rejected at the gateway).
+    normalized = {**payload, "stream": False} if streaming else payload
+    try:
+        result = gateway.complete(request.headers.get("Authorization", ""), normalized)
     except ModelGatewayError as exc:
         status = 401 if "authentication" in str(exc) else 503
         return JSONResponse({"error": str(exc)}, status_code=status)
     except Exception:
         return _bad_request("model request must be valid JSON")
+    if streaming:
+        return _sse_completion_response(result)
     return JSONResponse(result)
+
+
+def _sse_completion_response(completion: dict[str, object]) -> Response:
+    """Serialize one non-streamed completion into the OpenAI SSE shape Agent Zero expects."""
+    event_id = str(completion.get("id") or "builder-completion")
+    model = str(completion.get("model") or "unknown")
+    content = ""
+    choices = completion.get("choices")
+    if isinstance(choices, list) and choices:
+        first = choices[0]
+        if isinstance(first, dict):
+            message = first.get("message")
+            if isinstance(message, dict) and isinstance(message.get("content"), str):
+                content = message["content"]
+    chunks = [
+        {
+            "id": event_id,
+            "object": "chat.completion.chunk",
+            "model": model,
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {"role": "assistant", "content": content},
+                    "finish_reason": None,
+                }
+            ],
+        },
+        {
+            "id": event_id,
+            "object": "chat.completion.chunk",
+            "model": model,
+            "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
+        },
+    ]
+    body = "".join(f"data: {json.dumps(chunk)}\n\n" for chunk in chunks) + "data: [DONE]\n\n"
+    return Response(content=body, media_type="text/event-stream")
 
 
 async def _integration_action(request: Request) -> JSONResponse:

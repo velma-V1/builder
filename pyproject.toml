@@ -62,6 +62,7 @@ ignore_missing_imports = true
 [tool.ruff]
 target-version = "py312"
 line-length = 100
+extend-exclude = ["deploy/integrations/agent-zero/bake"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM", "S", "RUF"]

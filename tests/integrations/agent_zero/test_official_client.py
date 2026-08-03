@@ -58,6 +58,55 @@ def test_async_contract_establishes_csrf_starts_and_polls_context() -> None:
     assert transport.sent[1].headers["Cookie"] == "session=abc"
 
 
+def test_poll_ignores_greeting_demo_response_until_user_message_turn_completes() -> None:
+    def poll_payload(logs: list[dict[str, object]]) -> dict[str, object]:
+        return {"context": "ctx-race", "log_progress_active": False, "logs": logs}
+
+    csrf = FakeExchange(
+        lambda request: request.url.endswith("/api/csrf_token"),
+        HttpResponse(200, {"Set-Cookie": "session=s"}, b'{"ok":true,"token":"t"}'),
+    )
+    transport = FakeHttpTransport(
+        (
+            csrf,
+            FakeExchange(
+                lambda request: request.url.endswith("/api/poll"),
+                _response(
+                    poll_payload(
+                        [
+                            {"type": "response", "content": "**Hello! 👋**, I'm **Agent Zero**"},
+                            {"type": "user", "content": "Reply with exactly: LIVE-MODEL-OK"},
+                        ]
+                    )
+                ),
+            ),
+        )
+    )
+    client = _client(transport)
+
+    assert client.poll("ctx-race").response is None
+
+    transport2 = FakeHttpTransport(
+        (
+            csrf,
+            FakeExchange(
+                lambda request: request.url.endswith("/api/poll"),
+                _response(
+                    poll_payload(
+                        [
+                            {"type": "response", "content": "**Hello! 👋**, I'm **Agent Zero**"},
+                            {"type": "user", "content": "Reply with exactly: LIVE-MODEL-OK"},
+                            {"type": "response", "content": "LIVE-MODEL-OK"},
+                        ]
+                    )
+                ),
+            ),
+        )
+    )
+
+    assert _client(transport2).poll("ctx-race").response == "LIVE-MODEL-OK"
+
+
 def test_async_contract_rejects_missing_context_and_malformed_poll() -> None:
     missing = FakeHttpTransport(
         (
